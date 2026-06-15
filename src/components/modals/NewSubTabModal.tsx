@@ -1,0 +1,182 @@
+import { Folder, FolderCheck, Zap } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+
+import { useUiStore } from '../../stores/uiStore'
+import { useProjectsStore } from '../../stores/projectsStore'
+import { pickDirectory } from '../../lib/dialog'
+import { UNRESTRICTED_FLAG, type AgentType } from '../../lib/types'
+import { AgentIcon } from '../icons/AgentIcons'
+import { Modal } from './Modal'
+import controls from './controls.module.css'
+import picker from './agentPicker.module.css'
+
+const AGENTS: { type: AgentType; label: string }[] = [
+  { type: 'shell', label: 'Shell' },
+  { type: 'claude', label: 'Claude' },
+  { type: 'codex', label: 'Codex' },
+  { type: 'opencode', label: 'OpenCode' },
+]
+
+export function NewSubTabModal() {
+  const open = useUiStore((s) => s.openModal === 'newSubTab')
+  const context = useUiStore((s) => s.modalContext) as
+    | { projectId?: string; terminalId?: string }
+    | null
+  const closeModal = useUiStore((s) => s.closeModal)
+  const createSubTab = useProjectsStore((s) => s.createSubTab)
+  const enabled = useProjectsStore((s) => s.preferences.enabledAgents)
+  const terminalTheme = useProjectsStore(
+    (s) => s.preferences.terminalTheme ?? s.preferences.uiTheme,
+  )
+  const terminal = useProjectsStore((s) => {
+    if (!context?.projectId || !context?.terminalId) return null
+    const project = s.projects.find((p) => p.id === context.projectId)
+    return project?.terminals.find((t) => t.id === context.terminalId) ?? null
+  })
+
+  const [type, setType] = useState<AgentType>('shell')
+  const [cwd, setCwd] = useState('')
+  const [unrestricted, setUnrestricted] = useState<Record<AgentType, boolean>>({
+    shell: false,
+    claude: false,
+    codex: false,
+    opencode: false,
+  })
+
+  const visibleAgents = AGENTS.filter((a) => enabled[a.type])
+  const inheritedCwd = useMemo(() => {
+    const activeTab = terminal?.tabs.find((t) => t.id === terminal.activeTabId) ?? terminal?.tabs[0]
+    return activeTab?.cwd?.trim() || terminal?.cwd?.trim() || ''
+  }, [terminal])
+
+  useEffect(() => {
+    if (!open) return
+    setCwd(inheritedCwd)
+  }, [open, context?.projectId, context?.terminalId, inheritedCwd])
+
+  const reset = () => {
+    setType('shell')
+    setCwd('')
+    setUnrestricted({ shell: false, claude: false, codex: false, opencode: false })
+  }
+
+  const submit = () => {
+    if (!context?.projectId || !context?.terminalId) return
+    const flag = UNRESTRICTED_FLAG[type]
+    const extraArgs = unrestricted[type] && flag ? [flag] : undefined
+    createSubTab(context.projectId, context.terminalId, {
+      type,
+      cwd: cwd.trim() || inheritedCwd,
+      extraArgs,
+    })
+    reset()
+    closeModal()
+  }
+
+  const browse = async () => {
+    const dir = await pickDirectory({ defaultPath: cwd || inheritedCwd || undefined })
+    if (dir) setCwd(dir)
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={() => {
+        reset()
+        closeModal()
+      }}
+      title="Nova tab"
+      footer={
+        <>
+          <button type="button" className={controls.btn} onClick={closeModal}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className={`${controls.btn} ${controls.btnPrimary}`}
+            onClick={submit}
+            disabled={!context?.terminalId}
+          >
+            Adicionar
+          </button>
+        </>
+      }
+    >
+      <div className={controls.field}>
+        <label className={controls.label}>Tipo</label>
+        <div className={picker.list}>
+          {visibleAgents.map((a) => {
+            const active = type === a.type
+            return (
+              <button
+                key={a.type}
+                type="button"
+                className={`${picker.row} ${active ? picker.rowActive : ''}`}
+                onClick={() => setType(a.type)}
+              >
+                <span className={picker.rowIcon}>
+                  <AgentIcon type={a.type} size={18} theme={terminalTheme} />
+                </span>
+                <span className={picker.rowLabel}>{a.label}</span>
+                <span className={picker.rowEnd}>
+                  {UNRESTRICTED_FLAG[a.type] ? (
+                    <button
+                      type="button"
+                      className={`${picker.cwdBtn} ${unrestricted[a.type] ? picker.boltActive : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setType(a.type)
+                        setUnrestricted((u) => ({ ...u, [a.type]: !u[a.type] }))
+                      }}
+                      title={
+                        unrestricted[a.type]
+                          ? `Modo irrestrito ATIVO (${UNRESTRICTED_FLAG[a.type]})`
+                          : 'Ativar modo irrestrito'
+                      }
+                      aria-label="Modo irrestrito"
+                    >
+                      <Zap size={14} className={unrestricted[a.type] ? picker.bolt : ''} />
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={`${picker.cwdBtn} ${active && (cwd || inheritedCwd) ? picker.set : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setType(a.type)
+                      void browse()
+                    }}
+                    title={active && (cwd || inheritedCwd) ? cwd || inheritedCwd : 'Escolher pasta'}
+                    aria-label="Escolher pasta"
+                  >
+                    {active && (cwd || inheritedCwd) ? <FolderCheck size={14} /> : <Folder size={14} />}
+                  </button>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <div className={controls.field}>
+        <label className={controls.label}>Pasta (cwd)</label>
+        <div className={controls.cwdRow}>
+          <input
+            className={controls.input}
+            value={cwd}
+            onChange={(e) => setCwd(e.target.value)}
+            placeholder={inheritedCwd || '(default)'}
+          />
+          <button
+            type="button"
+            className={controls.btn}
+            onClick={browse}
+            aria-label="Escolher pasta"
+            title="Escolher pasta"
+          >
+            <Folder size={14} />
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}

@@ -1,0 +1,522 @@
+.sidebar {
+  width: clamp(240px, 21vw, 340px);
+  min-width: 220px;
+  max-width: min(380px, 42vw);
+  height: 100%;
+  background: var(--bg-sunken);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  resize: horizontal;
+}
+
+.homeRow {
+  padding: 8px 8px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.homeBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+.homeBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+.homeBtnActive {
+  background: var(--accent-faint);
+  color: var(--fg);
+}
+.homeBtnActive:hover {
+  background: var(--accent-faint);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  min-width: 0;
+}
+
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+}
+
+.iconBtn {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+}
+.iconBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 4px;
+  min-height: 0;
+  scrollbar-gutter: stable;
+}
+
+.empty {
+  padding: 24px 14px;
+  text-align: center;
+  color: var(--fg-faint);
+  font-size: 12px;
+}
+.emptyBtn {
+  display: block;
+  margin: 10px auto 0;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.emptyBtn:hover {
+  background: var(--accent-faint);
+}
+
+.projectNode {
+  margin-bottom: 2px;
+  min-width: 0;
+}
+
+.projectRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--fg);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  min-width: 0;
+}
+.projectRow:hover {
+  background: var(--panel-hover);
+}
+.projectActive {
+  background: var(--accent-faint);
+  color: var(--fg);
+}
+.projectActive:hover {
+  background: var(--accent-faint);
+}
+.projectDropTarget {
+  outline: 1.5px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--fg-muted);
+  border-radius: var(--radius-sm);
+}
+.chevron:hover {
+  background: var(--panel-hover);
+}
+
+.colorDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Indicador de Projeto: quadradinho com cantos arredondados (■). */
+.projectChip {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--fg-faint);
+  flex-shrink: 0;
+}
+
+.projectIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* ------------ Group ------------ */
+
+.groupBox {
+  position: relative;
+  margin: 14px 4px 8px;
+  padding: 14px 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--group-color, var(--border)) 35%, transparent);
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+
+.groupTag {
+  position: absolute;
+  top: -10px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px 2px 4px;
+  background: var(--bg-sunken);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  border-radius: var(--radius-sm);
+  height: 18px;
+  cursor: pointer;
+  z-index: 2;
+  max-width: calc(100% - 16px);
+}
+.groupTag:hover {
+  color: var(--fg);
+}
+
+.groupChevronBtn {
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  color: var(--fg-muted);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.groupChevronBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+/* Indicador de Grupo: bullet redondo (●) ou ícone de imagem. */
+.groupBullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.groupIcon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.groupTagName {
+  flex: 1;
+  white-space: nowrap;
+  font-weight: 700;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.groupBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 0 0;
+  min-width: 0;
+}
+
+.groupEmpty {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--fg-faint);
+}
+
+/* Grupo colapsado — linha simples sem borda */
+.groupCollapsed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 4px 4px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  min-width: 0;
+}
+.groupCollapsed:hover {
+  background: var(--panel-hover);
+}
+.groupChevron {
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+.groupName {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.groupCount {
+  font-size: 10px;
+  color: var(--fg-faint);
+  flex-shrink: 0;
+}
+
+/* Projeto desabilitado — todos os terminais disabled */
+.projectDisabled {
+  opacity: 0.45;
+}
+.projectDisabled .projectRow {
+  font-style: italic;
+}
+.projectPauseIcon {
+  color: var(--fg-faint);
+  flex-shrink: 0;
+}
+
+.groupSuspended {
+  opacity: 0.45;
+}
+.groupSuspended .groupTag {
+  font-style: italic;
+}
+
+.groupSuspendedIcon {
+  color: var(--fg-faint);
+  flex-shrink: 0;
+}
+
+.groupDropTarget {
+  outline: 1.5px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+/* Seção "Solto" */
+.ungroupedSection {
+  margin-top: 12px;
+  padding: 0 4px;
+}
+.ungroupedHeader {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-faint);
+  padding: 6px 8px 4px;
+}
+.ungroupedBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.projectName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-faint);
+  background: var(--panel);
+  border-radius: 9px;
+  padding: 0 6px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 16px;
+}
+
+.terminals {
+  margin-left: clamp(12px, 8%, 22px);
+  border-left: 1px solid var(--border);
+  padding-left: 4px;
+  margin-top: 2px;
+  min-width: 0;
+}
+
+.terminalRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  user-select: none;
+  min-width: 0;
+}
+.terminalRow:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+/* Visíveis no split = estado padrão (sem highlight). Apenas os ocultos
+   ganham estilo dimm pra destacar que NÃO aparecem no workspace. */
+.terminalHidden {
+  opacity: 0.45;
+}
+.terminalHidden .terminalName {
+  text-decoration: line-through;
+  text-decoration-color: var(--fg-faint);
+}
+.terminalDisabled {
+  opacity: 0.55;
+  font-style: italic;
+}
+.dragging {
+  opacity: 0.4;
+}
+
+.agentStack {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.agentIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  position: relative;
+}
+
+.terminalName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layoutFooter {
+  border-top: 1px solid var(--border);
+  padding: 8px 12px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.layoutLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.layoutSwitch {
+  display: flex;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: clamp(220px, 32vw, 300px);
+    max-width: 48vw;
+  }
+
+  .layoutLabel {
+    display: none;
+  }
+}
+
+.layoutBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.layoutBtn:hover {
+  color: var(--fg);
+}
+.layoutBtnActive {
+  background: var(--panel-hover);
+  color: var(--fg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tabCount {
+  font-size: 9px;
+  font-weight: 600;
+  background: var(--panel);
+  border-radius: 9px;
+  padding: 0 5px;
+  line-height: 14px;
+  color: var(--fg-faint);
+}
+
+.doneBadge {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--status-working);
+  color: var(--accent-on);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+}

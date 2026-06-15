@@ -1,0 +1,297 @@
+use std::fs;
+use std::path::PathBuf;
+use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::AppHandle;
+
+use crate::cli_resolver::find_vscode_launcher;
+use crate::paths::{app_data_dir, spawn_log_path};
+
+fn existing_path_from_user_input(path: &str) -> Result<PathBuf, String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("path vazio".to_string());
+    }
+    let target = PathBuf::from(trimmed);
+    if !target.exists() {
+        return Err(format!("path nao existe: {trimmed}"));
+    }
+    Ok(target)
+}
+
+#[tauri::command]
+pub fn open_in_file_explorer(path: String) -> Result<(), String> {
+    let target = existing_path_from_user_input(&path)?;
+    let result = if target.is_file() {
+        Command::new("explorer")
+            .arg("/select,")
+            .arg(target.as_os_str())
+            .spawn()
+    } else {
+        Command::new("explorer").arg(target.as_os_str()).spawn()
+    };
+    result.map(|_| ()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn open_in_vscode(path: String) -> Result<(), String> {
+    let target = existing_path_from_user_input(&path)?;
+    let launcher = find_vscode_launcher().ok_or_else(|| {
+        "VS Code não encontrado (procurado em PATH, LOCALAPPDATA, ProgramFiles)".to_string()
+    })?;
+    let is_cmd = launcher
+        .extension()
+        .and_then(|s| s.to_str())
+        .map(|s| s.eq_ignore_ascii_case("cmd"))
+        .unwrap_or(false);
+    let result = if is_cmd {
+        Command::new("cmd")
+            .arg("/C")
+            .arg(launcher.as_os_str())
+            .arg(target.as_os_str())
+            .spawn()
+    } else {
+        Command::new(launcher.as_os_str())
+            .arg(target.as_os_str())
+            .spawn()
+    };
+    result.map(|_| ()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn open_in_browser(target: String) -> Result<(), String> {
+    let trimmed = target.trim();
+    if trimmed.is_empty() {
+        return Err("target vazio".to_string());
+    }
+
+    let open_target = if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        trimmed.to_string()
+    } else {
+        existing_path_from_user_input(trimmed)?
+            .canonicalize()
+            .map_err(|e| e.to_string())?
+            .to_string_lossy()
+            .to_string()
+    };
+
+    #[cfg(target_os = "windows")]
+    let result = Command::new("rundll32")
+        .arg("url.dll,FileProtocolHandler")
+        .arg(open_target)
+        .spawn();
+
+    #[cfg(target_os = "macos")]
+    let result = Command::new("open").arg(open_target).spawn();
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let result = Command::new("xdg-open").arg(open_target).spawn();
+
+    result.map(|_| ()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn write_clipboard_text(text: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        windows_clipboard::write_text(&text)
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = text;
+        Err("clipboard backend indisponivel nesta plataforma".to_string())
+    }
+}
+
+#[tauri::command]
+pub fn read_clipboard_text() -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        windows_clipboard::read_text()
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        Err("clipboard backend indisponivel nesta plataforma".to_string())
+    }
+}
+
+#[cfg(target_os = "windows")]
+mod windows_clipboard {
+    use std::ptr;
+    use std::thread;
+    use std::time::Duration;
+    use windows_sys::Win32::Foundation::GlobalFree;
+    use windows_sys::Win32::System::DataExchange::{
+        CloseClipboard, EmptyClipboard, GetClipboardData, IsClipboardFormatAvailable, OpenClipboard,
+        SetClipboardData,
+    };
+    use windows_sys::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
+    use windows_sys::Win32::System::Ole::CF_UNICODETEXT;
+
+    const CF_UNICODETEXT_U32: u32 = CF_UNICODETEXT as u32;
+
+    struct ClipboardGuard;
+
+    impl Drop for ClipboardGuard {
+        fn drop(&mut self) {
+            unsafe {
+                CloseClipboard();
+            }
+        }
+    }
+
+    fn open_clipboard() -> Result<ClipboardGuard, String> {
+        for _ in 0..20 {
+            let opened = unsafe { OpenClipboard(ptr::null_mut()) };
+            if opened != 0 {
+                return Ok(ClipboardGuard);
+            }
+            thread::sleep(Duration::from_millis(15));
+        }
+        Err("clipboard ocupado".to_string())
+    }
+
+    pub fn write_text(text: &str) -> Result<(), String> {
+        let _guard = open_clipboard()?;
+        let mut wide = text.encode_utf16().collect::<Vec<u16>>();
+        wide.push(0);
+        let size_bytes = wide.len() * std::mem::size_of::<u16>();
+
+        let handle = unsafe { GlobalAlloc(GMEM_MOVEABLE, size_bytes) };
+        if handle.is_null() {
+            return Err("GlobalAlloc clipboard falhou".to_string());
+        }
+
+        let locked = unsafe { GlobalLock(handle) } as *mut u16;
+        if locked.is_null() {
+            unsafe {
+                GlobalFree(handle);
+            }
+            return Err("GlobalLock clipboard falhou".to_string());
+        }
+
+        unsafe {
+            locked.copy_from_nonoverlapping(wide.as_ptr(), wide.len());
+            GlobalUnlock(handle);
+        }
+
+        let emptied = unsafe { EmptyClipboard() };
+        if emptied == 0 {
+            unsafe {
+                GlobalFree(handle);
+            }
+            return Err("EmptyClipboard falhou".to_string());
+        }
+
+        let stored = unsafe { SetClipboardData(CF_UNICODETEXT_U32, handle) };
+        if stored.is_null() {
+            unsafe {
+                GlobalFree(handle);
+            }
+            return Err("SetClipboardData falhou".to_string());
+        }
+
+        Ok(())
+    }
+
+    pub fn read_text() -> Result<String, String> {
+        let _guard = open_clipboard()?;
+        let available = unsafe { IsClipboardFormatAvailable(CF_UNICODETEXT_U32) };
+        if available == 0 {
+            return Ok(String::new());
+        }
+
+        let handle = unsafe { GetClipboardData(CF_UNICODETEXT_U32) };
+        if handle.is_null() {
+            return Err("GetClipboardData falhou".to_string());
+        }
+
+        let locked = unsafe { GlobalLock(handle) } as *const u16;
+        if locked.is_null() {
+            return Err("GlobalLock clipboard falhou".to_string());
+        }
+
+        let mut len = 0usize;
+        unsafe {
+            while *locked.add(len) != 0 {
+                len += 1;
+            }
+            let slice = std::slice::from_raw_parts(locked, len);
+            let text = String::from_utf16_lossy(slice);
+            GlobalUnlock(handle);
+            Ok(text)
+        }
+    }
+}
+
+pub fn append_spawn_log(app: &AppHandle, message: &str) -> Result<(), String> {
+    use std::io::Write;
+    let path = spawn_log_path(app)?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|error| error.to_string())?;
+    writeln!(file, "[{}] {message}", timestamp_ms()).map_err(|error| error.to_string())
+}
+
+pub fn timestamp_ms() -> String {
+    match SystemTime::now().duration_since(UNIX_EPOCH) {
+        Ok(duration) => format!("{}.{:03}", duration.as_secs(), duration.subsec_millis()),
+        Err(_) => "0.000".to_string(),
+    }
+}
+
+#[tauri::command]
+pub fn open_data_folder(app: AppHandle) -> Result<(), String> {
+    let path = app_data_dir(&app)?;
+    fs::create_dir_all(&path).map_err(|error| error.to_string())?;
+    Command::new("explorer")
+        .arg(path)
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn open_spawn_log(app: AppHandle) -> Result<(), String> {
+    let path = spawn_log_path(&app)?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    }
+    if !path.exists() {
+        fs::write(&path, "").map_err(|error| error.to_string())?;
+    }
+    Command::new("notepad")
+        .arg(path)
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| error.to_string())
+}
+
+/// Limpa todo o conteúdo de `%LOCALAPPDATA%\dev.alethe\` (projects.json,
+/// scrollback/, spawn.log). Itera em vez de remover o dir inteiro pra
+/// permitir que o app continue rodando.
+#[tauri::command]
+pub fn reset_app_data(app: AppHandle) -> Result<(), String> {
+    let dir = app_data_dir(&app)?;
+    if !dir.exists() {
+        return Ok(());
+    }
+    if let Ok(entries) = fs::read_dir(&dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let _ = if path.is_dir() {
+                fs::remove_dir_all(&path)
+            } else {
+                fs::remove_file(&path)
+            };
+        }
+    }
+    Ok(())
+}

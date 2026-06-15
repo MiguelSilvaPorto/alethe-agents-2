@@ -1,0 +1,216 @@
+/* controles compartilhados pelos modais (input, botões, pills) */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input {
+  width: 100%;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  font-size: 14px;
+  color: var(--fg);
+  outline: none;
+  transition: border-color 100ms;
+}
+.input:focus {
+  border-color: var(--accent);
+}
+
+.cwdRow {
+  display: flex;
+  gap: 6px;
+}
+.cwdRow .input {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.inputActionRow {
+  display: flex;
+  gap: 6px;
+}
+.inputActionRow .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.hint {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+
+.btn {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 100ms, border-color 100ms;
+}
+.btn:hover:not(:disabled) {
+  background: var(--panel-hover);
+  border-color: var(--border-strong);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-on);
+}
+.btnPrimary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.btnDanger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+.btnDanger:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.pillRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-sunken);
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 100ms, background 100ms;
+}
+.pill:hover {
+  border-color: var(--border-strong);
+}
+.pillActive {
+  border-color: var(--accent);
+  background: var(--accent-faint);
+}
+
+.stepperRow {
+  display: grid;
+  grid-template-columns: 36px 1fr 36px 36px;
+  gap: 8px;
+  align-items: center;
+}
+
+.iconBtn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--fg);
+  cursor: pointer;
+  transition: background 100ms, border-color 100ms;
+}
+.iconBtn:hover:not(:disabled) {
+  background: var(--panel-hover);
+  border-color: var(--border-strong);
+}
+.iconBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stepperValue {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.themeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.themeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-sunken);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 100ms, background 100ms;
+}
+.themeCard:hover {
+  border-color: var(--border-strong);
+  background: var(--panel-hover);
+}
+.themeCardActive {
+  border-color: var(--accent);
+  background: var(--accent-faint);
+}
+
+.themeSwatches {
+  display: flex;
+  gap: 5px;
+}
+.themeSwatches span {
+  width: 24px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.themeTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.themeDescription {
+  color: var(--fg-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}

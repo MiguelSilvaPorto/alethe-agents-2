@@ -1,0 +1,166 @@
+.loadingScreen {
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, var(--accent-soft), transparent 30%),
+    var(--bg);
+  color: var(--fg);
+}
+
+.loadingMarkWrap {
+  position: relative;
+  width: min(78vmin, 760px);
+  height: min(78vmin, 760px);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* as duas camadas usam o mesmo vetor como máscara (alpha do SVG) */
+.markGhost,
+.markFill {
+  position: absolute;
+  inset: 0;
+  -webkit-mask: url('./assets/alethe-mark.svg') center / contain no-repeat;
+  mask: url('./assets/alethe-mark.svg') center / contain no-repeat;
+}
+
+/* figura "vazia": contorno bem fraco, sempre visível */
+.markGhost {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+/* preenchimento: gradiente vertical do accent, revelado de baixo pra cima.
+   gradiente segue o accent do tema (off-white no dark, roxo no dracula, etc.) */
+.markFill {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--accent) 40%, var(--bg)) 0%,
+    var(--accent) 58%,
+    var(--accent-strong) 100%
+  );
+  clip-path: inset(100% 0 0 0);
+  animation:
+    pour 2.6s cubic-bezier(0.42, 0.04, 0.3, 0.98) 0.3s forwards,
+    breathe 4.4s ease-in-out 3.1s infinite;
+}
+
+@keyframes pour {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 6px var(--accent-ring));
+  }
+  50% {
+    filter: drop-shadow(0 0 24px color-mix(in srgb, var(--accent) 45%, transparent));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .markFill {
+    clip-path: none;
+    animation: none;
+    filter: drop-shadow(0 0 18px var(--accent-ring));
+  }
+}
+
+/* Pill compacto centralizado no topo. Fundo sólido do tema, borda tingida
+   pela cor do agente. */
+.toastStack {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  max-width: min(460px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--toast-accent, var(--accent)) 30%, var(--border));
+  border-radius: 999px;
+  background: var(--surface-modal);
+  color: var(--fg);
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+  animation: toastIn 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.toastIcon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--toast-accent, var(--accent));
+  background: color-mix(in srgb, var(--toast-accent, var(--accent)) 16%, transparent);
+}
+
+.toastText {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.toastText strong {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.toastText span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.toastClose {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: var(--fg-faint);
+}
+.toastClose:hover {
+  color: var(--fg);
+  background: var(--panel-hover);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

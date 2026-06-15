@@ -1,0 +1,73 @@
+import {
+  isPermissionGranted,
+  requestPermission,
+  sendNotification,
+} from '@tauri-apps/plugin-notification'
+import { getCurrentWindow } from '@tauri-apps/api/window'
+
+import { useUiStore } from '../stores/uiStore'
+import type { AgentType } from './types'
+
+let permissionPromise: Promise<boolean> | null = null
+
+/**
+ * App "na frente" = janela focada e não minimizada. Quando true mostramos o
+ * banner in-app; quando false (alt-tab, minimizado, atrás de outra janela)
+ * disparamos a notificação do SO. Nunca os dois — evita aviso duplicado.
+ */
+async function appInForeground(): Promise<boolean> {
+  try {
+    const win = getCurrentWindow()
+    const [focused, minimized] = await Promise.all([win.isFocused(), win.isMinimized()])
+    return focused && !minimized
+  } catch {
+    try {
+      return document.hasFocus()
+    } catch {
+      return true
+    }
+  }
+}
+
+async function ensureNotificationPermission(): Promise<boolean> {
+  if (!permissionPromise) {
+    permissionPromise = (async () => {
+      try {
+        if (await isPermissionGranted()) return true
+        return (await requestPermission()) === 'granted'
+      } catch {
+        return false
+      }
+    })()
+  }
+  return permissionPromise
+}
+
+export async function notifyAgentDone(
+  title: string,
+  body: string,
+  meta?: { agent?: AgentType },
+): Promise<void> {
+  const agent = meta?.agent
+  const pushToast = useUiStore.getState().pushToast
+
+  // App na frente → só o banner in-app (banner + histórico).
+  if (await appInForeground()) {
+    pushToast({ title, body, agent })
+    return
+  }
+
+  // App fora de foco/minimizado → notificação do SO. Sem permissão, cai
+  // pro banner pra não perder o aviso. Em ambos os casos entra no histórico
+  // uma única vez (silent quando vai pro SO).
+  if (await ensureNotificationPermission()) {
+    pushToast({ title, body, agent, silent: true })
+    try {
+      sendNotification({ title, body })
+    } catch {
+      /* Notification failures should not affect the terminal session. */
+    }
+  } else {
+    pushToast({ title, body, agent })
+  }
+}

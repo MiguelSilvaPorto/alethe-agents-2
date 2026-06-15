@@ -1,0 +1,120 @@
+.lane {
+  width: 36px;
+  height: 100%;
+  /* Mesmo overlay do header rich pra parecerem o mesmo "chrome" */
+  background: var(--shape-tabs-lane-bg);
+  border-right: 1px solid var(--shape-tabs-lane-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.itemWrap {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+.itemWrap:hover .close {
+  opacity: 1;
+}
+
+/* Indicador da tab ativa — barra de acento colada na borda esquerda da lane
+   (padrão activity-bar), some quando não-ativa. */
+.active::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 16px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+
+/* Chip do agente — sem bg colorido, só o ícone do agente. Hover dá um
+   highlight sutil; tab ativa ganha bg neutro um pouco mais claro. */
+.item {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background 100ms;
+}
+.item img {
+  display: block;
+  pointer-events: none;
+}
+
+.doneBadge {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: grid;
+  place-items: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--status-working);
+  color: var(--accent-on);
+  font: 800 8px var(--font-sans);
+  line-height: 1;
+  box-shadow: 0 0 0 1px var(--bg-sunken);
+}
+
+.item:hover {
+  background: var(--accent-soft);
+}
+
+.active .item {
+  background: var(--surface-card-selected);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.close {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--fg-muted);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 100ms;
+  z-index: 2;
+}
+.close:hover {
+  color: var(--status-offline);
+  border-color: var(--status-offline);
+}
+
+.add {
+  margin-top: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--fg-faint);
+  cursor: pointer;
+  border: 1px dashed var(--border-strong);
+  transition: background 100ms, color 100ms, border-color 100ms;
+}
+.add:hover {
+  background: var(--accent-soft);
+  color: var(--fg);
+  border-color: var(--accent-border);
+}

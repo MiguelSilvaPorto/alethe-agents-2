@@ -1,0 +1,218 @@
+.bar {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  flex-shrink: 0;
+  padding-left: 4px;
+}
+
+.iconBtn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.iconBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+.iconBtnActive {
+  color: var(--fg);
+  background: var(--bg-sunken);
+}
+
+.title {
+  margin-left: 8px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: 0.02em;
+}
+
+.groupTabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  /* Cresce pra ocupar a faixa toda até as pills da direita — sem cap fixo,
+     que deixava as tabs curtas com espaço morto à direita. */
+  flex: 100 1 0;
+  height: 100%;
+  margin-left: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.groupTabs::-webkit-scrollbar {
+  display: none;
+}
+
+.groupTab {
+  height: 26px;
+  min-width: 96px;
+  max-width: 190px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px 0 8px;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  background: transparent;
+  flex: 0 0 auto;
+}
+.groupTab:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+.groupTabActive {
+  background: var(--bg-sunken);
+  color: var(--fg);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+
+.groupTabMain {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  cursor: pointer;
+}
+
+.groupTabClose {
+  display: grid;
+  place-items: center;
+  /* Colapsa quando escondido pra não deixar espaço vazio à direita do tab.
+     Expande no hover/focus e fica sempre visível na aba ativa. */
+  width: 0;
+  height: 18px;
+  margin-left: 0;
+  border-radius: 999px;
+  color: var(--fg-faint);
+  opacity: 0;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition:
+    width 0.12s ease,
+    margin-left 0.12s ease,
+    opacity 0.12s ease;
+}
+.groupTab:hover .groupTabClose,
+.groupTab:focus-within .groupTabClose,
+.groupTabActive .groupTabClose {
+  width: 18px;
+  margin-left: 2px;
+  opacity: 1;
+}
+.groupTabClose:hover {
+  background: var(--bg-sunken);
+  color: var(--fg);
+}
+
+.groupTabDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.groupTabIcon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.groupTabIconSvg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.groupTabName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.groupTabCount {
+  min-width: 18px;
+  height: 14px;
+  padding: 0 5px;
+  border-radius: 7px;
+  display: inline-grid;
+  place-items: center;
+  background: var(--panel);
+  color: var(--fg-faint);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 14px;
+  flex-shrink: 0;
+}
+
+.spacer {
+  /* Mantém uma área de arraste antes das pills; cresce sozinho quando não há
+     tabs (groupTabs ausente), senão o groupTabs (flex 100) domina o espaço. */
+  flex: 1 1 0;
+  height: 100%;
+  min-width: 12px;
+}
+
+.claudePill {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--pill-color, var(--fg-muted));
+  background: var(--bg-sunken);
+  padding: 2px 8px;
+  border-radius: 9px;
+  margin-right: 6px;
+  font-weight: 600;
+  white-space: pre-line;
+}
+
+.ramPill {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  background: var(--bg-sunken);
+  padding: 2px 8px;
+  border-radius: 9px;
+  margin-right: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.ramPill:hover {
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+
+.windowBtn {
+  width: 36px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.windowBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+.close:hover {
+  background: #e81123;
+  color: #fff;
+}

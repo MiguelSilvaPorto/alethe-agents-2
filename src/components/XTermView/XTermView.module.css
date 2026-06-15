@@ -1,0 +1,193 @@
+.host {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  /* bg vem inline (cor do tema do xterm) pra a área de padding casar
+     com o fundo do terminal — sem isso o padding mostraria o chrome. */
+  background: var(--bg-sunken);
+  padding: 6px 6px 6px 10px;
+  overflow: hidden;
+}
+
+.host :global(.xterm) {
+  width: 100%;
+  height: 100%;
+}
+
+.host :global(.xterm .xterm-viewport) {
+  overflow-y: scroll !important;
+  scrollbar-gutter: stable;
+  background-color: transparent;
+}
+
+.host :global(.xterm .xterm-viewport::-webkit-scrollbar) {
+  width: 10px;
+}
+
+.host :global(.xterm .xterm-viewport::-webkit-scrollbar-thumb) {
+  background: color-mix(in srgb, var(--fg-muted) 38%, transparent);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.host :global(.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover) {
+  background: color-mix(in srgb, var(--fg-muted) 58%, transparent);
+  background-clip: padding-box;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: color-mix(in srgb, var(--bg-sunken) 88%, transparent);
+  color: var(--fg);
+  font-size: 13px;
+  text-align: center;
+}
+
+.overlayText {
+  max-width: 320px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.overlayBtn {
+  padding: 7px 16px;
+  background: var(--accent);
+  color: var(--accent-on);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.overlayBtn:hover {
+  background: var(--accent-strong);
+}
+
+.bootOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: color-mix(in srgb, var(--bg-sunken) 94%, transparent);
+  color: var(--fg-muted);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.bootSpinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--fg-muted) 20%, transparent);
+  border-top-color: var(--accent);
+  animation: bootSpin 700ms linear infinite;
+}
+
+.bootLabel {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.linkActions {
+  position: fixed;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  max-width: min(520px, calc(100vw - 24px));
+  gap: 8px;
+  padding: 7px 8px;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-modal) 96%, transparent);
+  color: var(--fg);
+  box-shadow: var(--shadow-lg);
+  transform: translate(-50%, calc(-100% - 10px));
+  animation: linkActionsIn 120ms ease-out;
+}
+
+.linkActions::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 9px;
+  height: 9px;
+  border-right: 1px solid var(--border-accent);
+  border-bottom: 1px solid var(--border-accent);
+  background: inherit;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.linkActionsText {
+  min-width: 0;
+  max-width: 320px;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkActionsButtons {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.linkActionBtn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  background: transparent;
+  transition:
+    background 100ms ease,
+    border-color 100ms ease,
+    color 100ms ease;
+}
+
+.linkActionBtn:hover:not(:disabled) {
+  color: var(--fg);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.linkActionBtn:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
+@keyframes bootSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes linkActionsIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px)) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 10px)) scale(1);
+  }
+}
