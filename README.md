@@ -3,7 +3,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/Kc1t/alethe">
-    <img src="./src/assets/alethe-mark.svg" alt="Alethe Logo" width="280" height="80">
+    <img src="./src/assets/alethe-logo.png" alt="Alethe Logo" width="160">
   </a>
 
   <h3 align="center">Alethe</h3>

@@ -29,16 +29,12 @@ import { useKeybindings } from './hooks/useKeybindings'
 import { useProjectsStore } from './stores/projectsStore'
 import { type InAppToast, useUiStore } from './stores/uiStore'
 import styles from './App.module.css'
+import logoLoading from './assets/logo-loading.png'
 
 function LoadingScreen() {
   return (
     <div className={styles.loadingScreen}>
-      <div className={styles.loadingMarkWrap} aria-hidden>
-        {/* figura "vazia" (contorno fraco) */}
-        <div className={styles.markGhost} />
-        {/* preenchimento que sobe de baixo pra cima + respira luz */}
-        <div className={styles.markFill} />
-      </div>
+      <img className={styles.loadingMark} src={logoLoading} alt="Alethe" />
     </div>
   )
 }
