@@ -22,11 +22,17 @@
 > [!IMPORTANT]
 > Alethe is an early public release. The desktop app is free and local-first. Optional hosted services, such as sync or cloud backup, may be offered separately later.
 
+<div align="center">
+  <img src="./docs/assets/alethe-preview.gif" alt="Alethe desktop workspace preview" width="760">
+</div>
+
 ## About
 
 **Alethe** is a desktop workspace for running and resuming multiple coding agents and shells in parallel. It combines projects, groups, containers, split panes, terminal sub-tabs, real PTYs, local history, session resume, and memory controls in one app.
 
 It is built for people working with Claude Code, Codex, OpenCode, and local terminals across multiple projects.
+
+Built with Tauri, Rust, React, TypeScript, Vite, `portable-pty`, and `xterm.js`.
 
 ## Features
 
@@ -41,17 +47,6 @@ It is built for people working with Claude Code, Codex, OpenCode, and local term
 - Spotify Now Playing through the user's own Spotify app credentials.
 - Experimental Agent Planning / Agent Canvas.
 - GitHub Actions release workflow for Windows, Linux, and macOS.
-
-## Built With
-
-- Tauri 2
-- Rust
-- React
-- TypeScript
-- Vite
-- Zustand
-- `portable-pty`
-- `xterm.js`
 
 ## Installation
 
