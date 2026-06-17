@@ -7,6 +7,9 @@ mod cli_resolver;
 mod codex_sessions;
 mod diagnostics;
 mod economy_agents;
+mod ghostty_bridge;
+#[cfg(all(target_os = "macos", ghostty_linked))]
+mod ghostty_ffi;
 mod paths;
 mod projects;
 mod profiles;
@@ -28,6 +31,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .manage(sessions)
+        .manage(ghostty_bridge::GhosttySurfaces::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
@@ -53,6 +57,11 @@ pub fn run() {
             pty::resize_pty,
             pty::kill_pty,
             pty::get_pty_cwd,
+            ghostty_bridge::ghostty_spawn,
+            ghostty_bridge::ghostty_sync_frame,
+            ghostty_bridge::ghostty_set_hidden,
+            ghostty_bridge::ghostty_kill,
+            ghostty_bridge::ghostty_debug_send_read,
             projects::load_projects,
             projects::save_projects,
             profiles::list_profiles,

@@ -100,6 +100,36 @@ export async function getPtyCwd(id: string): Promise<string | null> {
   return invoke<string | null>('get_pty_cwd', { id })
 }
 
+// --- Ghostty native terminal (macOS only) ---
+
+export type GhosttySurfaceResponse = {
+  id: string
+  attached: boolean
+}
+
+/** Retângulo em coordenadas da WebView (CSS px, origem topo-esquerda). */
+export type WebRect = { x: number; y: number; width: number; height: number }
+
+export async function ghosttySpawn(id: string): Promise<GhosttySurfaceResponse> {
+  return invoke<GhosttySurfaceResponse>('ghostty_spawn', { id })
+}
+
+export async function ghosttySyncFrame(
+  id: string,
+  rect: WebRect,
+  scale: number,
+): Promise<void> {
+  await invoke('ghostty_sync_frame', { id, rect, scale })
+}
+
+export async function ghosttySetHidden(id: string, hidden: boolean): Promise<void> {
+  await invoke('ghostty_set_hidden', { id, hidden })
+}
+
+export async function ghosttyKill(id: string): Promise<void> {
+  await invoke('ghostty_kill', { id })
+}
+
 export function listenPtyData(
   id: string,
   handler: (chunk: string) => void,

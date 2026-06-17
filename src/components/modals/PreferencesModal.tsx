@@ -1,6 +1,7 @@
 import { Minus, Plus, RotateCcw } from 'lucide-react'
 
 import { LOCALES, useT } from '../../lib/i18n'
+import { isMacOS } from '../../lib/platform'
 import { getProfileImageUrl, getProfileInitial } from '../../lib/profile'
 import { THEME_OPTIONS, themeLabel } from '../../lib/themes'
 import { UI_ZOOM_LIMITS, useProjectsStore } from '../../stores/projectsStore'
@@ -211,6 +212,36 @@ export function PreferencesModal() {
           })}
         </div>
       </Section>
+
+      {isMacOS() ? (
+        <Section title="Experimental (macOS)">
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-sunken)',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={preferences.nativeTerminalMacos ?? false}
+              onChange={(e) => setPreferences({ nativeTerminalMacos: e.target.checked })}
+            />
+            <span style={{ flex: 1 }}>
+              <div style={{ fontWeight: 500, fontSize: 13 }}>Terminal nativo (Ghostty)</div>
+              <div style={{ fontSize: 11, color: 'var(--fg-muted)' }}>
+                Usa a engine do Ghostty (render GPU) embutida, no lugar do terminal interno.
+                Experimental. Reabra os terminais após mudar.
+              </div>
+            </span>
+          </label>
+        </Section>
+      ) : null}
 
       <Section title={t('prefs.spotify')}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

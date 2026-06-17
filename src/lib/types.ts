@@ -155,6 +155,12 @@ export type Preferences = {
   spotifyClientSecret: string
   /** v2.2 — grid layout custom da workspace inteira (cross-grupo). */
   workspaceGridLayout?: GridLayout
+  /**
+   * v2.4 — backend de terminal nativo (libghostty) no macOS. Opt-in.
+   * Só tem efeito no macOS; Windows/Linux ignoram e seguem no xterm.js.
+   * Default false até a feature sair do estágio experimental.
+   */
+  nativeTerminalMacos?: boolean
 }
 
 export type ProjectsFile = {
