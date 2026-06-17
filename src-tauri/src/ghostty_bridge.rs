@@ -66,6 +66,34 @@ mod imp {
         // Guardamos o ponteiro como usize para o mapa ser Send/Sync; a NSView
         // só é tocada na main thread, onde reconstruímos o Retained.
         views: Mutex<HashMap<String, SurfaceEntry>>,
+        // IDs com criação em andamento (reservados mas ainda sem entry no mapa).
+        // Fecha a janela entre "checar que não existe" e "inserir a surface":
+        // sem isto, duas chamadas de spawn pro mesmo id poderiam ambas passar o
+        // check e criar duas surfaces (over-spawn do StrictMode). #4
+        reserving: Mutex<std::collections::HashSet<String>>,
+    }
+
+    impl GhosttySurfaces {
+        /// Reserva um id para criação. Retorna true se reservou (não havia
+        /// surface viva nem outra reserva pendente); false se já existe/reservado.
+        /// Atômico: check de views + reserving sob locks, antes de qualquer
+        /// criação cara de surface.
+        pub fn try_reserve(&self, id: &str) -> bool {
+            let views = self.views.lock().expect("views lock");
+            if views.contains_key(id) {
+                return false;
+            }
+            let mut reserving = self.reserving.lock().expect("reserving lock");
+            reserving.insert(id.to_string())
+        }
+
+        /// Libera uma reserva (ex.: a criação falhou ou concluiu e já está no
+        /// mapa de views).
+        pub fn release_reservation(&self, id: &str) {
+            if let Ok(mut reserving) = self.reserving.lock() {
+                reserving.remove(id);
+            }
+        }
     }
 
     struct SurfaceEntry {
@@ -135,15 +163,28 @@ mod imp {
             .ok_or_else(|| "ghostty_spawn precisa rodar na main thread".to_string())?;
         let _ = (&cwd, &command); // usados só no caminho ghostty_linked
 
-        // Idempotente: o React (StrictMode / re-render) pode chamar spawn mais de
-        // uma vez para o mesmo id. Sem isso, criaríamos NSViews duplicadas e
-        // vazaríamos a primeira. Se já existe, devolvemos a mesma surface.
-        {
-            let views = state.views.lock().map_err(|_| "lock poisoned".to_string())?;
-            if views.contains_key(&id) {
-                return Ok(GhosttySurfaceResponse { id, attached: true });
+        // Idempotente + atômico (#4): reserva o id sob lock. Se já há surface
+        // viva OU outra criação em andamento pro mesmo id, não criamos a 2ª —
+        // devolvemos a existente. Isso fecha a janela entre o check e a inserção
+        // (o StrictMode chamava spawn 2x e gerava over-spawn).
+        if !state.try_reserve(&id) {
+            return Ok(GhosttySurfaceResponse { id, attached: true });
+        }
+        // Guard RAII: libera a reserva em QUALQUER saída (erro com `?`, pânico,
+        // ou sucesso). Chamamos `.done()` no fim pra não liberar antes da hora.
+        struct ReservationGuard<'a> {
+            state: &'a GhosttyState,
+            id: String,
+            active: bool,
+        }
+        impl<'a> Drop for ReservationGuard<'a> {
+            fn drop(&mut self) {
+                if self.active {
+                    self.state.release_reservation(&self.id);
+                }
             }
         }
+        let mut guard = ReservationGuard { state, id: id.clone(), active: true };
 
         let window = app
             .get_webview_window("main")
@@ -248,8 +289,14 @@ mod imp {
             SurfaceEntry { last_scale: 1.0, view: v }
         };
 
-        let mut views = state.views.lock().map_err(|_| "lock poisoned".to_string())?;
-        views.insert(id.clone(), entry);
+        {
+            let mut views = state.views.lock().map_err(|_| "lock poisoned".to_string())?;
+            views.insert(id.clone(), entry);
+        }
+        // Surface está no mapa de views agora; libera a reserva (sem o guard
+        // disparar de novo).
+        guard.active = false;
+        state.release_reservation(&id);
 
         Ok(GhosttySurfaceResponse { id, attached: true })
     }
@@ -437,6 +484,20 @@ mod imp {
             );
             assert!(f.size.width >= 1.0);
             assert!(f.size.height >= 1.0);
+        }
+
+        // #4: a reserva de slot é atômica e idempotente. A 1ª reserva de um id
+        // vence (true); a 2ª (mesmo id, ainda não liberada/criada) perde (false)
+        // — garante que nunca criamos uma 2ª surface pro mesmo id. Sem GUI.
+        #[test]
+        fn reserve_is_idempotent_per_id() {
+            let s = GhosttySurfaces::default();
+            assert!(s.try_reserve("abc"), "1ª reserva deve vencer");
+            assert!(!s.try_reserve("abc"), "2ª reserva do mesmo id deve perder");
+            assert!(s.try_reserve("xyz"), "id diferente reserva normalmente");
+            // Liberar a reserva permite reservar de novo (ex.: falha na criação).
+            s.release_reservation("abc");
+            assert!(s.try_reserve("abc"), "após liberar, pode reservar de novo");
         }
 
         // Teste funcional do terminal real. Só com libghostty linkado. #[ignore]

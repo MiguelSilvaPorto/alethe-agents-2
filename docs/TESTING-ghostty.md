@@ -15,7 +15,9 @@ npm run test:rust          # cd src-tauri && cargo test --lib
 
 Cobre:
 - `web_rect_to_appkit_frame` — inversão do eixo Y, clamp de tamanho mínimo.
-- (idempotência do spawn é coberta pelo próprio backend + smoke).
+- `reserve_is_idempotent_per_id` — a reserva de slot do spawn é atômica: o
+  mesmo id só reserva uma vez (segunda chamada perde), garantindo que nunca há
+  2 surfaces vivas pro mesmo id (#4 — fim do over-spawn do StrictMode).
 
 ## 2. Teste funcional do terminal (headless, libghostty real)
 
