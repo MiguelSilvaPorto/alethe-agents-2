@@ -142,6 +142,11 @@ export async function ghosttyKill(id: string): Promise<void> {
   await invoke('ghostty_kill', { id })
 }
 
+/** Mata todas as surfaces nativas vivas — limpeza de órfãs no boot/reload. */
+export async function ghosttyKillAll(): Promise<void> {
+  await invoke('ghostty_kill_all')
+}
+
 export function listenPtyData(
   id: string,
   handler: (chunk: string) => void,

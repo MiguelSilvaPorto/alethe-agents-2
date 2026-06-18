@@ -2,6 +2,8 @@ import { getCurrentWebview } from '@tauri-apps/api/webview'
 import { Bell, X } from 'lucide-react'
 import { type CSSProperties, useEffect } from 'react'
 
+import { ghosttyKillAll } from './lib/tauri'
+
 import { AgentCanvasPOC } from './components/AgentCanvasPOC'
 import { AgentIcon } from './components/icons/AgentIcons'
 import { FocusOverlay } from './components/FocusOverlay'
@@ -109,6 +111,16 @@ export default function App() {
   useEffect(() => {
     void hydrate()
   }, [hydrate])
+
+  // No boot/reload da WebView, mata surfaces nativas órfãs do Ghostty: o JS é
+  // recriado mas as NSViews/o app Ghostty persistem no backend. Sem isto, a cada
+  // reload sobra uma surface antiga empilhada que rouba o foco do teclado — e
+  // você digita sem nada aparecer. Roda UMA vez, antes de qualquer GhosttySurface.
+  useEffect(() => {
+    void ghosttyKillAll().catch(() => {
+      /* não-macOS ou sem libghostty: no-op */
+    })
+  }, [])
 
   useEffect(() => {
     document.documentElement.dataset.theme = uiTheme

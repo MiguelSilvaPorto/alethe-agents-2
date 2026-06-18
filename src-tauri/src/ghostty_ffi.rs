@@ -37,6 +37,7 @@ extern "C" {
     pub fn alethe_ghostty_surface_draw(surface: AletheSurface);
     pub fn alethe_ghostty_surface_free(surface: AletheSurface);
     pub fn alethe_ghostty_app_tick();
+    pub fn alethe_ghostty_kill_all();
     pub fn alethe_ghostty_surface_send_text(
         surface: AletheSurface,
         utf8: *const c_char,
@@ -53,4 +54,11 @@ extern "C" {
         marked: *const c_char,
         final_: *const c_char,
     ) -> bool;
+    pub fn alethe_ghostty_test_type_key(
+        surface: AletheSurface,
+        characters: *const c_char,
+        keycode: u16,
+    ) -> bool;
+    pub fn alethe_ghostty_test_last_key_text() -> *const c_char;
+    pub fn alethe_ghostty_test_last_key_composing() -> bool;
 }

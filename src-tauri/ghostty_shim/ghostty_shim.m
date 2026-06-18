@@ -3,12 +3,19 @@
 // é resolvida pelo compilador, não reproduzida à mão no Rust.
 #import "ghostty_shim.h"
 #import <AppKit/AppKit.h>
+#import <Carbon/Carbon.h>
 #import <dispatch/dispatch.h>
 #import "ghostty.h"
 
 // App global do Ghostty (singleton, como no app oficial e no wrapper Swift).
 static ghostty_app_t g_app = NULL;
 static ghostty_config_t g_config = NULL;
+
+// Captura do ÚLTIMO key enviado à surface — instrumentação para o teste headless
+// de digitação/dead-keys provar o que de fato chega ao terminal (sem depender de
+// ler o grid). Atualizado no ponto de chamada de ghostty_surface_key no keyDown.
+static char g_last_key_text[64] = {0};
+static bool g_last_key_composing = false;
 
 // Registro simples de surfaces vivas, para redesenhá-las após cada tick (o
 // terminal precisa de um draw quando há output/cursor; o Ghostty sinaliza via
@@ -75,7 +82,13 @@ static void alethe_draw_all(void) {
 @implementation AletheRenderTicker
 - (void)tick:(NSTimer *)t {
     (void)t;
-    if (g_surface_count > 0) alethe_draw_all();
+    // Avança o IO do terminal a cada frame e desenha. O tick processa o echo do
+    // PTY (output do shell) e o draw pinta — cobre tanto output do shell quanto
+    // cursor piscando sem depender só do wakeup.
+    if (g_surface_count > 0) {
+        if (g_app) ghostty_app_tick(g_app);
+        alethe_draw_all();
+    }
 }
 @end
 
@@ -175,18 +188,21 @@ static ghostty_input_mods_e alethe_mods(NSEventModifierFlags f) {
 }
 
 // ---- NSView customizada que encaminha input pra surface -------------------
-// Encaminha teclado (via NSTextInputClient + interpretKeyEvents, cobrindo
-// dead-keys/IME — ex.: ´ + a = á), mouse, scroll e foco. Espelha o fluxo do
-// app oficial do Ghostty: o keyDown deixa o macOS interpretar a tecla; se virar
-// texto (incl. acento composto) vem por insertText:, senão mandamos a tecla
-// crua pro Ghostty (Enter, backspace, setas, Ctrl+C).
+// Encaminha teclado, mouse, scroll e foco pra surface. O teclado usa composição
+// MANUAL de dead-keys via UCKeyTranslate (não interpretKeyEvents — esse, na
+// WebView do Tauri, roteava o input pra a WKWebView e o texto sumia). Assim a
+// tecla de acento morto (ABNT2: ´ ` ~ ^) compõe com a vogal seguinte sem
+// depender do roteamento de input-context do AppKit.
 @interface AletheGhosttyView : NSView <NSTextInputClient>
 @property (nonatomic, assign) ghostty_surface_t surface;
-// Estado de coleta de texto durante um keyDown (preenchido por insertText:).
+// Estado de dead-key do UCKeyTranslate (memória de composição). PER-VIEW, nunca
+// global: guarda o acento morto pendente entre um keyDown e o próximo.
+@property (nonatomic, assign) UInt32 deadKeyState;
+// (legado NSTextInputClient — mantido mas não usado no caminho de digitação)
 @property (nonatomic, strong) NSMutableArray<NSString *> *collectedText;
 @property (nonatomic, assign) BOOL collecting;
-// Marked text (preedit) da composição IME/dead-key em andamento.
 @property (nonatomic, strong) NSString *markedText;
+@property (nonatomic, assign) SEL lastCommand;
 @end
 
 @implementation AletheGhosttyView
@@ -200,21 +216,50 @@ static ghostty_input_mods_e alethe_mods(NSEventModifierFlags f) {
     return [super resignFirstResponder];
 }
 
+// Compõe a tecla via UCKeyTranslate, mantendo o estado de dead-key da view.
+// Retorna o texto composto (vazio se a tecla foi um acento morto pendente), ou
+// nil se a layout não pôde ser lida (chamador faz fallback p/ event.characters).
+// *outDead = YES quando esta tecla iniciou/continuou uma composição (o
+// deadKeyState mudou de 0 -> não-zero), distinguindo de teclas de controle
+// (Enter/setas) que também produzem 0 caracteres mas NÃO são dead-keys.
+- (NSString *)alethe_composeForEvent:(NSEvent *)event deadPending:(BOOL *)outDead {
+    *outDead = NO;
+    TISInputSourceRef src = TISCopyCurrentKeyboardLayoutInputSource();
+    if (!src) return nil;
+    CFDataRef layoutData = (CFDataRef)TISGetInputSourceProperty(src, kTISPropertyUnicodeKeyLayoutData);
+    if (!layoutData) { CFRelease(src); return nil; }
+    const UCKeyboardLayout *layout = (const UCKeyboardLayout *)CFDataGetBytePtr(layoutData);
+
+    NSEventModifierFlags f = event.modifierFlags;
+    UInt32 carbonMods = 0;
+    if (f & NSEventModifierFlagShift)    carbonMods |= (shiftKey  >> 8) & 0xFF;
+    if (f & NSEventModifierFlagOption)   carbonMods |= (optionKey >> 8) & 0xFF;
+    if (f & NSEventModifierFlagCapsLock) carbonMods |= (alphaLock >> 8) & 0xFF;
+    // Ctrl/Cmd ficam de fora — atalhos seguem como tecla crua.
+
+    UInt32 stateBefore = self.deadKeyState;
+    UniChar buf[8];
+    UniCharCount n = 0;
+    OSStatus s = UCKeyTranslate(layout, (UInt16)event.keyCode, kUCKeyActionDown,
+                                carbonMods, LMGetKbdType(), 0,
+                                &self->_deadKeyState,
+                                sizeof(buf) / sizeof(buf[0]), &n, buf);
+    CFRelease(src);
+    if (s != noErr) return nil;
+    if (n == 0) {
+        // Sem caracteres. Só é dead-key se o estado MUDOU (acento morto pendente).
+        // Teclas de controle (Enter/setas) deixam o estado em 0 -> não é dead-key.
+        if (self.deadKeyState != 0 && self.deadKeyState != stateBefore) {
+            *outDead = YES;
+        }
+        return @"";
+    }
+    return [NSString stringWithCharacters:buf length:n];
+}
+
 - (void)keyDown:(NSEvent *)event {
     if (!self.surface) return;
 
-    // Deixa o macOS interpretar a tecla (dead-keys/IME). Os callbacks
-    // insertText:/setMarkedText: rodam DENTRO desta chamada e enchem
-    // self.collectedText / self.markedText.
-    BOOL hadMarkedBefore = (self.markedText.length > 0);
-    self.collectedText = [NSMutableArray array];
-    self.collecting = YES;
-    [self interpretKeyEvents:@[ event ]];
-    self.collecting = NO;
-    NSArray<NSString *> *collected = self.collectedText;
-    self.collectedText = nil;
-
-    // Monta o evento de tecla base (keycode + unshifted_codepoint + mods).
     ghostty_input_key_s key;
     memset(&key, 0, sizeof(key));
     key.action = event.isARepeat ? GHOSTTY_ACTION_REPEAT : GHOSTTY_ACTION_PRESS;
@@ -225,25 +270,50 @@ static ghostty_input_mods_e alethe_mods(NSEventModifierFlags f) {
     NSEventModifierFlags consumed =
         event.modifierFlags & ~(NSEventModifierFlagControl | NSEventModifierFlagCommand);
     key.consumed_mods = alethe_mods(consumed);
-    key.composing = (self.markedText.length > 0);
 
-    if (collected.count > 0) {
-        // O IME produziu texto final (inclui acento composto: ´+a => "á").
-        // Manda cada pedaço como text junto com o evento de tecla.
-        for (NSString *t in collected) {
-            const char *utf8 = [t UTF8String];
-            key.text = utf8;
-            ghostty_surface_key(self.surface, key);
+    bool ctrlOrCmd = (event.modifierFlags &
+        (NSEventModifierFlagControl | NSEventModifierFlagCommand)) != 0;
+
+    const char *utf8 = NULL;     // texto a enviar (NULL = nenhum)
+    bool composing = false;      // true = acento morto pendente
+
+    if (ctrlOrCmd) {
+        // Atalho (Ctrl+C etc.): tecla crua, sem texto. (Ctrl+C precisa do
+        // keycode+unshifted, não de texto.)
+        utf8 = NULL;
+    } else {
+        BOOL dead = NO;
+        NSString *composed = [self alethe_composeForEvent:event deadPending:&dead];
+        if (composed == nil) {
+            // Layout não-lido: fallback exato ao caminho comprovado.
+            NSString *chars = event.characters;
+            if (chars.length > 0) utf8 = [chars UTF8String];
+        } else if (dead) {
+            // Acento morto pendente: não manda texto; o deadKeyState carrega
+            // pro próximo keyDown, que vai compor (´ + a => "á").
+            utf8 = NULL;
+            composing = true;
+        } else if (composed.length > 0) {
+            // Caractere final (letra, símbolo, ou acento já composto).
+            utf8 = [composed UTF8String];
+        } else {
+            // Sem texto e sem dead-key: tecla de controle (Enter/setas/Tab).
+            utf8 = NULL;
         }
-        return;
     }
 
-    // Sem texto: ou está compondo (marked text) — não manda tecla crua — ou é
-    // uma tecla de controle/navegação (Enter, backspace, setas, Ctrl+C).
-    if (self.markedText.length > 0 || hadMarkedBefore) {
-        return;
+    key.composing = composing;
+    key.text = utf8;
+
+    // Instrumentação de teste (sem efeito no app): registra o que vai à surface.
+    g_last_key_composing = composing;
+    if (utf8) {
+        strncpy(g_last_key_text, utf8, sizeof(g_last_key_text) - 1);
+        g_last_key_text[sizeof(g_last_key_text) - 1] = '\0';
+    } else {
+        g_last_key_text[0] = '\0';
     }
-    key.text = NULL;
+
     ghostty_surface_key(self.surface, key);
 }
 
@@ -258,7 +328,14 @@ static ghostty_input_mods_e alethe_mods(NSEventModifierFlags f) {
     if (self.collecting) {
         [self.collectedText addObject:text];
     } else if (self.surface) {
-        ghostty_surface_text(self.surface, [text UTF8String], strlen([text UTF8String]));
+        // Caminho direto (insertText fora de keyDown): envia via surface_key com
+        // text — mesmo método do caso 1, que renderiza.
+        ghostty_input_key_s k;
+        memset(&k, 0, sizeof(k));
+        k.action = GHOSTTY_ACTION_PRESS;
+        k.text = [text UTF8String];
+        if (text.length > 0) k.unshifted_codepoint = [text characterAtIndex:0];
+        ghostty_surface_key(self.surface, k);
     }
 }
 
@@ -303,10 +380,11 @@ static ghostty_input_mods_e alethe_mods(NSEventModifierFlags f) {
 }
 - (NSUInteger)characterIndexForPoint:(NSPoint)point { (void)point; return NSNotFound; }
 - (void)doCommandBySelector:(SEL)selector {
-    // AppKit resolve teclas não-texto em comandos de edição (ex.: deleteBackward:
-    // pra backspace). Num terminal, deixamos o Ghostty tratar pela tecla crua —
-    // então NÃO executamos o comando aqui (no-op); o keyDow já manda a tecla.
-    (void)selector;
+    // AppKit resolve teclas não-texto em comandos de edição (insertNewline: pra
+    // Enter, deleteBackward: pra backspace, etc.). Registramos qual foi pra o
+    // keyDown saber que NÃO é texto digitável e mandar a tecla crua pro Ghostty
+    // — senão o Enter viraria um "\n" inserido em vez de executar o comando.
+    self.lastCommand = selector;
 }
 
 - (void)keyUp:(NSEvent *)event {
@@ -414,9 +492,11 @@ alethe_surface_t alethe_ghostty_surface_new(void *superview,
     view.surface = surface;
     alethe_register_surface(surface, view);
 
-    // Guardamos a view no userdata da surface pra recuperá-la em set_frame/free
-    // e tornar a view first responder.
-    [view.window makeFirstResponder:view];
+    // NÃO roubamos o first-responder na criação. Se cada surface criada virasse
+    // first-responder, a ÚLTIMA criada (inclusive surfaces órfãs de reload/troca
+    // de projeto) engoliria todo o teclado, enquanto a surface visível não
+    // receberia input — exatamente o bug "digito e nada aparece". O foco passa a
+    // vir do clique (mouseDown) ou de um focus explícito do app.
     return (alethe_surface_t)surface;
 }
 
@@ -472,6 +552,35 @@ unsigned long long alethe_ghostty_draw_count(void) {
     return g_draw_count;
 }
 
+bool alethe_ghostty_test_type_key(alethe_surface_t surface,
+                                  const char *characters,
+                                  unsigned short keycode) {
+    if (surface == NULL || characters == NULL) return false;
+    AletheGhosttyView *v = alethe_view_for_surface((ghostty_surface_t)surface);
+    if (v == nil) return false;
+    NSString *chars = [NSString stringWithUTF8String:characters];
+    NSEvent *e = [NSEvent keyEventWithType:NSEventTypeKeyDown
+                                  location:NSZeroPoint
+                             modifierFlags:0
+                                 timestamp:0
+                              windowNumber:0
+                                   context:nil
+                                characters:chars
+               charactersIgnoringModifiers:chars
+                                 isARepeat:NO
+                                   keyCode:keycode];
+    // Caminho REAL: o mesmo keyDown: que o teclado dispara (com UCKeyTranslate).
+    [v keyDown:e];
+    return true;
+}
+
+const char *alethe_ghostty_test_last_key_text(void) {
+    return g_last_key_text;
+}
+bool alethe_ghostty_test_last_key_composing(void) {
+    return g_last_key_composing;
+}
+
 bool alethe_ghostty_test_ime_compose(alethe_surface_t surface,
                                      const char *marked,
                                      const char *final) {
@@ -498,6 +607,21 @@ void alethe_ghostty_surface_free(alethe_surface_t surface) {
     alethe_unregister_surface((ghostty_surface_t)surface);
     ghostty_surface_free((ghostty_surface_t)surface);
     [v removeFromSuperview];
+}
+
+// Mata TODAS as surfaces vivas. Chamado no boot do frontend para limpar
+// surfaces órfãs que sobreviveram a um reload da WebView (o JS é recriado mas as
+// NSViews/o app Ghostty persistem). Sem isso, surfaces antigas ficam empilhadas
+// e roubam foco/atrapalham o render. Main thread.
+void alethe_ghostty_kill_all(void) {
+    while (g_surface_count > 0) {
+        ghostty_surface_t s = g_surfaces[0];
+        AletheGhosttyView *v = g_views[0];
+        alethe_unregister_surface(s);
+        if (s) ghostty_surface_free(s);
+        [v removeFromSuperview];
+    }
+    fprintf(stderr, "[alethe-diag] kill_all -> count=%d\n", g_surface_count);
 }
 
 void alethe_ghostty_app_tick(void) {

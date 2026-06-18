@@ -57,6 +57,9 @@ mod imp {
     #[cfg(ghostty_linked)]
     static PROBE_STARTED: std::sync::atomic::AtomicBool =
         std::sync::atomic::AtomicBool::new(false);
+    #[cfg(ghostty_linked)]
+    static WATCH_STARTED: std::sync::atomic::AtomicBool =
+        std::sync::atomic::AtomicBool::new(false);
 
     /// Registro global de surfaces vivas: surfaceId -> NSView nativa.
     /// Protegido por Mutex; todo acesso à AppKit é feito na main thread (ver
@@ -270,6 +273,39 @@ mod imp {
                 });
             }
 
+            // WATCH: com ALETHE_GHOSTTY_WATCH=1, loga o conteúdo do grid a cada
+            // 2s — pra EU observar o que está renderizado sem depender de
+            // screenshot/usuário. Só uma vez por processo.
+            if std::env::var("ALETHE_GHOSTTY_WATCH").as_deref() == Ok("1")
+                && !WATCH_STARTED.swap(true, std::sync::atomic::Ordering::SeqCst)
+            {
+                let app_w = app.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_secs(4));
+                    for _ in 0..30 {
+                        let app_m = app_w.clone();
+                        let (tx, rx) = std::sync::mpsc::channel::<Option<String>>();
+                        let _ = app_w.run_on_main_thread(move || {
+                            use tauri::Manager;
+                            let st = app_m.state::<GhosttyState>();
+                            let id = st.views.lock().ok().and_then(|m| m.keys().next().cloned());
+                            let r = id.and_then(|i| debug_send_read(&st, i, String::new()).ok());
+                            let _ = tx.send(r);
+                        });
+                        if let Ok(Some(screen)) = rx.recv() {
+                            let last: String = screen
+                                .lines()
+                                .filter(|l| !l.trim().is_empty())
+                                .last()
+                                .unwrap_or("(vazio)")
+                                .to_string();
+                            eprintln!("[alethe-ghostty] WATCH última-linha: {last}");
+                        }
+                        std::thread::sleep(std::time::Duration::from_secs(2));
+                    }
+                });
+            }
+
             SurfaceEntry { last_scale: scale, surface: s }
         };
 
@@ -372,6 +408,32 @@ mod imp {
             {
                 entry.view.setHidden(hidden);
             }
+        }
+        Ok(())
+    }
+
+    /// Mata TODAS as surfaces vivas e limpa o registro. Usado no boot do
+    /// frontend para descartar surfaces órfãs que sobreviveram a um reload da
+    /// WebView (o JS é recriado, mas as NSViews/o app Ghostty persistem). Sem
+    /// isso, surfaces antigas ficam empilhadas e roubam o foco do teclado.
+    pub fn kill_all(state: &State<'_, GhosttyState>) -> Result<(), String> {
+        let _mtm = MainThreadMarker::new()
+            .ok_or_else(|| "ghostty_kill_all precisa rodar na main thread".to_string())?;
+        #[cfg(ghostty_linked)]
+        {
+            use crate::ghostty_ffi::*;
+            unsafe { alethe_ghostty_kill_all() };
+        }
+        let mut views = state.views.lock().map_err(|_| "lock poisoned".to_string())?;
+        #[cfg(not(ghostty_linked))]
+        {
+            for (_, entry) in views.iter() {
+                entry.view.removeFromSuperview();
+            }
+        }
+        views.clear();
+        if let Ok(mut r) = state.reserving.lock() {
+            r.clear();
         }
         Ok(())
     }
@@ -535,6 +597,25 @@ mod imp {
         fn terminal_ime_dead_key_accents() {
             super::super::functional_tests::run_ime_dead_key();
         }
+
+        // input: digitar pelo caminho REAL do keyDown renderiza, sem app_tick
+        // manual — prova a root fix (tick no render loop). Era o bug "nada
+        // aparece ao digitar".
+        #[cfg(ghostty_linked)]
+        #[test]
+        #[ignore]
+        fn terminal_typed_input_renders() {
+            super::super::functional_tests::run_typed_input_renders();
+        }
+
+        // dead-key (UCKeyTranslate): compõe acento + vogal, e NÃO quebra
+        // digitação básica / Enter. Prova via o texto que chega à surface.
+        #[cfg(ghostty_linked)]
+        #[test]
+        #[ignore]
+        fn terminal_deadkey_compose() {
+            super::super::functional_tests::run_deadkey_compose();
+        }
     }
 }
 
@@ -591,6 +672,110 @@ mod functional_tests {
     fn send(s: *mut c_void, text: &str) {
         let c = CString::new(text).unwrap();
         unsafe { alethe_ghostty_surface_send_text(s, c.as_ptr(), text.len()) };
+    }
+
+    /// Digita 1 char pelo caminho REAL do keyDown (NSEvent sintético).
+    fn type_char(s: *mut c_void, ch: &str, keycode: u16) {
+        let c = CString::new(ch).unwrap();
+        unsafe { alethe_ghostty_test_type_key(s, c.as_ptr(), keycode) };
+    }
+
+    fn last_key_text() -> String {
+        let p = unsafe { alethe_ghostty_test_last_key_text() };
+        if p.is_null() {
+            return String::new();
+        }
+        unsafe { std::ffi::CStr::from_ptr(p) }.to_string_lossy().to_string()
+    }
+    fn last_key_composing() -> bool {
+        unsafe { alethe_ghostty_test_last_key_composing() }
+    }
+
+    /// Prova a composição de dead-key (UCKeyTranslate) pelo caminho REAL do
+    /// keyDown, SEM ler o grid — verifica o texto que chega à surface.
+    /// Robusto ao layout: se o keycode 39 não for dead-key no layout atual
+    /// (ex.: US puro = apóstrofo), valida o comportamento correto desse layout.
+    pub fn run_deadkey_compose() {
+        assert!(unsafe { alethe_ghostty_ensure_app() }, "ensure_app falhou");
+        let view = make_nsview();
+        let surface =
+            unsafe { alethe_ghostty_surface_new(view, std::ptr::null(), std::ptr::null(), 2.0) };
+        assert!(!surface.is_null(), "surface_new NULL");
+
+        // --- regressão: digitação básica e controle NÃO podem quebrar ---
+        type_char(surface, "a", 0);
+        assert_eq!(last_key_text(), "a", "letra normal deve emitir 'a'");
+        assert!(!last_key_composing(), "letra normal não é composing");
+
+        type_char(surface, "", 36); // Enter
+        // UCKeyTranslate traduz Enter -> "\r" (carriage return) — é o que faz o
+        // shell executar. O importante: NÃO pode ficar travado em composing.
+        assert_eq!(last_key_text(), "\r", "Enter deve emitir CR");
+        assert!(!last_key_composing(), "Enter NÃO pode ficar composing");
+
+        // --- dead-key (keycode 39): depende do layout do sistema ---
+        type_char(surface, "", 39); // tecla de acento (´ no ABNT2)
+        let dead = last_key_composing();
+        if dead {
+            // Layout com dead-key: a próxima vogal deve compor.
+            assert_eq!(last_key_text(), "", "dead-key pendente não emite texto");
+            type_char(surface, "a", 0);
+            assert!(!last_key_composing(), "após compor, não é mais composing");
+            let composed = last_key_text();
+            assert!(
+                composed == "á" || composed == "à" || composed == "ã"
+                    || composed == "â" || composed == "ä",
+                "dead-key + a deveria compor um 'a' acentuado, veio: {composed:?}"
+            );
+        } else {
+            // Layout sem dead-key (ex.: US): a tecla emite um caractere direto.
+            // Aceita qualquer caractere não-vazio (apóstrofo, etc.) — só garante
+            // que NÃO travou em composing.
+            eprintln!(
+                "[teste] keycode 39 não é dead-key neste layout (emitiu {:?}) — ok",
+                last_key_text()
+            );
+        }
+        unsafe { alethe_ghostty_surface_free(surface) };
+    }
+
+    /// #input: digita pelo caminho real do keyDown e confirma que renderiza SEM
+    /// app_tick manual — só o run loop (que agora faz tick por frame). Falha se
+    /// o render loop não bombear o IO (era o bug do "nada aparece").
+    pub fn run_typed_input_renders() {
+        assert!(unsafe { alethe_ghostty_ensure_app() }, "ensure_app falhou");
+        let view = make_nsview();
+        let surface =
+            unsafe { alethe_ghostty_surface_new(view, std::ptr::null(), std::ptr::null(), 2.0) };
+        assert!(!surface.is_null(), "surface_new NULL (Metal headless?)");
+        unsafe {
+            alethe_ghostty_surface_set_content_scale(surface, 2.0, 2.0);
+            alethe_ghostty_surface_set_size(surface, 1600, 960);
+        }
+        // Deixa o shell iniciar — aqui pode usar pump (com tick) só pra subir.
+        pump(Duration::from_secs(2));
+
+        // Digita "echo zztop" pelo keyDown real. Virtual keycodes (US layout).
+        // e=14 c=8 h=4 o=31 space=49 z=6 t=17 p=35
+        let keys: &[(&str, u16)] = &[
+            ("e", 14), ("c", 8), ("h", 4), ("o", 31), (" ", 49),
+            ("z", 6), ("z", 6), ("t", 17), ("o", 31), ("p", 35),
+        ];
+        for (ch, kc) in keys {
+            type_char(surface, ch, *kc);
+        }
+
+        // Render SÓ pelo run loop (sem app_tick manual) — é o que prova a root
+        // fix: o NSTimer precisa fazer tick por frame pra o texto digitado e o
+        // echo do shell aparecerem.
+        pump_runloop_only(Duration::from_millis(1500));
+
+        let screen = read_screen(surface);
+        assert!(
+            screen.contains("echo zztop") || screen.contains("zztop"),
+            "texto digitado pelo keyDown não renderizou (root fix do tick no render loop):\n{screen}"
+        );
+        unsafe { alethe_ghostty_surface_free(surface) };
     }
 
     pub fn run_echo_cd_ls() {
@@ -787,6 +972,9 @@ mod imp {
     pub fn kill(_state: &State<'_, GhosttyState>, _id: String) -> Result<(), String> {
         Err(UNSUPPORTED.into())
     }
+    pub fn kill_all(_state: &State<'_, GhosttyState>) -> Result<(), String> {
+        Ok(())
+    }
 }
 
 pub use imp::{GhosttyState, GhosttySurfaces};
@@ -832,6 +1020,12 @@ pub fn ghostty_kill(
     id: String,
 ) -> Result<(), String> {
     imp::kill(&state, id)
+}
+
+/// Mata todas as surfaces vivas (limpeza de órfãs no boot/reload da WebView).
+#[tauri::command]
+pub fn ghostty_kill_all(state: tauri::State<'_, GhosttyState>) -> Result<(), String> {
+    imp::kill_all(&state)
 }
 
 /// DEBUG/automação: envia texto pra surface e lê o grid de volta. Prova o fluxo

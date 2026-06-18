@@ -59,6 +59,9 @@ void alethe_ghostty_surface_free(alethe_surface_t surface);
 // periodicamente). Main thread.
 void alethe_ghostty_app_tick(void);
 
+// Libera TODAS as surfaces vivas (limpeza de órfãs no boot/reload). Main thread.
+void alethe_ghostty_kill_all(void);
+
 // --- Helpers de teste/automação --------------------------------------------
 // Envia texto pro terminal (como se fosse digitado). Use "\r" para Enter.
 void alethe_ghostty_surface_send_text(alethe_surface_t surface,
@@ -75,6 +78,21 @@ size_t alethe_ghostty_surface_read_screen(alethe_surface_t surface,
 // Nº acumulado de draws emitidos (instrumentação p/ o teste de render
 // contínuo, #2). Cresce com o display link e com draws explícitos.
 unsigned long long alethe_ghostty_draw_count(void);
+
+// Teste do caminho REAL de digitação: cria um NSEvent keyDown com os
+// `characters` dados e o despacha ao keyDown: da view (passa por
+// interpretKeyEvents -> insertText -> envio ao surface). `keycode` é o virtual
+// keycode (0 = 'a'). Retorna false se não achou a view. Usado pra reproduzir,
+// sem teclado físico, exatamente o que acontece quando o usuário digita.
+bool alethe_ghostty_test_type_key(alethe_surface_t surface,
+                                  const char *characters,
+                                  unsigned short keycode);
+
+// Após um test_type_key, retorna o texto que foi enviado à surface (UTF-8, ""
+// se nenhum) e se a tecla ficou "composing" (acento morto pendente). Permite ao
+// teste headless provar a composição de dead-keys sem ler o grid.
+const char *alethe_ghostty_test_last_key_text(void);
+bool alethe_ghostty_test_last_key_composing(void);
 
 // Teste de IME/dead-key (#3): exercita o caminho NSTextInputClient da NSView da
 // surface como o macOS faria numa composição — setMarkedText(marked) e depois
