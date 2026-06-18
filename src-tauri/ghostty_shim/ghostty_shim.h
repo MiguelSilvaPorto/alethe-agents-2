@@ -76,6 +76,14 @@ size_t alethe_ghostty_surface_read_screen(alethe_surface_t surface,
 // contínuo, #2). Cresce com o display link e com draws explícitos.
 unsigned long long alethe_ghostty_draw_count(void);
 
+// Teste de IME/dead-key (#3): exercita o caminho NSTextInputClient da NSView da
+// surface como o macOS faria numa composição — setMarkedText(marked) e depois
+// insertText(final). Prova que a composição é encaminhada ao Ghostty. Retorna
+// false se não achou a view. `marked`/`final` em UTF-8.
+bool alethe_ghostty_test_ime_compose(alethe_surface_t surface,
+                                     const char *marked,
+                                     const char *final);
+
 #ifdef __cplusplus
 }
 #endif

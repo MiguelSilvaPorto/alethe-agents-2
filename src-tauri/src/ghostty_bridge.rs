@@ -525,6 +525,16 @@ mod imp {
         fn terminal_renders_continuously() {
             super::super::functional_tests::run_render_loop_draws();
         }
+
+        // #3: a composição de dead-key (NSTextInputClient) encaminha o caractere
+        // acentuado ao terminal. Exercita setMarkedText+insertText (o mesmo
+        // caminho do teclado real) e confere que "á" renderiza no grid.
+        #[cfg(ghostty_linked)]
+        #[test]
+        #[ignore]
+        fn terminal_ime_dead_key_accents() {
+            super::super::functional_tests::run_ime_dead_key();
+        }
     }
 }
 
@@ -667,6 +677,44 @@ mod functional_tests {
                 let _: bool = msg_send![rl, runMode: &*mode, beforeDate: until];
             }
         }
+    }
+
+    /// #3: prova que a composição de dead-key (NSTextInputClient) entrega o
+    /// caractere acentuado ao terminal. Monta `echo MARK_á_END` onde o "á" vem
+    /// da composição IME (setMarkedText "´" + insertText "á"), e confere no grid.
+    pub fn run_ime_dead_key() {
+        assert!(unsafe { alethe_ghostty_ensure_app() }, "ensure_app falhou");
+        let view = make_nsview();
+        let surface =
+            unsafe { alethe_ghostty_surface_new(view, std::ptr::null(), std::ptr::null(), 2.0) };
+        assert!(!surface.is_null(), "surface_new NULL (Metal headless?)");
+        unsafe {
+            alethe_ghostty_surface_set_content_scale(surface, 2.0, 2.0);
+            alethe_ghostty_surface_set_size(surface, 1600, 960);
+        }
+        pump(Duration::from_secs(2));
+
+        // Prefixo do comando via texto normal.
+        send(surface, "echo IME_");
+        // Composição dead-key: "´" marcado, depois "á" inserido (como option+e,a).
+        let marked = CString::new("\u{00b4}").unwrap(); // ´
+        let final_ = CString::new("\u{00e1}").unwrap(); // á
+        let ok = unsafe {
+            alethe_ghostty_test_ime_compose(surface, marked.as_ptr(), final_.as_ptr())
+        };
+        assert!(ok, "test_ime_compose não achou a view");
+        // Mais acentos por insertText direto (ç, ã) e fecha o comando.
+        let cedilha = CString::new("\u{00e7}\u{00e3}").unwrap(); // çã
+        unsafe { alethe_ghostty_test_ime_compose(surface, std::ptr::null(), cedilha.as_ptr()) };
+        send(surface, "_END\r");
+        pump(Duration::from_secs(2));
+
+        let screen = read_screen(surface);
+        assert!(
+            screen.contains("IME_áçã_END"),
+            "composição IME não chegou ao terminal. Esperava 'IME_áçã_END':\n{screen}"
+        );
+        unsafe { alethe_ghostty_surface_free(surface) };
     }
 
     /// #2: prova que a surface se redesenha sozinha (display link), sem input

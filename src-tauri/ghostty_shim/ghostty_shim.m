@@ -175,11 +175,18 @@ static ghostty_input_mods_e alethe_mods(NSEventModifierFlags f) {
 }
 
 // ---- NSView customizada que encaminha input pra surface -------------------
-// Versão mínima-porém-funcional: cobre digitar texto, Enter, backspace, setas,
-// Ctrl+C e mouse/scroll. NÃO reproduz toda a máquina de IME/dead-keys do app
-// oficial (isso é uma camada futura), mas é suficiente para USAR o terminal.
-@interface AletheGhosttyView : NSView
+// Encaminha teclado (via NSTextInputClient + interpretKeyEvents, cobrindo
+// dead-keys/IME — ex.: ´ + a = á), mouse, scroll e foco. Espelha o fluxo do
+// app oficial do Ghostty: o keyDown deixa o macOS interpretar a tecla; se virar
+// texto (incl. acento composto) vem por insertText:, senão mandamos a tecla
+// crua pro Ghostty (Enter, backspace, setas, Ctrl+C).
+@interface AletheGhosttyView : NSView <NSTextInputClient>
 @property (nonatomic, assign) ghostty_surface_t surface;
+// Estado de coleta de texto durante um keyDown (preenchido por insertText:).
+@property (nonatomic, strong) NSMutableArray<NSString *> *collectedText;
+@property (nonatomic, assign) BOOL collecting;
+// Marked text (preedit) da composição IME/dead-key em andamento.
+@property (nonatomic, strong) NSString *markedText;
 @end
 
 @implementation AletheGhosttyView
@@ -195,39 +202,111 @@ static ghostty_input_mods_e alethe_mods(NSEventModifierFlags f) {
 
 - (void)keyDown:(NSEvent *)event {
     if (!self.surface) return;
+
+    // Deixa o macOS interpretar a tecla (dead-keys/IME). Os callbacks
+    // insertText:/setMarkedText: rodam DENTRO desta chamada e enchem
+    // self.collectedText / self.markedText.
+    BOOL hadMarkedBefore = (self.markedText.length > 0);
+    self.collectedText = [NSMutableArray array];
+    self.collecting = YES;
+    [self interpretKeyEvents:@[ event ]];
+    self.collecting = NO;
+    NSArray<NSString *> *collected = self.collectedText;
+    self.collectedText = nil;
+
+    // Monta o evento de tecla base (keycode + unshifted_codepoint + mods).
     ghostty_input_key_s key;
     memset(&key, 0, sizeof(key));
     key.action = event.isARepeat ? GHOSTTY_ACTION_REPEAT : GHOSTTY_ACTION_PRESS;
     key.mods = alethe_mods(event.modifierFlags);
     key.keycode = event.keyCode;
-    key.composing = false;
-
-    // unshifted_codepoint: o codepoint da tecla SEM modificadores. É isto que
-    // permite ao Ghostty identificar a tecla física (ex.: Ctrl+C -> precisa
-    // saber que a tecla é 'c' pra gerar 0x03). Sem isso, Ctrl+C/atalhos não
-    // funcionam. Usamos charactersIgnoringModifiers (ignora shift/ctrl/alt).
     NSString *bare = event.charactersIgnoringModifiers;
-    if (bare.length > 0) {
-        key.unshifted_codepoint = [bare characterAtIndex:0];
-    }
-
-    // consumed_mods: todos os modificadores menos Ctrl/Cmd (que ficam livres
-    // pro sistema de keybinding do Ghostty casar atalhos como Ctrl+C).
+    if (bare.length > 0) key.unshifted_codepoint = [bare characterAtIndex:0];
     NSEventModifierFlags consumed =
         event.modifierFlags & ~(NSEventModifierFlagControl | NSEventModifierFlagCommand);
     key.consumed_mods = alethe_mods(consumed);
+    key.composing = (self.markedText.length > 0);
 
-    // Texto digitável: manda como text só quando não há Ctrl/Cmd (senão são
-    // bindings/atalhos que o Ghostty interpreta pelo keycode + unshifted).
-    const char *utf8 = NULL;
-    NSString *chars = event.characters;
-    bool ctrlOrCmd = (event.modifierFlags &
-        (NSEventModifierFlagControl | NSEventModifierFlagCommand)) != 0;
-    if (!ctrlOrCmd && chars.length > 0) {
-        utf8 = [chars UTF8String];
+    if (collected.count > 0) {
+        // O IME produziu texto final (inclui acento composto: ´+a => "á").
+        // Manda cada pedaço como text junto com o evento de tecla.
+        for (NSString *t in collected) {
+            const char *utf8 = [t UTF8String];
+            key.text = utf8;
+            ghostty_surface_key(self.surface, key);
+        }
+        return;
     }
-    key.text = utf8;
+
+    // Sem texto: ou está compondo (marked text) — não manda tecla crua — ou é
+    // uma tecla de controle/navegação (Enter, backspace, setas, Ctrl+C).
+    if (self.markedText.length > 0 || hadMarkedBefore) {
+        return;
+    }
+    key.text = NULL;
     ghostty_surface_key(self.surface, key);
+}
+
+// ---- NSTextInputClient ----------------------------------------------------
+- (void)insertText:(id)string replacementRange:(NSRange)replacementRange {
+    (void)replacementRange;
+    NSString *text = [string isKindOfClass:[NSAttributedString class]]
+        ? [(NSAttributedString *)string string]
+        : (NSString *)string;
+    if (![text isKindOfClass:[NSString class]] || text.length == 0) return;
+    [self unmarkText];
+    if (self.collecting) {
+        [self.collectedText addObject:text];
+    } else if (self.surface) {
+        ghostty_surface_text(self.surface, [text UTF8String], strlen([text UTF8String]));
+    }
+}
+
+- (void)setMarkedText:(id)string
+        selectedRange:(NSRange)selectedRange
+     replacementRange:(NSRange)replacementRange {
+    (void)selectedRange; (void)replacementRange;
+    NSString *text = [string isKindOfClass:[NSAttributedString class]]
+        ? [(NSAttributedString *)string string]
+        : (NSString *)string;
+    self.markedText = [text isKindOfClass:[NSString class]] ? text : @"";
+    if (self.surface) {
+        const char *u = [self.markedText UTF8String];
+        ghostty_surface_preedit(self.surface, u, strlen(u));
+    }
+}
+
+- (void)unmarkText {
+    if (self.markedText.length == 0) return;
+    self.markedText = @"";
+    if (self.surface) ghostty_surface_preedit(self.surface, "", 0);
+}
+
+- (BOOL)hasMarkedText { return self.markedText.length > 0; }
+- (NSRange)markedRange {
+    return self.markedText.length > 0 ? NSMakeRange(0, self.markedText.length)
+                                      : NSMakeRange(NSNotFound, 0);
+}
+- (NSRange)selectedRange { return NSMakeRange(NSNotFound, 0); }
+- (NSAttributedString *)attributedSubstringForProposedRange:(NSRange)range
+                                                actualRange:(NSRangePointer)actualRange {
+    (void)range; (void)actualRange; return nil;
+}
+- (NSArray<NSAttributedStringKey> *)validAttributesForMarkedText { return @[]; }
+- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange {
+    (void)range; (void)actualRange;
+    // Posição aproximada do cursor de composição (canto da view). Suficiente
+    // para o painel de IME aparecer perto; refinamento fica pra depois.
+    NSRect r = NSMakeRect(0, 0, 1, 1);
+    NSRect win = [self convertRect:r toView:nil];
+    return [self.window convertRectToScreen:win];
+}
+- (NSUInteger)characterIndexForPoint:(NSPoint)point { (void)point; return NSNotFound; }
+- (void)doCommandBySelector:(SEL)selector {
+    // AppKit resolve teclas não-texto em comandos de edição (ex.: deleteBackward:
+    // pra backspace). Num terminal, deixamos o Ghostty tratar pela tecla crua —
+    // então NÃO executamos o comando aqui (no-op); o keyDow já manda a tecla.
+    (void)selector;
 }
 
 - (void)keyUp:(NSEvent *)event {
@@ -391,6 +470,26 @@ void alethe_ghostty_surface_draw(alethe_surface_t surface) {
 
 unsigned long long alethe_ghostty_draw_count(void) {
     return g_draw_count;
+}
+
+bool alethe_ghostty_test_ime_compose(alethe_surface_t surface,
+                                     const char *marked,
+                                     const char *final) {
+    if (surface == NULL) return false;
+    AletheGhosttyView *v = alethe_view_for_surface((ghostty_surface_t)surface);
+    if (v == nil) return false;
+    // Simula a composição como o macOS faz: primeiro marca o acento morto, depois
+    // insere o caractere composto final — passando pelo MESMO NSTextInputClient
+    // que o teclado real usa.
+    if (marked && marked[0] != '\0') {
+        NSString *m = [NSString stringWithUTF8String:marked];
+        [v setMarkedText:m selectedRange:NSMakeRange(0, m.length) replacementRange:NSMakeRange(NSNotFound, 0)];
+    }
+    if (final && final[0] != '\0') {
+        NSString *f = [NSString stringWithUTF8String:final];
+        [v insertText:f replacementRange:NSMakeRange(NSNotFound, 0)];
+    }
+    return true;
 }
 
 void alethe_ghostty_surface_free(alethe_surface_t surface) {

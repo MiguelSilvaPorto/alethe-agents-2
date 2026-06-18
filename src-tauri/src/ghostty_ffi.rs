@@ -48,4 +48,9 @@ extern "C" {
         cap: usize,
     ) -> usize;
     pub fn alethe_ghostty_draw_count() -> u64;
+    pub fn alethe_ghostty_test_ime_compose(
+        surface: AletheSurface,
+        marked: *const c_char,
+        final_: *const c_char,
+    ) -> bool;
 }
