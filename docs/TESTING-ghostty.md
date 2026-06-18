@@ -93,6 +93,21 @@ Cobre:
 - `shouldUseNativeBackend` — **garante que Windows/Linux nunca caem no nativo**.
 - `webRectsEqual` — coalescing que evita IPC redundante em drags.
 
+## 5. Captura visual da janela (`capture:window`)
+
+Captura **só a janela do Alethe** (não a tela inteira), por CGWindowID — resolve
+o problema de foco que tornava o screencapture de tela cheia não-confiável.
+
+```sh
+npm run capture:window           # -> /tmp/alethe-window.png
+npm run capture:window foo.png   # destino custom
+```
+
+Acha o window id via CoreGraphics (Swift) filtrando pelo **dono** do processo
+(`alethe`), não pelo título (que pode casar com abas de navegador). Requer o app
+aberto e permissão de Screen Recording pro terminal. Complemento visual — a
+fonte de verdade continua sendo os testes acima.
+
 ## Sobre screenshot diff (não incluído)
 
 Avaliamos teste visual por diff de pixels e **decidimos não incluir**: é frágil

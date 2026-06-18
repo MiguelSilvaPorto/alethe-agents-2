@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "app": "tauri dev",
     "smoke:ghostty": "bash scripts/smoke-ghostty.sh",
+    "capture:window": "bash scripts/capture-window.sh",
     "test:rust": "cd src-tauri && cargo test --lib",
     "test:ghostty": "cd src-tauri && cargo test --lib -- --ignored --test-threads=1 terminal_runs",
     "test": "vitest run"
