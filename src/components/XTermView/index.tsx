@@ -28,6 +28,7 @@ import {
   readClipboardText,
   resizePty,
   spawnPty,
+  snapshotClaudeSessions,
   snapshotCodexSessions,
   writeClipboardText,
   writePty,
@@ -818,8 +819,31 @@ export function XTermView({
           : command === 'codex'
             ? savedSession?.codexSessionId
             : undefined
+        let resumeId = sessionId ?? savedConversationId
+        // Claude: valida que a conversa ainda existe no cwd antes de passar
+        // --resume. Se o id ficou órfão (conversa apagada, cwd diferente de onde
+        // nasceu, ou o --session-id forçado nunca virou transcript), o CLI aborta
+        // com "No conversation found" — mesmo havendo conversas reais ali (que o
+        // /resume interativo mostraria). Em vez de quebrar ou começar em branco,
+        // RECUPERAMOS a sessão mais recente daquele cwd (snapshot vem ordenado
+        // recent-first). O id recuperado é persistido logo abaixo, então se
+        // auto-cura pras próximas aberturas. Só agimos quando o snapshot SUCEDE;
+        // erro/timeout mantém o resume original (evita falso negativo).
+        // Ressalva: com 2+ panes Claude no MESMO cwd, ambos podem cair na mesma
+        // conversa mais recente — aceitável pro caso comum (1 Claude por pasta).
+        if (command === 'claude' && resumeId && cwd) {
+          try {
+            const existing = await snapshotClaudeSessions(cwd)
+            if (!existing.some((s) => s.id === resumeId)) {
+              resumeId = existing[0]?.id
+            }
+          } catch {
+            /* mantém o resume — não arrisca falso negativo */
+          }
+          if (disposed) return
+        }
         const launch = command
-          ? buildAgentLaunch(command, extraArgs ?? [], sessionId ?? savedConversationId)
+          ? buildAgentLaunch(command, extraArgs ?? [], resumeId)
           : { args: extraArgs ?? [], sessionId: undefined, createdSession: false }
         const spawnArgs = launch.args.length > 0 ? launch.args : undefined
         if (launch.sessionId && launch.sessionId !== sessionId) {

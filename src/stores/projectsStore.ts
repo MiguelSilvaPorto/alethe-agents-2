@@ -204,7 +204,7 @@ function scheduleSave(getState: () => ProjectsState) {
     pendingSave = false
     const state = getState()
     const payload: ProjectsFile = {
-      version: 3,
+      version: 4,
       groups: state.groups,
       ungroupedOrder: state.ungroupedOrder,
       projects: state.projects,
@@ -458,7 +458,7 @@ function migrateWorkspaceNavigation(base: {
 
 /** Migra arquivos antigos e normaliza snapshots restauráveis. */
 function migrate(parsed: any): ProjectsFile {
-  if (parsed.version === 2 || parsed.version === 3) {
+  if (parsed.version === 2 || parsed.version === 3 || parsed.version === 4) {
     // backfill parentGroupId (v2.1) — grupos antigos viram raiz.
     const groups = (parsed.groups ?? []).map((g: any) => ({
       ...g,
@@ -468,7 +468,7 @@ function migrate(parsed: any): ProjectsFile {
     const base = {
       ...EMPTY_PROJECTS_FILE,
       ...parsed,
-      version: 3 as const,
+      version: 4 as const,
       preferences,
       groups,
       ungroupedOrder: parsed.ungroupedOrder ?? [],
@@ -509,7 +509,7 @@ function migrate(parsed: any): ProjectsFile {
     }))
 
   return {
-    version: 3,
+    version: 4,
     groups: [],
     ungroupedOrder: projects.map((p) => p.id),
     projects,

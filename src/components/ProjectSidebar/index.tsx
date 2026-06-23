@@ -13,6 +13,7 @@ import {
   Folder,
   FolderPlus,
   Grid3x3,
+  GitBranch,
   Home,
   Layout,
   LayoutGrid,
@@ -24,7 +25,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { open as openFileDialog } from '@tauri-apps/plugin-dialog'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 
 import {
@@ -37,6 +38,7 @@ import { useT } from '../../lib/i18n'
 import type { AgentType, Group, LayoutMode, Project, Terminal } from '../../lib/types'
 import { EmptyState } from '../EmptyState/EmptyState'
 import { FileExplorer } from './FileExplorer'
+import { GitControl } from './GitControl'
 import { AgentIcon } from '../icons/AgentIcons'
 import { SidebarNowPlaying } from '../SidebarNowPlaying'
 import { UserProfile } from '../UserProfile'
@@ -60,6 +62,7 @@ export function ProjectSidebar() {
   const ungroupedOrder = useProjectsStore((s) => s.ungroupedOrder)
   const containers = useProjectsStore((s) => s.workspace.containers)
   const activeProjectId = useProjectsStore((s) => s.activeProjectId)
+  const showGitControl = useProjectsStore((s) => s.preferences.showGitControl)
 
   // --- action selectors (stable refs, grouped for readability) ---
   const actions = useProjectsStore(useShallow((s) => ({
@@ -100,8 +103,12 @@ export function ProjectSidebar() {
   const activeTerminalRef = useUiStore((s) => s.activeTerminal)
   const setActiveTerminal = useUiStore((s) => s.setActiveTerminal)
   const [menu, setMenu] = useState<ContextMenuState>(null)
-  const [sidebarTab, setSidebarTab] = useState<'files' | 'projects'>('projects')
+  const [sidebarTab, setSidebarTab] = useState<'files' | 'git' | 'projects'>('projects')
   const keepHome = activeView === 'home'
+
+  useEffect(() => {
+    if (!showGitControl && sidebarTab === 'git') setSidebarTab('projects')
+  }, [showGitControl, sidebarTab])
 
   const onAddMarkdownViewer = async () => {
     if (!activeProjectId) {
@@ -607,6 +614,22 @@ export function ProjectSidebar() {
         >
           <Folder size={14} />
         </button>
+        {showGitControl ? (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={sidebarTab === 'git'}
+            aria-label={t('ui.sidebar.git')}
+            title={t('ui.sidebar.git')}
+            className={`${styles.sidebarTab} ${sidebarTab === 'git' ? styles.sidebarTabActive : ''}`}
+            onClick={() => {
+              setSidebarTab('git')
+              if (!keepHome) setActiveView('workspace')
+            }}
+          >
+            <GitBranch size={14} />
+          </button>
+        ) : null}
       </div>
 
       {sidebarTab === 'projects' ? <header className={styles.header}>
@@ -665,6 +688,29 @@ export function ProjectSidebar() {
                 label: t('ui.sidebar.emptyAction'),
                 onClick: () => openModal('newProject'),
               }}
+            />
+          </div>
+        )}
+      </section> : null}
+
+      {sidebarTab === 'git' ? <section className={styles.explorerPanel}>
+        <div className={styles.explorerHeader}>
+          <span className={styles.explorerLabel}>{t('ui.sidebar.sourceControl')}</span>
+        </div>
+        {selectedTerminal && selectedSubTab ? (
+          <GitControl
+            cwd={selectedSubTab.cwd || selectedTerminal.cwd}
+            ptyId={selectedSubTab.ptyId}
+            terminalName={selectedTerminal.name}
+          />
+        ) : (
+          <div className={styles.explorerEmpty}>
+            <EmptyState
+              compact
+              icon={<GitBranch size={18} />}
+              title={t('git.empty.noTerminal')}
+              description={t('git.empty.noTerminalDesc')}
+              primaryAction={{ label: t('ui.sidebar.emptyAction'), onClick: () => openModal('newProject') }}
             />
           </div>
         )}

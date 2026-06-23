@@ -204,6 +204,8 @@ export type Preferences = {
   topbarShowSync: boolean
   topbarShowProfile: boolean
   topbarShowMemory: boolean
+  /** Exibe a aba Source Control na sidebar. */
+  showGitControl: boolean
   /** Quantos PTYs podem ser spawnados em paralelo (fila global). Default 3. */
   spawnConcurrency: number
   /** v2.2 — grid layout custom da workspace inteira (cross-grupo). */
@@ -211,7 +213,7 @@ export type Preferences = {
 }
 
 export type ProjectsFile = {
-  version: 3
+  version: 4
   groups: Group[]
   /** Ordem manual dos projetos sem grupo (Solto). */
   ungroupedOrder: string[]
@@ -258,11 +260,12 @@ export const DEFAULT_PREFERENCES: Preferences = {
   topbarShowSync: true,
   topbarShowProfile: true,
   topbarShowMemory: true,
+  showGitControl: true,
   spawnConcurrency: 3,
 }
 
 export const EMPTY_PROJECTS_FILE: ProjectsFile = {
-  version: 3,
+  version: 4,
   groups: [],
   ungroupedOrder: [],
   projects: [],

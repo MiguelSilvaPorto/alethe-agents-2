@@ -110,6 +110,44 @@ export async function listDirectory(path: string): Promise<DirectoryEntry[]> {
   return invoke<DirectoryEntry[]>('list_directory', { path })
 }
 
+export type GitFileChange = {
+  path: string
+  originalPath: string | null
+  status: string
+}
+
+export type GitRepositoryStatus = {
+  repoRoot: string
+  branch: string
+  detached: boolean
+  ahead: number
+  behind: number
+  staged: GitFileChange[]
+  changes: GitFileChange[]
+  untracked: GitFileChange[]
+  conflicts: GitFileChange[]
+}
+
+export async function gitStatus(path: string): Promise<GitRepositoryStatus> {
+  return invoke<GitRepositoryStatus>('git_status', { path })
+}
+
+export async function gitStage(repoRoot: string, paths: string[]): Promise<void> {
+  return invoke('git_stage', { repoRoot, paths })
+}
+
+export async function gitUnstage(repoRoot: string, paths: string[]): Promise<void> {
+  return invoke('git_unstage', { repoRoot, paths })
+}
+
+export async function gitDiscard(repoRoot: string, paths: string[], untracked: boolean): Promise<void> {
+  return invoke('git_discard', { repoRoot, paths, untracked })
+}
+
+export async function gitCommit(repoRoot: string, message: string): Promise<string> {
+  return invoke<string>('git_commit', { repoRoot, message })
+}
+
 export async function readTextFile(path: string): Promise<string> {
   return invoke<string>('read_text_file', { path })
 }

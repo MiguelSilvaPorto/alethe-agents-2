@@ -13,6 +13,7 @@ mod diagnostics;
 mod discord_presence;
 mod economy_agents;
 mod filesystem;
+mod git_control;
 mod github_sync;
 mod logging;
 mod paths;
@@ -96,6 +97,11 @@ pub fn run() {
             github_sync::github_sync_logout,
             github_sync::github_sync_push,
             github_sync::github_sync_pull,
+            git_control::git_status,
+            git_control::git_stage,
+            git_control::git_unstage,
+            git_control::git_discard,
+            git_control::git_commit,
             diagnostics::open_data_folder,
             diagnostics::open_spawn_log,
             diagnostics::open_in_file_explorer,

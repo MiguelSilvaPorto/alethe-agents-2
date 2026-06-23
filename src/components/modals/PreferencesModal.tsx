@@ -85,6 +85,7 @@ export function PreferencesModal() {
       { category: 'account', target: 'local-accounts', label: t('prefs.localAccounts'), description: t('prefs.localAccountsDesc'), keywords: 'account profile conta perfil local switch trocar' },
       { category: 'appearance', target: 'ui-theme', label: t('prefs.uiTheme'), description: t('prefs.uiThemeDesc'), keywords: 'theme tema colors cores light dark claro escuro' },
       { category: 'appearance', target: 'ui-zoom', label: t('prefs.uiZoom'), description: t('prefs.uiZoomDesc'), keywords: 'zoom scale escala tamanho interface' },
+      { category: 'appearance', target: 'git-control', label: t('prefs.gitControl'), description: t('prefs.gitControlDesc'), keywords: 'git source control sidebar version controle versao' },
       { category: 'terminal', target: 'terminal-theme', label: t('prefs.terminalTheme'), description: t('prefs.terminalThemeDesc'), keywords: 'terminal theme tema colors cores' },
       { category: 'terminal', target: 'spawn-concurrency', label: t('prefs.spawnConcurrency'), description: t('prefs.spawnConcurrencyDesc'), keywords: 'spawn concurrency parallel paralelo fila queue performance pty' },
       { category: 'terminal', target: 'agents', label: t('prefs.agentsTitle'), description: t('prefs.agentsDesc'), keywords: 'agents agentes claude codex opencode shell' },
@@ -349,6 +350,7 @@ function AppearancePage() {
   const preferences = useProjectsStore((state) => state.preferences)
   const setUiTheme = useProjectsStore((state) => state.setUiTheme)
   const setUiZoom = useProjectsStore((state) => state.setUiZoom)
+  const setPreferences = useProjectsStore((state) => state.setPreferences)
   return (
     <>
       <SettingsSection id="ui-theme" title={t('prefs.uiTheme')} description={t('prefs.uiThemeDesc')}>
@@ -397,6 +399,13 @@ function AppearancePage() {
             disabled={preferences.uiZoom === 1}
             aria-label={t('prefs.zoomReset')}
           ><RotateCcw size={15} /></button>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection id="git-control" title={t('prefs.gitControl')} description={t('prefs.gitControlDesc')}>
+        <div className={styles.segmented}>
+          <button type="button" className={preferences.showGitControl ? styles.segmentActive : undefined} onClick={() => setPreferences({ showGitControl: true })}>{t('prefs.gitControlShow')}</button>
+          <button type="button" className={!preferences.showGitControl ? styles.segmentActive : undefined} onClick={() => setPreferences({ showGitControl: false })}>{t('prefs.gitControlHide')}</button>
         </div>
       </SettingsSection>
     </>

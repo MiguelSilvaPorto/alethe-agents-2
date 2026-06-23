@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog'
-import { Check, Globe, Palette, Users } from 'lucide-react'
+import { Check, GitBranch, Globe, Palette, Users } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import aletheLogo from '../../assets/alethe-logo.png'
@@ -13,7 +13,7 @@ import { AgentIcon } from '../icons/AgentIcons'
 import { ImageInput } from './ImageInput'
 import styles from './OnboardingModal.module.css'
 
-const STEP_COUNT = 3
+const STEP_COUNT = 4
 
 const AGENTS: { id: AgentType; label: string }[] = [
   { id: 'shell', label: 'Shell' },
@@ -61,6 +61,11 @@ export function OnboardingModal() {
         label: t('onboarding.agentsStep'),
         hint: t('onboarding.agentsStepHint'),
         icon: Users,
+      },
+      {
+        label: t('onboarding.gitStep'),
+        hint: t('onboarding.gitStepHint'),
+        icon: GitBranch,
       },
     ],
     [t],
@@ -376,6 +381,44 @@ export function OnboardingModal() {
                                   {active ? <Check size={15} className={styles.checkMark} /> : null}
                                 </div>
                                 <div className={styles.agentDesc}>{t(`agent.${agent.id}.desc`)}</div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </>
+                  ) : null}
+
+                  {step === 3 ? (
+                    <>
+                      <div className={styles.sectionIntro}>
+                        <h2 className={styles.sectionTitle}>{t('onboarding.gitTitle')}</h2>
+                        <p className={styles.sectionSubtitle}>{t('onboarding.gitSubtitle')}</p>
+                      </div>
+                      <div className={styles.agentGrid}>
+                        {[true, false].map((enabled) => {
+                          const active = preferences.showGitControl === enabled
+                          return (
+                            <button
+                              key={String(enabled)}
+                              type="button"
+                              className={[styles.agentOption, active ? styles.agentOptionActive : '']
+                                .filter(Boolean)
+                                .join(' ')}
+                              onClick={() => setPreferences({ showGitControl: enabled })}
+                              data-autofocus={active ? 'true' : undefined}
+                            >
+                              <div className={styles.agentIconWrap}><GitBranch size={20} /></div>
+                              <div className={styles.agentOptionBody}>
+                                <div className={styles.agentNameRow}>
+                                  <span className={styles.agentName}>
+                                    {enabled ? t('onboarding.gitEnable') : t('onboarding.gitDisable')}
+                                  </span>
+                                  {active ? <Check size={15} className={styles.checkMark} /> : null}
+                                </div>
+                                <div className={styles.agentDesc}>
+                                  {enabled ? t('onboarding.gitEnableDesc') : t('onboarding.gitDisableDesc')}
+                                </div>
                               </div>
                             </button>
                           )

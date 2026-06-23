@@ -28,6 +28,7 @@ const preferences: Preferences = {
   spotifyClientId: '',
   spotifyClientSecret: '',
   discordRichPresenceEnabled: false,
+  showGitControl: true,
 }
 
 const projects: Project[] = [
