@@ -61,6 +61,9 @@ export const UNRESTRICTED_FLAG: Record<AgentType, string | null> = {
   opencode: '--dangerously-skip-permissions',
 }
 
+/** Tipo de pane. Ausente = 'terminal' (back-compat, sem migração). */
+export type PaneKind = 'terminal' | 'markdown'
+
 export type Terminal = {
   id: string
   name: string
@@ -71,6 +74,10 @@ export type Terminal = {
   laneVisible: boolean | null
   /** Última vez que esse terminal foi aberto/focado. Usado pra ordenar a Home. */
   lastUsedAt?: number
+  /** Discriminador de pane. Ausente/undefined = 'terminal'. Um 'markdown' usa `tabs: []`. */
+  kind?: PaneKind
+  /** Caminho absoluto do arquivo .md quando kind === 'markdown'. */
+  filePath?: string
 }
 
 export type Project = {
@@ -127,6 +134,42 @@ export type WorkspaceRecentTab = {
   id: string
 }
 
+export type WorkspaceTabKind = 'project' | 'group' | 'terminal' | 'composition'
+
+/** Estado visual restaurável. PTYs e conteúdo dos terminais permanecem globais. */
+export type WorkspaceViewSnapshot = {
+  containers: WorkspaceContainer[]
+  activeProjectId: string | null
+  activeGroupId: string | null
+  focusedTerminalId: string | null
+  workspaceFlat: boolean
+  fullscreenContainerId: string | null
+  workspaceGridLayout?: GridLayout
+}
+
+export type WorkspaceTab = {
+  id: string
+  kind: WorkspaceTabKind
+  sourceId?: string
+  sourceProjectId?: string
+  label: string
+  color?: string
+  iconUrl?: string
+  /** Tab fixada — não é evictada pelo limite e fica antes das demais. */
+  pinned?: boolean
+  snapshot: WorkspaceViewSnapshot
+  createdAt: number
+  updatedAt: number
+}
+
+export type WorkspaceHistoryEntry = {
+  id: string
+  tabId: string
+  label: string
+  snapshot: WorkspaceViewSnapshot
+  visitedAt: number
+}
+
 export type Preferences = {
   /** Idioma da UI. Default 'en'. */
   language: Locale
@@ -153,6 +196,18 @@ export type Preferences = {
   /** Credenciais locais do Spotify Developer Dashboard para Now Playing. */
   spotifyClientId: string
   spotifyClientSecret: string
+  /** Exibe a atividade atual do Alethe no perfil do Discord. */
+  discordRichPresenceEnabled: boolean
+  /** Itens opcionais exibidos no canto direito da topbar. */
+  topbarShowClaudeUsage: boolean
+  topbarShowCodexUsage: boolean
+  topbarShowSync: boolean
+  topbarShowProfile: boolean
+  topbarShowMemory: boolean
+  /** Exibe a aba Source Control na sidebar. */
+  showGitControl: boolean
+  /** Quantos PTYs podem ser spawnados em paralelo (fila global). Default 3. */
+  spawnConcurrency: number
   /** v2.2 — grid layout custom da workspace inteira (cross-grupo). */
   workspaceGridLayout?: GridLayout
   /**
@@ -164,7 +219,7 @@ export type Preferences = {
 }
 
 export type ProjectsFile = {
-  version: 2
+  version: 4
   groups: Group[]
   /** Ordem manual dos projetos sem grupo (Solto). */
   ungroupedOrder: string[]
@@ -177,6 +232,13 @@ export type ProjectsFile = {
     recentProjectIds: string[]
     /** Tabs recentes da topbar, com escopo de projeto ou grupo/subgrupo. */
     recentTabs: WorkspaceRecentTab[]
+    /** Tabs restauráveis da workspace. */
+    tabs: WorkspaceTab[]
+    activeTabId: string | null
+    activeGroupId: string | null
+    focusedTerminalId: string | null
+    history: WorkspaceHistoryEntry[]
+    historyIndex: number
   }
   preferences: Preferences
   cliPaths: Partial<Record<AgentType, string>>
@@ -198,15 +260,33 @@ export const DEFAULT_PREFERENCES: Preferences = {
   alwaysStartOnHome: false,
   spotifyClientId: '',
   spotifyClientSecret: '',
+  discordRichPresenceEnabled: true,
+  topbarShowClaudeUsage: true,
+  topbarShowCodexUsage: true,
+  topbarShowSync: true,
+  topbarShowProfile: true,
+  topbarShowMemory: true,
+  showGitControl: true,
+  spawnConcurrency: 3,
 }
 
 export const EMPTY_PROJECTS_FILE: ProjectsFile = {
-  version: 2,
+  version: 4,
   groups: [],
   ungroupedOrder: [],
   projects: [],
   activeProjectId: null,
-  workspace: { containers: [], recentProjectIds: [], recentTabs: [] },
+  workspace: {
+    containers: [],
+    recentProjectIds: [],
+    recentTabs: [],
+    tabs: [],
+    activeTabId: null,
+    activeGroupId: null,
+    focusedTerminalId: null,
+    history: [],
+    historyIndex: -1,
+  },
   preferences: DEFAULT_PREFERENCES,
   cliPaths: {},
 }

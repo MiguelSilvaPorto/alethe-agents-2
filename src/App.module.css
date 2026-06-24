@@ -10,62 +10,39 @@
   color: var(--fg);
 }
 
-.loadingMarkWrap {
-  position: relative;
-  width: min(78vmin, 760px);
-  height: min(78vmin, 760px);
+.loadingMark {
+  width: min(60vmin, 520px);
+  height: auto;
   user-select: none;
   pointer-events: none;
-}
-
-/* as duas camadas usam o mesmo vetor como máscara (alpha do SVG) */
-.markGhost,
-.markFill {
-  position: absolute;
-  inset: 0;
-  -webkit-mask: url('./assets/alethe-mark.svg') center / contain no-repeat;
-  mask: url('./assets/alethe-mark.svg') center / contain no-repeat;
-}
-
-/* figura "vazia": contorno bem fraco, sempre visível */
-.markGhost {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-
-/* preenchimento: gradiente vertical do accent, revelado de baixo pra cima.
-   gradiente segue o accent do tema (off-white no dark, roxo no dracula, etc.) */
-.markFill {
-  background: linear-gradient(
-    to top,
-    color-mix(in srgb, var(--accent) 40%, var(--bg)) 0%,
-    var(--accent) 58%,
-    var(--accent-strong) 100%
-  );
-  clip-path: inset(100% 0 0 0);
   animation:
-    pour 2.6s cubic-bezier(0.42, 0.04, 0.3, 0.98) 0.3s forwards,
-    breathe 4.4s ease-in-out 3.1s infinite;
+    markIn 0.6s ease-out both,
+    breathe 4.4s ease-in-out 0.6s infinite;
 }
 
-@keyframes pour {
+@keyframes markIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
   to {
-    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
 @keyframes breathe {
   0%,
   100% {
-    filter: drop-shadow(0 0 6px var(--accent-ring));
+    filter: drop-shadow(0 0 8px var(--accent-ring));
   }
   50% {
-    filter: drop-shadow(0 0 24px color-mix(in srgb, var(--accent) 45%, transparent));
+    filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 45%, transparent));
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .markFill {
-    clip-path: none;
+  .loadingMark {
     animation: none;
     filter: drop-shadow(0 0 18px var(--accent-ring));
   }
