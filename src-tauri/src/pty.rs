@@ -627,6 +627,23 @@ pub fn cleanup_orphan_scrollback(app: &AppHandle) {
     }
 }
 
+pub fn kill_all_sessions(sessions: &PtySessions) {
+    let drained = sessions
+        .lock()
+        .ok()
+        .map(|mut sessions| sessions.drain().map(|(_, session)| session).collect::<Vec<_>>())
+        .unwrap_or_default();
+
+    for session in drained {
+        if let Ok(mut child) = session.child.lock() {
+            if let Some(pid) = child.process_id() {
+                kill_process_tree(pid);
+            }
+            let _ = child.kill();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

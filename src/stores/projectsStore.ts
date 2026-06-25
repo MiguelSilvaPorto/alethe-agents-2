@@ -38,6 +38,7 @@ import {
   type ProfilesState,
 } from '../lib/tauri'
 import { setStorageNamespace } from '../lib/storageNamespace'
+import { cleanupPtys } from '../lib/terminalLifecycle'
 
 const SAVE_DEBOUNCE_MS = 500
 const MIN_UI_ZOOM = 0.8
@@ -288,6 +289,20 @@ function resolveTerminalCwd(terminal: Terminal | null | undefined): string {
   if (!terminal) return ''
   const activeTab = terminal.tabs.find((t) => t.id === terminal.activeTabId) ?? terminal.tabs[0]
   return activeTab?.cwd?.trim() || terminal.cwd?.trim() || ''
+}
+
+function collectTerminalPtyIds(terminals: Terminal[]): string[] {
+  return terminals.flatMap((terminal) =>
+    terminal.tabs.map((tab) => tab.ptyId).filter((ptyId): ptyId is string => Boolean(ptyId)),
+  )
+}
+
+function clearTerminalPtyIds(terminal: Terminal): Terminal {
+  if (terminal.tabs.length === 0) return terminal
+  return {
+    ...terminal,
+    tabs: terminal.tabs.map((tab) => (tab.ptyId ? { ...tab, ptyId: null } : tab)),
+  }
 }
 
 export function getProjectDefaultCwd(
@@ -932,13 +947,20 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
         if (!group || group.suspended) return
 
         const allProjectIds = collectGroupProjectIds(groupId, state.groups)
+        cleanupPtys(
+          collectTerminalPtyIds(
+            state.projects
+              .filter((p) => allProjectIds.has(p.id))
+              .flatMap((p) => p.terminals),
+          ),
+        )
 
         // Desabilita todos os terminais dos projetos do grupo
         const projects = state.projects.map((p) => {
           if (!allProjectIds.has(p.id)) return p
           return {
             ...p,
-            terminals: p.terminals.map((t) => ({ ...t, disabled: true })),
+            terminals: p.terminals.map((t) => ({ ...clearTerminalPtyIds(t), disabled: true })),
           }
         })
 
@@ -1000,6 +1022,13 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
           for (const p of state.projects) {
             if (p.groupId && groupsToRemove.has(p.groupId)) projectsToRemove.add(p.id)
           }
+          cleanupPtys(
+            collectTerminalPtyIds(
+              state.projects
+                .filter((p) => projectsToRemove.has(p.id))
+                .flatMap((p) => p.terminals),
+            ),
+          )
           const remainingProjects = state.projects.filter((p) => !projectsToRemove.has(p.id))
           return {
             groups: state.groups.filter((g) => !groupsToRemove.has(g.id)),
@@ -1164,6 +1193,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
       update((state) => {
         const project = state.projects.find((p) => p.id === id)
         if (!project) return
+        cleanupPtys(collectTerminalPtyIds(project.terminals))
         const projects = state.projects.filter((p) => p.id !== id)
         const groups = state.groups.map((g) =>
           g.id === project.groupId
@@ -1822,6 +1852,10 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
 
     deleteTerminal: (projectId, terminalId) =>
       update((state) => {
+        const terminal = state.projects
+          .find((p) => p.id === projectId)
+          ?.terminals.find((t) => t.id === terminalId)
+        if (terminal) cleanupPtys(collectTerminalPtyIds([terminal]))
         const projects = state.projects.map((p) => {
           if (p.id !== projectId) return p
           return { ...p, terminals: p.terminals.filter((t) => t.id !== terminalId) }
@@ -1896,15 +1930,25 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
     },
 
     setTerminalDisabled: (projectId, terminalId, disabled) =>
-      updateTerminal(projectId, terminalId, (t) => ({ ...t, disabled })),
+      updateTerminal(projectId, terminalId, (t) => {
+        if (disabled) {
+          cleanupPtys(collectTerminalPtyIds([t]))
+          return { ...clearTerminalPtyIds(t), disabled }
+        }
+        return { ...t, disabled }
+      }),
 
     setProjectDisabled: (projectId, disabled) =>
       update((state) => {
         const projects = state.projects.map((p) => {
           if (p.id !== projectId) return p
+          if (disabled) cleanupPtys(collectTerminalPtyIds(p.terminals))
           return {
             ...p,
-            terminals: p.terminals.map((t) => ({ ...t, disabled })),
+            terminals: p.terminals.map((t) => ({
+              ...(disabled ? clearTerminalPtyIds(t) : t),
+              disabled,
+            })),
           }
         })
         if (disabled) {
@@ -1994,6 +2038,20 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
 
     closePane: (projectId, terminalId) =>
       update((state) => {
+        const terminal = state.projects
+          .find((p) => p.id === projectId)
+          ?.terminals.find((t) => t.id === terminalId)
+        if (terminal) cleanupPtys(collectTerminalPtyIds([terminal]))
+        const projects = state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                terminals: p.terminals.map((t) =>
+                  t.id === terminalId ? clearTerminalPtyIds(t) : t,
+                ),
+              }
+            : p,
+        )
         const containers = state.workspace.containers
           .map((c) =>
             c.projectId === projectId
@@ -2001,7 +2059,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
               : c,
           )
           .filter((c) => c.paneIds.length > 0)
-        return { workspace: { ...state.workspace, containers } }
+        return { projects, workspace: { ...state.workspace, containers } }
       }),
 
     togglePane: (projectId, terminalId) => {
@@ -2062,12 +2120,30 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
       }),
 
     closeContainer: (projectId) =>
-      update((state) => ({
-        workspace: {
-          ...state.workspace,
-          containers: state.workspace.containers.filter((c) => c.projectId !== projectId),
-        },
-      })),
+      update((state) => {
+        const closingPaneIds = new Set(
+          state.workspace.containers.find((c) => c.projectId === projectId)?.paneIds ?? [],
+        )
+        const project = state.projects.find((p) => p.id === projectId)
+        const closingTerminals = project?.terminals.filter((t) => closingPaneIds.has(t.id)) ?? []
+        cleanupPtys(collectTerminalPtyIds(closingTerminals))
+        return {
+          projects: state.projects.map((p) =>
+            p.id === projectId
+              ? {
+                  ...p,
+                  terminals: p.terminals.map((t) =>
+                    closingPaneIds.has(t.id) ? clearTerminalPtyIds(t) : t,
+                  ),
+                }
+              : p,
+          ),
+          workspace: {
+            ...state.workspace,
+            containers: state.workspace.containers.filter((c) => c.projectId !== projectId),
+          },
+        }
+      }),
 
     closeOtherContainers: (keepProjectId) =>
       update((state) => ({
@@ -2136,6 +2212,8 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
 
     closeSubTab: (projectId, terminalId, tabId) =>
       updateTerminal(projectId, terminalId, (t) => {
+        const closingTab = t.tabs.find((s) => s.id === tabId)
+        if (closingTab?.ptyId) cleanupPtys([closingTab.ptyId])
         const remaining = t.tabs.filter((s) => s.id !== tabId)
         if (remaining.length === 0) return t
         const activeTabId = t.activeTabId === tabId ? remaining[0].id : t.activeTabId
