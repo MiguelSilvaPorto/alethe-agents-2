@@ -151,7 +151,17 @@ fn validate_paths(paths: &[String]) -> Result<(), String> {
     }
     for path in paths {
         let parsed = Path::new(path);
+        let bytes = path.as_bytes();
+        let has_windows_drive_root = bytes.len() >= 3
+            && bytes[0].is_ascii_alphabetic()
+            && bytes[1] == b':'
+            && matches!(bytes[2], b'/' | b'\\');
+        let is_cross_platform_rooted =
+            matches!(bytes.first(), Some(b'/' | b'\\')) || has_windows_drive_root;
+        let has_cross_platform_parent = path.split(['/', '\\']).any(|component| component == "..");
         if parsed.is_absolute()
+            || is_cross_platform_rooted
+            || has_cross_platform_parent
             || path.trim().is_empty()
             || parsed.components().any(|part| {
                 matches!(
@@ -427,8 +437,12 @@ mod tests {
     #[test]
     fn rejects_paths_outside_repository() {
         assert!(validate_paths(&["../secret".to_string()]).is_err());
+        assert!(validate_paths(&["..\\secret".to_string()]).is_err());
         assert!(validate_paths(&["C:\\secret".to_string()]).is_err());
+        assert!(validate_paths(&["/secret".to_string()]).is_err());
+        assert!(validate_paths(&["\\\\server\\share".to_string()]).is_err());
         assert!(validate_paths(&["src/main.rs".to_string()]).is_ok());
+        assert!(validate_paths(&["src\\main.rs".to_string()]).is_ok());
     }
 
     #[test]
