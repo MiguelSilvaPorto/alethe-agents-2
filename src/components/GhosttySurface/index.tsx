@@ -124,22 +124,49 @@ export function GhosttySurface({ surfaceId, cwd, command, onSpawned }: GhosttySu
     }
   }, [surfaceId])
 
-  // Esconde a NSView nativa enquanto o placeholder estiver oculto (ex.: sob um
-  // modal). NSView nativa fica sempre acima do HTML, então precisamos ocultá-la
-  // explicitamente — senão ela "vaza" por cima de diálogos.
+  // Esconde a NSView nativa quando ela não deveria estar visível. A NSView vive
+  // ACIMA do HTML, então nenhum z-index CSS a cobre — precisamos ocultá-la
+  // explicitamente em dois casos:
+  //   1. o placeholder saiu do viewport (scroll / troca de aba) — IntersectionObserver;
+  //   2. há um modal aberto por cima — um overlay HTML NÃO muda a interseção do
+  //      placeholder, então a surface "vazaria" por cima do diálogo. Detectamos
+  //      qualquer Radix Dialog aberto ([role="dialog"][data-state="open"]), o que
+  //      cobre todos os modais do app, inclusive o onboarding ("Criar perfil").
   useEffect(() => {
     const node = placeholderRef.current
     if (!node) return
+
+    let intersecting = true
+    let lastHidden: boolean | null = null
+
+    const anyModalOpen = () =>
+      document.querySelector('[role="dialog"][data-state="open"]') !== null
+
+    const applyHidden = () => {
+      const hidden = !intersecting || anyModalOpen()
+      // O IPC vai à main thread do macOS; só dispara quando o estado muda.
+      if (hidden === lastHidden) return
+      lastHidden = hidden
+      void ghosttySetHidden(surfaceId, hidden)
+    }
+
     const io = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          void ghosttySetHidden(surfaceId, !entry.isIntersecting)
-        }
+        for (const entry of entries) intersecting = entry.isIntersecting
+        applyHidden()
       },
       { threshold: 0 },
     )
     io.observe(node)
-    return () => io.disconnect()
+
+    // Reavalia sempre que modais entram/saem do DOM (abrir/fechar diálogo).
+    const mo = new MutationObserver(applyHidden)
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-state'] })
+
+    return () => {
+      io.disconnect()
+      mo.disconnect()
+    }
   }, [surfaceId])
 
   // O placeholder ocupa todo o espaço do terminalArea; a NSView é alinhada a ele.
