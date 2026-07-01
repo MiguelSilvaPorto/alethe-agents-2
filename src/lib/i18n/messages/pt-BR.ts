@@ -69,6 +69,8 @@ export const ptBR: Record<MessageKey, string> = {
   'agent.claude.desc': 'Anthropic CLI',
   'agent.codex.desc': 'OpenAI CLI',
   'agent.opencode.desc': 'Open source',
+  'agent.freebuff.desc': 'Agente grátis',
+  'agent.mimo.desc': 'CLI da Xiaomi',
 
   /* ---- image input ---- */
   'image.placeholder': 'https://exemplo.com/icone.png',
@@ -583,7 +585,7 @@ export const ptBR: Record<MessageKey, string> = {
   "ui.sidebar.deleteGroupAndProjects": "Apagar grupo + projetos",
   "ui.sidebar.confirmDeleteGroupCascade": "Apagar grupo \"{name}\" e os {count} projeto(s) dentro? Não dá pra desfazer.",
   "ui.sidebar.rename": "Renomear",
-  "ui.sidebar.hideFromSplit": "Ocultar do split",
+  "ui.sidebar.hideFromSplit": "Fechar split e parar PTY",
   "ui.sidebar.showInSplit": "Mostrar no split",
   "ui.sidebar.reactivate": "Reativar",
   "ui.sidebar.disable": "Desabilitar",
@@ -626,7 +628,7 @@ export const ptBR: Record<MessageKey, string> = {
   "ws.exitFullscreen": "Sair do fullscreen",
   "ws.containerFullscreen": "Container em fullscreen",
   "ws.toggleFullscreen": "Alternar fullscreen",
-  "ws.closeContainer": "Fechar container (PTYs continuam vivos)",
+  "ws.closeContainer": "Fechar container e parar PTYs",
   "ws.close": "Fechar",
   "ws.noPanesOpen": "Nada aberto aqui.",
   "ws.panesEmptyTitle": "Nada aberto neste container",

@@ -69,6 +69,8 @@ export const en = {
   'agent.claude.desc': 'Anthropic CLI',
   'agent.codex.desc': 'OpenAI CLI',
   'agent.opencode.desc': 'Open source',
+  'agent.freebuff.desc': 'Free coding agent',
+  'agent.mimo.desc': 'Xiaomi CLI',
 
   /* ---- image input ---- */
   'image.placeholder': 'https://example.com/icon.png',
@@ -583,7 +585,7 @@ export const en = {
   "ui.sidebar.deleteGroupAndProjects": "Delete group + projects",
   "ui.sidebar.confirmDeleteGroupCascade": "Delete group \"{name}\" and the {count} project(s) inside? This can't be undone.",
   "ui.sidebar.rename": "Rename",
-  "ui.sidebar.hideFromSplit": "Hide from split",
+  "ui.sidebar.hideFromSplit": "Close split and stop PTY",
   "ui.sidebar.showInSplit": "Show in split",
   "ui.sidebar.reactivate": "Reactivate",
   "ui.sidebar.disable": "Disable",
@@ -626,7 +628,7 @@ export const en = {
   "ws.exitFullscreen": "Exit fullscreen",
   "ws.containerFullscreen": "Container fullscreen",
   "ws.toggleFullscreen": "Toggle fullscreen",
-  "ws.closeContainer": "Close container (PTYs stay alive)",
+  "ws.closeContainer": "Close container and stop PTYs",
   "ws.close": "Close",
   "ws.noPanesOpen": "Nothing open here.",
   "ws.panesEmptyTitle": "Nothing open in this container",

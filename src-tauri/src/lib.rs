@@ -41,6 +41,7 @@ pub fn run() {
     // resolvido no .setup(); panics anteriores a isso caem só no stderr.
     logging::install_panic_hook();
     let sessions: PtySessions = Arc::new(Mutex::new(HashMap::<String, PtySession>::new()));
+    let sessions_for_exit = Arc::clone(&sessions);
 
     tauri::Builder::default()
         .manage(sessions)
@@ -91,6 +92,7 @@ pub fn run() {
             ghostty_bridge::ghostty_kill,
             ghostty_bridge::ghostty_kill_all,
             ghostty_bridge::ghostty_debug_send_read,
+            pty::list_pty_processes,
             projects::load_projects,
             projects::save_projects,
             profiles::list_profiles,
@@ -146,11 +148,12 @@ pub fn run() {
         ])
         .build(tauri::generate_context!())
         .expect("error while building alethe")
-        .run(|_app_handle, event| {
+        .run(move |_app_handle, event| {
             // Saída limpa (event loop encerrou normalmente) → marca a sessão como
             // OK. Se o processo for morto/crashar, isto NÃO roda e o próximo boot
             // reporta a saída suja.
             if let tauri::RunEvent::Exit = event {
+                pty::kill_all_sessions(&sessions_for_exit);
                 crash_watch::mark_clean_exit();
             }
         });
