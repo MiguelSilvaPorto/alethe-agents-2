@@ -122,75 +122,84 @@ pub fn find_cli_launcher(agent: String) -> Option<String> {
 }
 
 pub fn find_windows_cli_launcher(command: &str) -> Option<PathBuf> {
-    if !cfg!(windows) {
-        return None;
+    #[cfg(not(windows))]
+    {
+        return which::which(command).ok();
     }
 
-    let mut dirs = Vec::<PathBuf>::new();
-    dirs.extend(split_windows_path_expanded(&rebuilt_path()));
-    dirs.extend(agent_search_dirs());
+    #[cfg(windows)]
+    {
+        let mut dirs = Vec::<PathBuf>::new();
+        dirs.extend(split_windows_path_expanded(&rebuilt_path()));
+        dirs.extend(agent_search_dirs());
 
-    for dir in dirs {
-        for extension in ["cmd", "exe", "bat", "ps1"] {
-            let candidate = dir.join(format!("{command}.{extension}"));
-            if candidate.is_file() {
-                return Some(candidate);
+        for dir in dirs {
+            for extension in ["cmd", "exe", "bat", "ps1"] {
+                let candidate = dir.join(format!("{command}.{extension}"));
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
             }
         }
+        None
     }
-    None
 }
 
-/// Procura o launcher do VS Code (code.cmd / code.exe / code-insiders.cmd) em
-/// localizações comuns + PATH. Retorna o primeiro que existir.
+/// Procura o launcher do VS Code (code) em localizações comuns + PATH.
+/// Retorna o primeiro que existir.
 pub fn find_vscode_launcher() -> Option<PathBuf> {
-    if !cfg!(windows) {
-        return None;
-    }
-    let root_candidates = ["Code.exe", "Code - Insiders.exe"];
-    let path_candidates = [
-        "code.exe",
-        "code-insiders.exe",
-        "code.cmd",
-        "code-insiders.cmd",
-    ];
-    let mut dirs: Vec<PathBuf> = Vec::new();
-    if let Some(local) = env::var_os("LOCALAPPDATA").map(PathBuf::from) {
-        dirs.push(local.join("Programs").join("Microsoft VS Code").join("bin"));
-        dirs.push(
-            local
-                .join("Programs")
-                .join("Microsoft VS Code Insiders")
-                .join("bin"),
-        );
-    }
-    if let Some(pf) = env::var_os("ProgramFiles").map(PathBuf::from) {
-        dirs.push(pf.join("Microsoft VS Code").join("bin"));
-        dirs.push(pf.join("Microsoft VS Code Insiders").join("bin"));
-    }
-    if let Some(pf86) = env::var_os("ProgramFiles(x86)").map(PathBuf::from) {
-        dirs.push(pf86.join("Microsoft VS Code").join("bin"));
+    #[cfg(not(windows))]
+    {
+        which::which("code").ok()
     }
 
-    for app_dir in dirs.iter().filter_map(|dir| dir.parent()) {
-        for name in root_candidates {
-            let candidate = app_dir.join(name);
-            if candidate.is_file() {
-                return Some(candidate);
-            }
+    #[cfg(windows)]
+    {
+        let root_candidates = ["Code.exe", "Code - Insiders.exe"];
+        let path_candidates = [
+            "code.exe",
+            "code-insiders.exe",
+            "code.cmd",
+            "code-insiders.cmd",
+        ];
+        let mut dirs: Vec<PathBuf> = Vec::new();
+        if let Some(local) = env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+            dirs.push(local.join("Programs").join("Microsoft VS Code").join("bin"));
+            dirs.push(
+                local
+                    .join("Programs")
+                    .join("Microsoft VS Code Insiders")
+                    .join("bin"),
+            );
         }
-    }
+        if let Some(pf) = env::var_os("ProgramFiles").map(PathBuf::from) {
+            dirs.push(pf.join("Microsoft VS Code").join("bin"));
+            dirs.push(pf.join("Microsoft VS Code Insiders").join("bin"));
+        }
+        if let Some(pf86) = env::var_os("ProgramFiles(x86)").map(PathBuf::from) {
+            dirs.push(pf86.join("Microsoft VS Code").join("bin"));
+        }
 
-    dirs.splice(0..0, split_windows_path_expanded(&rebuilt_path()));
-    for dir in dirs {
-        for name in path_candidates {
-            let candidate = dir.join(name);
-            if candidate.is_file() {
-                return Some(candidate);
+        for app_dir in dirs.iter().filter_map(|dir| dir.parent()) {
+            for name in root_candidates {
+                let candidate = app_dir.join(name);
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
             }
         }
+
+        dirs.splice(0..0, split_windows_path_expanded(&rebuilt_path()));
+        for dir in dirs {
+            for name in path_candidates {
+                let candidate = dir.join(name);
+                if candidate.is_file() {
+                    return Some(candidate);
+                }
+            }
+        }
+        None
     }
-    None
 }
 
 pub fn agent_search_dirs() -> Vec<PathBuf> {
