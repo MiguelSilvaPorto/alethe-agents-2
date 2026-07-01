@@ -17,6 +17,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { AgentIcon } from '../icons/AgentIcons'
 import { LOCALES, useT } from '../../lib/i18n'
+import { isMacOS } from '../../lib/platform'
 import { getProfileImageUrl, getProfileInitial } from '../../lib/profile'
 import { THEME_OPTIONS, themeDescription, themeLabel } from '../../lib/themes'
 import {
@@ -508,6 +509,34 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
           })}
         </div>
       </SettingsSection>
+
+      {isMacOS() ? (
+        <SettingsSection
+          id="native-terminal-macos"
+          title="Terminal nativo (Ghostty)"
+          description="Usa a engine do Ghostty (render GPU) embutida, no lugar do terminal interno. Experimental. Reabra os terminais após mudar."
+        >
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-sunken)',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={preferences.nativeTerminalMacos ?? false}
+              onChange={(e) => setPreferences({ nativeTerminalMacos: e.target.checked })}
+            />
+            <span style={{ flex: 1, fontSize: 13 }}>Habilitar terminal nativo (macOS)</span>
+          </label>
+        </SettingsSection>
+      ) : null}
 
       <SettingsSection id="reset-session" title={t('prefs.resetSession')} description={t('prefs.resetSessionDesc')}>
         <button

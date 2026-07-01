@@ -438,6 +438,11 @@ mod tests {
     fn rejects_paths_outside_repository() {
         assert!(validate_paths(&["../secret".to_string()]).is_err());
         assert!(validate_paths(&["..\\secret".to_string()]).is_err());
+        // Caminho absoluto Unix — rejeitado em qualquer plataforma.
+        assert!(validate_paths(&["/etc/secret".to_string()]).is_err());
+        // O prefixo de drive do Windows só é reconhecido como `Component::Prefix`
+        // no próprio Windows; em Unix `C:\secret` é um nome relativo válido.
+        #[cfg(windows)]
         assert!(validate_paths(&["C:\\secret".to_string()]).is_err());
         assert!(validate_paths(&["/secret".to_string()]).is_err());
         assert!(validate_paths(&["\\\\server\\share".to_string()]).is_err());

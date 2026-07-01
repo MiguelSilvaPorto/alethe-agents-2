@@ -20,6 +20,10 @@ Thumbs.db
 # Tauri
 src-tauri/target/
 src-tauri/gen/
+
+# libghostty pré-buildado — não versionado (binário ~39MB). Reconstruído por
+# src-tauri/vendor/fetch-ghostty.sh (URL + checksum pinados).
+src-tauri/vendor/GhosttyKit.xcframework/
 src-tauri/WixTools/
 src-tauri/*.log
 src-tauri/**/*.pdb

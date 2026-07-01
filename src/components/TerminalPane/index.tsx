@@ -29,6 +29,9 @@ import { AgentIcon, VSCodeIcon } from '../icons/AgentIcons'
 import { ClaudeHistoryModal } from '../modals/ClaudeHistoryModal'
 import { SubTabsLane } from '../SubTabsLane'
 import { XTermView } from '../XTermView'
+import { GhosttySurface } from '../GhosttySurface'
+import { shouldUseNativeBackend } from '../../lib/platform'
+import { buildGhosttyCommand } from '../../lib/ghosttyCommand'
 import styles from './TerminalPane.module.css'
 
 export type TerminalPaneProps = {
@@ -94,6 +97,12 @@ export const TerminalPane = memo(function TerminalPane({
   const terminalTheme = useProjectsStore(
     (s) => s.preferences.terminalTheme ?? s.preferences.uiTheme,
   )
+  // Backend de terminal nativo (Ghostty) — só no macOS e quando opt-in. Em
+  // qualquer outro caso, segue no xterm.js (caminho atual, intocado).
+  const nativeTerminalMacos = useProjectsStore(
+    (s) => s.preferences.nativeTerminalMacos ?? false,
+  )
+  const useNativeBackend = shouldUseNativeBackend(nativeTerminalMacos)
 
   // Resize de span no grid do PROJETO (quando project.layoutMode === 'grid').
   const projectGrid = useProjectsStore((s) => {
@@ -382,30 +391,44 @@ export const TerminalPane = memo(function TerminalPane({
             />
           ) : activeTab ? (
             <>
-              <XTermView
-                key={activeTab.id}
-                projectId={projectId}
-                ptyId={activeTab.ptyId ?? activeTab.id}
-                command={activeTab.type === 'shell' ? null : activeTab.type}
-                cwd={activeTab.cwd || null}
-                extraArgs={activeTab.extraArgs}
-                sessionId={activeTab.sessionId}
-                terminalTheme={terminalTheme}
-                onSpawned={(id) => {
-                  if (activeTab.ptyId !== id) {
-                    setSubTabPtyId(projectId, terminal.id, activeTab.id, id)
+              {useNativeBackend ? (
+                <GhosttySurface
+                  key={activeTab.id}
+                  surfaceId={activeTab.id}
+                  cwd={activeTab.cwd?.trim() || terminal.cwd?.trim() || undefined}
+                  command={buildGhosttyCommand(activeTab.type, activeTab.extraArgs)}
+                  onSpawned={(id) => {
+                    if (activeTab.ptyId !== id) {
+                      setSubTabPtyId(projectId, terminal.id, activeTab.id, id)
+                    }
+                  }}
+                />
+              ) : (
+                <XTermView
+                  key={activeTab.id}
+                  projectId={projectId}
+                  ptyId={activeTab.ptyId ?? activeTab.id}
+                  command={activeTab.type === 'shell' ? null : activeTab.type}
+                  cwd={activeTab.cwd || null}
+                  extraArgs={activeTab.extraArgs}
+                  sessionId={activeTab.sessionId}
+                  terminalTheme={terminalTheme}
+                  onSpawned={(id) => {
+                    if (activeTab.ptyId !== id) {
+                      setSubTabPtyId(projectId, terminal.id, activeTab.id, id)
+                    }
+                  }}
+                  onSessionId={(sessionId) => {
+                    if (activeTab.sessionId !== sessionId) {
+                      setSubTabSessionId(projectId, terminal.id, activeTab.id, sessionId)
+                    }
+                  }}
+                  onAgentComplete={() =>
+                    setSubTabCompletionUnread(projectId, terminal.id, activeTab.id, true)
                   }
-                }}
-                onSessionId={(sessionId) => {
-                  if (activeTab.sessionId !== sessionId) {
-                    setSubTabSessionId(projectId, terminal.id, activeTab.id, sessionId)
-                  }
-                }}
-                onAgentComplete={() =>
-                  setSubTabCompletionUnread(projectId, terminal.id, activeTab.id, true)
-                }
-              />
-              {ptyExited ? (
+                />
+              )}
+              {ptyExited && !useNativeBackend ? (
                 <div className={styles.exitedOverlay}>
                   <RefreshCw size={24} style={{ opacity: 0.5 }} />
                   <span className={styles.exitedLabel}>{t('ui.terminal.processEnded')}</span>

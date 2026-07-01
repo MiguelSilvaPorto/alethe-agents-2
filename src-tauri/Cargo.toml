@@ -13,6 +13,9 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
+[target.'cfg(target_os = "macos")'.build-dependencies]
+cc = "1"
+
 [dependencies]
 nanoid = "0.4"
 portable-pty = "0.8"
@@ -34,6 +37,14 @@ urlencoding = "2"
 dotenvy = "0.15"
 discord-rich-presence = "1.1.0"
 notify = "6"
+
+# Dependências só-macOS para o bridge nativo do Ghostty (embutir surfaces de
+# terminal numa NSView sobre a WebView do Tauri). Versões alinhadas com as que
+# o Tauri 2.11 já traz na árvore, pra não duplicar.
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-app-kit = "0.3"
+objc2-foundation = "0.3"
 
 # Dependências só-Windows (registro + Win32). Em Linux/macOS o `winreg` nem
 # compila, então ficam atrás de `cfg(windows)`; o código que as usa já é gated.
