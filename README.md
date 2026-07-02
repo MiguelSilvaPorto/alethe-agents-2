@@ -41,6 +41,34 @@
   <img src="./docs/assets/alethe-preview.gif" alt="Alethe desktop workspace preview" width="760">
 </div>
 
+## Supported Platforms
+
+<table>
+  <tr>
+    <th width="33.33%">macOS</th>
+    <th width="33.33%">Windows</th>
+    <th width="33.33%">Linux</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./docs/screenshots/alethe-macos.png" alt="Alethe running on macOS" width="100%">
+    </td>
+    <td align="center">
+      <img src="./docs/screenshots/alethe-windows.png" alt="Alethe running on Windows" width="100%">
+    </td>
+    <td align="center">
+      <br><br><br>
+      <strong>Coming soon</strong>
+      <br><br><br>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">Available on macOS</td>
+    <td align="center">Available on Windows</td>
+    <td align="center">Screenshot coming soon</td>
+  </tr>
+</table>
+
 ## What Alethe Is
 
 **Alethe** is a cross-platform desktop workspace for running and resuming multiple coding agents and shells in parallel on Windows, macOS, and Linux. It combines projects, groups, containers, split panes, terminal sub-tabs, real PTYs, local history, session resume, and memory controls in one app.
