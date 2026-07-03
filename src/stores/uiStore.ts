@@ -76,6 +76,8 @@ type UiState = {
   notifications: InAppToast[]
   /** Update disponível (checado em silêncio no boot). null = atualizado/sem info. */
   updateInfo: UpdateInfo | null
+  /** URL aberta no visualizador in-app (overlay com iframe). null = fechado. */
+  linkViewerUrl: string | null
 
   openModal_: (kind: Exclude<ModalKind, null>, context?: Record<string, unknown>) => void
   closeModal: () => void
@@ -103,6 +105,8 @@ type UiState = {
   dismissToast: (id: string) => void
   clearNotifications: () => void
   setUpdateInfo: (info: UpdateInfo | null) => void
+  openLinkViewer: (url: string) => void
+  closeLinkViewer: () => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -124,6 +128,7 @@ export const useUiStore = create<UiState>((set) => ({
   toasts: [],
   notifications: [],
   updateInfo: null,
+  linkViewerUrl: null,
 
   openModal_: (kind, context) => set({ openModal: kind, modalContext: context ?? null }),
   closeModal: () => set({ openModal: null, modalContext: null }),
@@ -166,4 +171,6 @@ export const useUiStore = create<UiState>((set) => ({
     set((s) => ({ toasts: s.toasts.filter((toast) => toast.id !== id) })),
   clearNotifications: () => set({ notifications: [] }),
   setUpdateInfo: (info) => set({ updateInfo: info }),
+  openLinkViewer: (url) => set({ linkViewerUrl: url }),
+  closeLinkViewer: () => set({ linkViewerUrl: null }),
 }))

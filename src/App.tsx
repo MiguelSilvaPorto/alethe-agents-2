@@ -7,6 +7,7 @@ import { ghosttyKillAll } from './lib/tauri'
 import { AgentIcon } from './components/icons/AgentIcons'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FocusOverlay } from './components/FocusOverlay'
+import { LinkViewerOverlay } from './components/LinkViewerOverlay'
 import { MainMenu } from './components/MainMenu'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { TitleBar } from './components/TitleBar'
@@ -248,6 +249,7 @@ export default function App() {
         </div>
       </div>
       <FocusOverlay />
+      <LinkViewerOverlay />
       <MainMenu />
       <ErrorBoundary label="modals">
       <NewProjectModal />

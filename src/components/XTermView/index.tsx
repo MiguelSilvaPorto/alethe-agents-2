@@ -4,7 +4,7 @@ import { WebglAddon } from '@xterm/addon-webgl'
 import { Terminal } from '@xterm/xterm'
 import type { ILink } from '@xterm/xterm'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
-import { Copy, ExternalLink, FolderOpen, LayoutGrid, X } from 'lucide-react'
+import { AppWindow, Copy, ExternalLink, FolderOpen, LayoutGrid, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import '@xterm/xterm/css/xterm.css'
 
@@ -386,6 +386,10 @@ export function XTermView({
     [projectId],
   )
 
+  const openLinkInAppViewer = useCallback((target: string) => {
+    useUiStore.getState().openLinkViewer(target)
+  }, [])
+
   const openLinkInBrowser = useCallback(async (target: string) => {
     try {
       await openInBrowser(target)
@@ -513,7 +517,8 @@ export function XTermView({
         }
         const links = detectTerminalLinks(logicalLine.text).map((link) =>
           makeXtermLink(logicalLine.startLine, terminal.cols, link, {
-            open: (text) => void openLinkInBrowser(text),
+            open: (text) =>
+              /^https?:\/\//i.test(text) ? openLinkInAppViewer(text) : void openLinkInBrowser(text),
             hover: showLinkActions,
             leave: scheduleHideLinkActions,
           }),
@@ -1108,6 +1113,20 @@ export function XTermView({
             >
               <Copy size={14} />
             </button>
+            {linkActions.kind === 'url' ? (
+              <button
+                type="button"
+                className={styles.linkActionBtn}
+                onClick={() => {
+                  openLinkInAppViewer(linkActions.text)
+                  hideLinkActions()
+                }}
+                title={t('xterm.openInApp')}
+                aria-label={t('xterm.openInApp')}
+              >
+                <AppWindow size={14} />
+              </button>
+            ) : null}
             <button
               type="button"
               className={styles.linkActionBtn}
