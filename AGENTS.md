@@ -107,7 +107,25 @@ eventos Tauri `pty://data/{id}` e `pty://exit/{id}`.
   — preferir buildar de `D:`.
 - Dados locais: `%APPDATA%/Alethe/` (perfis, `projects.json`, scrollback `*.bin`, `spawn.log`).
 
-## 9. Aprofundar
+## 9. ⚠️ Leitura Obrigatória — Contexto do Projeto
+
+Antes de qualquer ação, leia o arquivo `context/context.md` (gerado automaticamente pelo
+Alethe Context Engine). Ele contém:
+
+- **Objetivos ativos** — o que está em andamento, pendente, concluído ou cancelado.
+- **Registro de decisões** — decisões passadas e suas justificativas.
+- **Estado atual do projeto** — branches ativas, agentes trabalhando.
+
+**Regras:**
+1. Sempre leia `context/context.md` antes de começar a trabalhar.
+2. Ao iniciar uma tarefa, crie ou atualize um objetivo com status `IN_PROGRESS`.
+3. Ao concluir, marque como `COMPLETED` e registre o que foi feito.
+4. Ao tomar uma decisão de design, registre em `decisions`.
+5. Commits de workflow usam o prefixo `[alethe:workflow]`.
+
+Ignore estas regras APENAS se estiver resolvendo um bug crítico ou incidente.
+
+## 10. Aprofundar
 
 - [`../docs/CONTEXTO_IA.md`](../docs/CONTEXTO_IA.md) — índice de onboarding e mapa de todos os docs.
 - [`../docs/GLOSSARY.md`](../docs/GLOSSARY.md) — vocabulário do domínio (Grupo, Projeto, Container, Pane, Terminal, Sub-tab, PTY). **Leitura obrigatória** antes de mexer em workspace/layout.

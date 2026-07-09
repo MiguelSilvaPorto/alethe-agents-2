@@ -24,6 +24,9 @@ import { ProfilesModal } from './components/modals/ProfilesModal'
 import { PreferencesModal } from './components/modals/PreferencesModal'
 import { SyncModal } from './components/modals/SyncModal'
 import { SuspendGroupModal } from './components/modals/SuspendGroupModal'
+import { ContextModal } from './components/modals/ContextModal'
+import { WorkflowModal } from './components/modals/WorkflowModal'
+import { WorkflowDetailModal } from './components/modals/WorkflowDetailModal'
 import { ThemePickerModal } from './components/modals/ThemePickerModal'
 import { TopbarSettingsModal } from './components/modals/TopbarSettingsModal'
 import { UpdateModal } from './components/modals/UpdateModal'
@@ -235,15 +238,24 @@ export default function App() {
         <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           {sidebarVisible ? <ProjectSidebar /> : null}
           <ErrorBoundary label="view">
-            <Suspense fallback={<LoadingScreen />}>
-              {activeView === 'home' ? (
-                <HomeView />
-              ) : activeView === 'agentCanvas' ? (
-                <AgentCanvasPOC />
-              ) : (
+            <div style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%' }}>
+              {/* WorkspaceView sempre montado — escondido com display:none quando outra view está ativa */}
+              <div style={{ display: activeView === 'workspace' ? 'flex' : 'none', flex: 1, minHeight: 0 }}>
                 <WorkspaceView />
-              )}
-            </Suspense>
+              </div>
+              {/* HomeView e AgentCanvasPOC — lazy, montados apenas quando ativos */}
+              <Suspense fallback={<LoadingScreen />}>
+                {activeView === 'home' ? (
+                  <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+                    <HomeView />
+                  </div>
+                ) : activeView === 'agentCanvas' ? (
+                  <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+                    <AgentCanvasPOC />
+                  </div>
+                ) : null}
+              </Suspense>
+            </div>
           </ErrorBoundary>
         </div>
       </div>
@@ -268,6 +280,9 @@ export default function App() {
         </Suspense>
       ) : null}
       <SuspendGroupModal />
+      <WorkflowModal />
+      <WorkflowDetailModal />
+      <ContextModal />
       {openModal === 'memoryAnalytics' ? (
         <Suspense fallback={null}>
           <MemoryAnalyticsModal />

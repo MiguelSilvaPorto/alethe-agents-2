@@ -28,6 +28,9 @@ type ModalKind =
   | 'sync'
   | 'topbarSettings'
   | 'updateAvailable'
+  | 'workflow'
+  | 'workflowDetail'
+  | 'context'
   | null
 
 export type ActiveView = 'home' | 'workspace' | 'agentCanvas'

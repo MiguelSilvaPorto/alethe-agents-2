@@ -17,6 +17,7 @@ import {
   Home,
   Layout,
   LayoutGrid,
+  Layers,
   MoreHorizontal,
   FileText,
   Pause,
@@ -39,6 +40,7 @@ import type { AgentType, Group, LayoutMode, Project, Terminal } from '../../lib/
 import { EmptyState } from '../EmptyState/EmptyState'
 import { FileExplorer } from './FileExplorer'
 import { GitControl } from './GitControl'
+import { WorkflowDashboard } from './WorkflowDashboard'
 import { AgentIcon } from '../icons/AgentIcons'
 import { SidebarNowPlaying } from '../SidebarNowPlaying'
 import { UserProfile } from '../UserProfile'
@@ -105,7 +107,7 @@ export function ProjectSidebar() {
   const activeTerminalRef = useUiStore((s) => s.activeTerminal)
   const setActiveTerminal = useUiStore((s) => s.setActiveTerminal)
   const [menu, setMenu] = useState<ContextMenuState>(null)
-  const [sidebarTab, setSidebarTab] = useState<'files' | 'git' | 'projects'>('projects')
+  const [sidebarTab, setSidebarTab] = useState<'files' | 'git' | 'projects' | 'workflows'>('projects')
   const keepHome = activeView === 'home'
 
   useEffect(() => {
@@ -637,7 +639,25 @@ export function ProjectSidebar() {
             <GitBranch size={14} />
           </button>
         ) : null}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={sidebarTab === 'workflows'}
+          aria-label={t('workflow.sidebarTab')}
+          title={t('workflow.sidebarTab')}
+          className={`${styles.sidebarTab} ${sidebarTab === 'workflows' ? styles.sidebarTabActive : ''}`}
+          onClick={() => {
+            setSidebarTab('workflows')
+            if (!keepHome) setActiveView('workspace')
+          }}
+        >
+          <Layers size={14} />
+        </button>
       </div>
+
+      {sidebarTab === 'workflows' ? <section className={styles.explorerPanel}>
+        <WorkflowDashboard />
+      </section> : null}
 
       {sidebarTab === 'projects' ? <header className={styles.header}>
         <span className={styles.title}>{t('ui.sidebar.projects')}</span>

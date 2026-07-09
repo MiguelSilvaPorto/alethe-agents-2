@@ -1,0 +1,142 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 8px;
+}
+
+.title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-muted);
+}
+
+.headerActions {
+  display: flex;
+  gap: 2px;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.iconBtn:hover {
+  background: var(--panel-hover);
+  color: var(--fg);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.section {
+  padding: 4px 8px;
+}
+
+.sectionTitle {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-tertiary);
+  margin: 8px 0 4px;
+  padding: 0 2px;
+}
+
+.workflowCard {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-card-default);
+  cursor: pointer;
+  text-align: left;
+  border: none;
+  color: inherit;
+  font: inherit;
+}
+
+.workflowCard:hover {
+  background: var(--surface-card-selected);
+}
+
+.cardDone {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cardDone:hover {
+  background: var(--surface-card-default);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.badgeGit {
+  background: rgba(240, 146, 51, 0.15);
+  color: #f09233;
+}
+
+.badgeLocal {
+  background: rgba(6, 182, 212, 0.15);
+  color: #06b6d4;
+}
+
+.cardStatus {
+  font-size: 10px;
+  color: var(--fg-tertiary);
+}
+
+.cardTask {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardMeta {
+  font-size: 10px;
+  color: var(--fg-tertiary);
+}

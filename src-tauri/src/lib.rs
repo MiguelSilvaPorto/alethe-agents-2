@@ -7,8 +7,11 @@ mod claude_sessions;
 mod claude_usage;
 mod cli_resolver;
 mod codex_sessions;
-mod crash_watch;
 mod codex_usage;
+mod context_decisions;
+mod context_engine;
+mod context_objectives;
+mod crash_watch;
 mod diagnostics;
 mod discord_presence;
 mod economy_agents;
@@ -27,6 +30,9 @@ mod pty;
 mod session_watcher;
 mod spotify;
 mod stats;
+mod workflow_engine;
+mod workflow_git;
+mod workflow_local;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -119,6 +125,10 @@ pub fn run() {
             git_control::git_commit,
             git_control::git_push,
             git_control::git_pull,
+            git_control::git_create_branch,
+            git_control::git_list_branches,
+            git_control::git_log,
+            git_control::git_merge_branch,
             diagnostics::open_data_folder,
             diagnostics::open_spawn_log,
             diagnostics::open_in_file_explorer,
@@ -148,6 +158,20 @@ pub fn run() {
             agent_cost::get_transcript_cost,
             agent_cost::get_model_pricing,
             crash_watch::get_last_crash_report,
+            context_objectives::context_get_state,
+            context_objectives::context_set_objective,
+            context_objectives::context_delete_objective,
+            context_objectives::context_update_objective_status,
+            context_decisions::context_get_decisions,
+            context_decisions::context_add_decision,
+            context_engine::context_refresh,
+            context_engine::context_get_report,
+            workflow_engine::workflow_start_session,
+            workflow_engine::workflow_commit_step,
+            workflow_engine::workflow_get_status,
+            workflow_engine::workflow_get_branch_status,
+            workflow_engine::workflow_get_local_status,
+            workflow_engine::workflow_complete,
             ping,
         ])
         .build(tauri::generate_context!())

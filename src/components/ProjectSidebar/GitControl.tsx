@@ -102,7 +102,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
     void refresh()
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refresh(true)
-    }, 3000)
+    }, 15000)
     const onFocus = () => void refresh(true)
     window.addEventListener('focus', onFocus)
     return () => {

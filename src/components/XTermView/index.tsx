@@ -490,16 +490,22 @@ export function XTermView({
     let forceNextResize = false
     let completionMonitor: AgentCompletionMonitor | null = null
     let linkProviderDisposable: { dispose: () => void } | null = null
+    let userScrolledUp = false
 
     const terminal = new Terminal({
       cursorBlink: true,
       convertEol: false,
       allowProposedApi: true,
       scrollback: getTerminalScrollbackRows(),
+      scrollOnUserInput: false,
       windowsPty: { backend: 'conpty', buildNumber: 22000 },
       fontFamily: 'Cascadia Mono, Consolas, "Courier New", monospace',
       fontSize: 14,
       theme: getXtermTheme(terminalTheme),
+    })
+    terminal.onScroll(() => {
+      const b = terminal.buffer.active
+      userScrolledUp = b.viewportY < b.baseY
     })
     const fitAddon = new FitAddon()
     const searchAddon = new SearchAddon()
@@ -527,40 +533,43 @@ export function XTermView({
 
     // Renderer WebGL (GPU) — o renderer DOM padrão trava a digitação,
     // principalmente com zoom da WebView ≠ 100%. Fallback: DOM renderer.
-    let webglAddon: WebglAddon | null = null
-    try {
-      webglAddon = new WebglAddon()
-      webglAddon.onContextLoss(() => {
-        // Perda de contexto GL (ex.: muitos terminais estouram o limite de
-        // contextos da WebView, ou soluço do processo de GPU). Descarta o addon
-        // (o xterm volta pro renderer DOM) e NÃO recria — evita thrash.
+    // Skip para OpenCode — WebGL corrompe o atlas ao scrollar por muitas linhas.
+    if (command !== 'opencode') {
+      let webglAddon: WebglAddon | null = null
+      try {
+        webglAddon = new WebglAddon()
+        webglAddon.onContextLoss(() => {
+          // Perda de contexto GL (ex.: muitos terminais estouram o limite de
+          // contextos da WebView, ou soluço do processo de GPU). Descarta o addon
+          // (o xterm volta pro renderer DOM) e NÃO recria — evita thrash.
+          webglAddon?.dispose()
+          webglAddon = null
+          // Um syncScrollArea assíncrono já agendado pode ler `dimensions` de um
+          // renderer morto e lançar ("Cannot read properties of undefined
+          // (reading 'dimensions')"), o que cascateia e derruba a render. Força um
+          // re-fit/refresh com retry em múltiplos frames pra estabilizar.
+          let attempts = 0
+          const tryRecover = () => {
+            attempts++
+            try {
+              const rect = container.getBoundingClientRect()
+              if (rect.width < 50 || rect.height < 30) {
+                if (attempts < 5) window.requestAnimationFrame(tryRecover)
+                return
+              }
+              fitAddon.fit()
+              terminal.refresh(0, Math.max(0, terminal.rows - 1))
+            } catch {
+              if (attempts < 5) window.requestAnimationFrame(tryRecover)
+            }
+          }
+          window.requestAnimationFrame(tryRecover)
+        })
+        terminal.loadAddon(webglAddon)
+      } catch {
         webglAddon?.dispose()
         webglAddon = null
-        // Um syncScrollArea assíncrono já agendado pode ler `dimensions` de um
-        // renderer morto e lançar ("Cannot read properties of undefined
-        // (reading 'dimensions')"), o que cascateia e derruba a render. Força um
-        // re-fit/refresh com retry em múltiplos frames pra estabilizar.
-        let attempts = 0
-        const tryRecover = () => {
-          attempts++
-          try {
-            const rect = container.getBoundingClientRect()
-            if (rect.width < 50 || rect.height < 30) {
-              if (attempts < 5) window.requestAnimationFrame(tryRecover)
-              return
-            }
-            fitAddon.fit()
-            terminal.refresh(0, Math.max(0, terminal.rows - 1))
-          } catch {
-            if (attempts < 5) window.requestAnimationFrame(tryRecover)
-          }
-        }
-        window.requestAnimationFrame(tryRecover)
-      })
-      terminal.loadAddon(webglAddon)
-    } catch {
-      webglAddon?.dispose()
-      webglAddon = null
+      }
     }
 
     terminal.focus()
@@ -570,7 +579,10 @@ export function XTermView({
       if (!pendingWrite) return
       const chunk = pendingWrite
       pendingWrite = ''
-      terminal.write(chunk)
+      const hadScrolledUp = userScrolledUp
+      terminal.write(chunk, () => {
+        if (hadScrolledUp) userScrolledUp = true
+      })
     }
 
     const queueTerminalWrite = (chunk: string) => {

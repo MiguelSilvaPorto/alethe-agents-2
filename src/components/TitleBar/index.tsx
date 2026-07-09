@@ -1,5 +1,5 @@
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { ArrowLeft, ArrowRight, Maximize2, Menu, Minus, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, Users, Workflow, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, FileText, Layers, Maximize2, Menu, Minus, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, Users, Workflow, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { ContextMenu, type MenuItem } from '../ProjectSidebar/ContextMenu'
@@ -14,7 +14,7 @@ import { useProjectsStore } from '../../stores/projectsStore'
 import { useUiStore } from '../../stores/uiStore'
 import styles from './TitleBar.module.css'
 
-const RAM_POLL_INTERVAL_MS = 5000
+const RAM_POLL_INTERVAL_MS = 15000
 const CLAUDE_POLL_INTERVAL_MS = 5 * 60_000
 const APP_TITLE = import.meta.env.DEV ? '(DEV) Alethe' : 'Alethe'
 
@@ -429,6 +429,12 @@ export function TitleBar() {
             </div>
           </div>
         ) : null}
+        <button type="button" className={styles.syncPill} title={t('workflow.title')} onClick={() => openModal('workflow')}>
+          <Layers size={12} />
+        </button>
+        <button type="button" className={styles.syncPill} title={t('context.title')} onClick={() => openModal('context')}>
+          <FileText size={12} />
+        </button>
         {preferences.topbarShowMemory && ramMb !== null ? (
           <button type="button" className={styles.ramPill} title={t('ui.titlebar.openMemoryAnalytics')} onClick={() => openModal('memoryAnalytics')}>
             {ramMb.toFixed(0)} MB

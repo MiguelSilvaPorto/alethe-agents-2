@@ -409,6 +409,40 @@ pub fn git_pull(repo_root: String) -> Result<String, String> {
     remote_command(&root, &["pull", "--ff-only"])
 }
 
+#[tauri::command]
+pub fn git_create_branch(repo_root: String, name: String) -> Result<String, String> {
+    let root = validated_root(&repo_root)?;
+    checked_output(&root, &["checkout", "-b", &name])?;
+    Ok(name)
+}
+
+#[tauri::command]
+pub fn git_list_branches(repo_root: String) -> Result<Vec<String>, String> {
+    let root = validated_root(&repo_root)?;
+    let output = checked_output(&root, &["branch", "--list", "--format=%(refname:short)"])?;
+    Ok(String::from_utf8_lossy(&output.stdout).lines().map(|l| l.to_string()).collect())
+}
+
+#[tauri::command]
+pub fn git_log(repo_root: String, max_count: u32) -> Result<Vec<String>, String> {
+    let root = validated_root(&repo_root)?;
+    let count = max_count.to_string();
+    let output = checked_output(&root, &["log", &format!("--max-count={}", count), "--oneline", "--format=%h %s"])?;
+    Ok(String::from_utf8_lossy(&output.stdout).lines().map(|l| l.to_string()).collect())
+}
+
+#[tauri::command]
+pub fn git_merge_branch(repo_root: String, branch: String, delete: bool) -> Result<String, String> {
+    let root = validated_root(&repo_root)?;
+    checked_output(&root, &["checkout", "main"])?;
+    let merge_out = checked_output(&root, &["merge", &branch, "--no-edit"])?;
+    let msg = String::from_utf8_lossy(&merge_out.stdout).trim().to_string();
+    if delete {
+        checked_output(&root, &["branch", "-d", &branch])?;
+    }
+    Ok(msg)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

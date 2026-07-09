@@ -1,0 +1,160 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.refreshBtn:hover {
+  background: var(--panel-hover);
+}
+
+.refreshBtn:disabled {
+  opacity: 0.6;
+}
+
+.updated {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-card-default);
+}
+
+.cardTitle {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  color: var(--fg);
+}
+
+.statRow {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 8px;
+  font-size: 11px;
+  color: var(--fg-secondary);
+}
+
+.stat {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-sunken);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.listItem:hover {
+  background: var(--panel-hover);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status_PENDING {
+  background: var(--status-waiting);
+}
+
+.status_IN_PROGRESS {
+  background: var(--status-active);
+}
+
+.status_COMPLETED {
+  background: var(--status-idle);
+}
+
+.status_CANCELLED {
+  background: transparent;
+  border: 1px solid var(--status-idle);
+}
+
+.listText {
+  flex: 1;
+  color: var(--fg);
+}
+
+.listMeta {
+  font-size: 10px;
+  color: var(--fg-tertiary);
+}
+
+.empty {
+  font-size: 12px;
+  color: var(--fg-tertiary);
+  margin: 8px 0;
+}
+
+.markdown {
+  margin-top: 12px;
+}
+
+.markdownSummary {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.markdownPre {
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  font-size: 11px;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

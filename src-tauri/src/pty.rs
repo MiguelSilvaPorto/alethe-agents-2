@@ -13,7 +13,7 @@ use crate::cli_resolver::{command_builder_for_terminal, find_windows_cli_launche
 use crate::diagnostics::append_spawn_log;
 use crate::paths::{scrollback_dir, scrollback_path};
 
-pub const SCROLLBACK_CAP_BYTES: usize = 4 * 1024 * 1024;
+pub const SCROLLBACK_CAP_BYTES: usize = 1 * 1024 * 1024;
 pub const SCROLLBACK_FLUSH_INTERVAL_MS: u128 = 2000;
 
 pub struct ScrollbackBuffer {

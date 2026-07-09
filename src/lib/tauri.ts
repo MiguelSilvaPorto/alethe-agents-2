@@ -592,3 +592,169 @@ export async function getActivitySummary(dates: string[] = []): Promise<Activity
 export async function clearActivityStats(): Promise<void> {
   await invoke('clear_activity_stats')
 }
+
+// ───── Context Engine ─────
+
+export type ObjectiveStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
+
+export type Objective = {
+  id: string
+  title: string
+  status: ObjectiveStatus
+  agent: string | null
+  ptyId: string | null
+  startedAt: number | null
+  completedAt: number | null
+  createdAt: number
+  updatedAt: number
+  notes: string
+  commitSha: string | null
+  branch: string | null
+}
+
+export type Decision = {
+  id: string
+  summary: string
+  reason: string
+  agent: string | null
+  madeAt: number
+}
+
+export type ContextState = {
+  objectives: Objective[]
+  objectivesDir: string
+}
+
+export type ContextReport = {
+  contextMd: string
+  updatedAt: number
+  objectiveCount: number
+  completedCount: number
+  decisionCount: number
+  activeAgents: number
+  branch: string
+}
+
+export async function contextGetState(): Promise<ContextState> {
+  return invoke<ContextState>('context_get_state')
+}
+
+export async function contextSetObjective(objective: Objective): Promise<Objective[]> {
+  return invoke<Objective[]>('context_set_objective', { objective })
+}
+
+export async function contextDeleteObjective(id: string): Promise<Objective[]> {
+  return invoke<Objective[]>('context_delete_objective', { id })
+}
+
+export async function contextUpdateObjectiveStatus(id: string, status: ObjectiveStatus): Promise<Objective[]> {
+  return invoke<Objective[]>('context_update_objective_status', { id, status })
+}
+
+export async function contextGetDecisions(): Promise<Decision[]> {
+  return invoke<Decision[]>('context_get_decisions')
+}
+
+export async function contextAddDecision(decision: Decision): Promise<Decision[]> {
+  return invoke<Decision[]>('context_add_decision', { decision })
+}
+
+export async function contextRefresh(): Promise<ContextReport> {
+  return invoke<ContextReport>('context_refresh')
+}
+
+export async function contextGetReport(): Promise<ContextReport> {
+  return invoke<ContextReport>('context_get_report')
+}
+
+// ───── Workflow Engine ─────
+
+export type WorkflowMode = 'GIT' | 'LOCAL'
+
+export type WorkflowSession = {
+  id: string
+  ptyId: string
+  agentType: string
+  task: string
+  mode: WorkflowMode
+  repoRoot: string | null
+  branch: string | null
+  status: string
+  startedAt: number
+  updatedAt: number
+}
+
+export type GitWorkflowStatus = {
+  branch: string
+  exists: boolean
+  ahead: number
+  behind: number
+  commitCount: number
+  lastCommitMsg: string | null
+}
+
+export type WorkflowStep = {
+  id: string
+  description: string
+  status: string
+  timestamp: number
+}
+
+export type LocalWorkflow = {
+  ptyId: string
+  agentType: string
+  task: string
+  steps: WorkflowStep[]
+  status: string
+  startedAt: number
+  updatedAt: number
+  completedAt: number | null
+}
+
+export async function workflowStartSession(
+  ptyId: string,
+  agentType: string,
+  task: string,
+  mode: WorkflowMode,
+  repoRoot: string | null,
+): Promise<WorkflowSession> {
+  return invoke<WorkflowSession>('workflow_start_session', { ptyId, agentType, task, mode, repoRoot })
+}
+
+export async function workflowCommitStep(ptyId: string, message: string): Promise<string> {
+  return invoke<string>('workflow_commit_step', { ptyId, message })
+}
+
+export async function workflowGetStatus(): Promise<WorkflowSession[]> {
+  return invoke<WorkflowSession[]>('workflow_get_status')
+}
+
+export async function workflowGetBranchStatus(sessionId: string): Promise<GitWorkflowStatus | null> {
+  return invoke<GitWorkflowStatus | null>('workflow_get_branch_status', { sessionId })
+}
+
+export async function workflowGetLocalStatus(): Promise<LocalWorkflow[]> {
+  return invoke<LocalWorkflow[]>('workflow_get_local_status')
+}
+
+export async function workflowComplete(ptyId: string, summary: string): Promise<void> {
+  return invoke<void>('workflow_complete', { ptyId, summary })
+}
+
+// Git extensions for workflows
+
+export async function gitCreateBranch(repoRoot: string, name: string): Promise<string> {
+  return invoke<string>('git_create_branch', { repoRoot, name })
+}
+
+export async function gitListBranches(repoRoot: string): Promise<string[]> {
+  return invoke<string[]>('git_list_branches', { repoRoot })
+}
+
+export async function gitLog(repoRoot: string, maxCount: number): Promise<string[]> {
+  return invoke<string[]>('git_log', { repoRoot, maxCount })
+}
+
+export async function gitMergeBranch(repoRoot: string, branch: string, deleteBranch: boolean): Promise<string> {
+  return invoke<string>('git_merge_branch', { repoRoot, branch, delete: deleteBranch })
+}

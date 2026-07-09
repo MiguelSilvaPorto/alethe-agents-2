@@ -9,7 +9,7 @@ import { useProjectsStore } from '../../stores/projectsStore'
 import type { AgentType } from '../../lib/types'
 import styles from './TokenHud.module.css'
 
-const POLL_MS = 4000
+const POLL_MS = 10_000
 
 /** Último segmento do cwd, pra rótulo curto. */
 function shortCwd(cwd: string): string {
@@ -33,16 +33,22 @@ export function TokenHud() {
   const [collapsed, setCollapsed] = useState(false)
   const timer = useRef<number | null>(null)
 
-  // Poll adaptativo: sempre roda; refresh() pula sozinho quando não há agente vivo.
+  // Poll adaptativo: só roda quando o HUD está expandido e a janela visível.
+  // refresh() pula sozinho quando não há agente vivo.
+  const activeRef = useRef(true)
   useEffect(() => {
-    void refresh()
-    timer.current = window.setInterval(() => {
-      void refresh()
-    }, POLL_MS)
+    if (collapsed) return
+    const onVisibility = () => { activeRef.current = document.visibilityState === 'visible' }
+    document.addEventListener('visibilitychange', onVisibility)
+    onVisibility()
+    const tick = () => { if (activeRef.current) void refresh() }
+    void tick()
+    timer.current = window.setInterval(tick, POLL_MS)
     return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
       if (timer.current) window.clearInterval(timer.current)
     }
-  }, [refresh])
+  }, [refresh, collapsed])
 
   const entries = Object.values(byPtyId)
   if (entries.length === 0) return null
