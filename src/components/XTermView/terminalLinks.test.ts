@@ -41,6 +41,13 @@ describe('terminal links', () => {
     const [link] = detectTerminalLinks('/tmp/my\\ file/readme.md')
     expect(link.text).toBe('/tmp/my file/readme.md')
     expect(link.displayLength).toBe('/tmp/my\\ file/readme.md'.length)
-    expect(link.isMarkdown).toBe(true)
+    expect(link.fileKind).toBe('markdown')
+  })
+
+  it('classifies path links by extension', () => {
+    expect(detectTerminalLinks('/tmp/shot.png')[0].fileKind).toBe('image')
+    expect(detectTerminalLinks('/tmp/main.ts:42:10')[0].fileKind).toBe('text')
+    expect(detectTerminalLinks('/tmp/notes.md')[0].fileKind).toBe('markdown')
+    expect(detectTerminalLinks('https://example.com/x')[0].fileKind).toBeUndefined()
   })
 })

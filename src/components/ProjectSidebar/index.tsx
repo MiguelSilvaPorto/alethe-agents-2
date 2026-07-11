@@ -95,7 +95,7 @@ export function ProjectSidebar() {
     reorderGroups: s.reorderGroups,
     togglePane: s.togglePane,
     setSubTabCompletionUnread: s.setSubTabCompletionUnread,
-    createMarkdownPane: s.createMarkdownPane,
+    createFilePane: s.createFilePane,
   })))
 
   const requestPaneFocus = useUiStore((s) => s.requestPaneFocus)
@@ -125,7 +125,7 @@ export function ProjectSidebar() {
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
     })
     if (typeof selected !== 'string') return
-    actions.createMarkdownPane(activeProjectId, { filePath: selected })
+    actions.createFilePane(activeProjectId, { filePath: selected })
   }
 
   // map projectId → Set<paneIds> pra checar se cada terminal está aberto
@@ -1165,7 +1165,7 @@ function TerminalNode({ project, terminal, selected, onClick, onDoubleClick, onM
       title={terminal.filePath || terminal.cwd || terminal.name}
     >
       <span className={styles.agentStack}>
-        {terminal.kind === 'markdown' ? (
+        {terminal.kind && terminal.kind !== 'terminal' ? (
           <span className={styles.agentIcon}>
             <FileText size={14} />
           </span>

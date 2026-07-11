@@ -66,8 +66,11 @@ export const UNRESTRICTED_FLAG: Record<AgentType, string | null> = {
   mimo: null,
 }
 
-/** Tipo de pane. Ausente = 'terminal' (back-compat, sem migração). */
-export type PaneKind = 'terminal' | 'markdown'
+/**
+ * Tipo de pane. Ausente = 'terminal' (back-compat, sem migração).
+ * 'markdown' | 'file' | 'image' são viewers de arquivo (usam `tabs: []` + `filePath`).
+ */
+export type PaneKind = 'terminal' | 'markdown' | 'file' | 'image'
 
 export type Terminal = {
   id: string
@@ -79,9 +82,9 @@ export type Terminal = {
   laneVisible: boolean | null
   /** Última vez que esse terminal foi aberto/focado. Usado pra ordenar a Home. */
   lastUsedAt?: number
-  /** Discriminador de pane. Ausente/undefined = 'terminal'. Um 'markdown' usa `tabs: []`. */
+  /** Discriminador de pane. Ausente/undefined = 'terminal'. Viewers de arquivo usam `tabs: []`. */
   kind?: PaneKind
-  /** Caminho absoluto do arquivo .md quando kind === 'markdown'. */
+  /** Caminho absoluto do arquivo quando o pane é um viewer (markdown/file/image). */
   filePath?: string
 }
 

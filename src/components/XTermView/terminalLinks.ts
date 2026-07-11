@@ -1,9 +1,13 @@
+/** Categoria de arquivo apontado por um link de path — decide o viewer no grid. */
+export type FileLinkKind = 'markdown' | 'image' | 'text'
+
 export type DetectedTerminalLink = {
   text: string
   index: number
   displayLength: number
   kind: 'url' | 'path'
-  isMarkdown?: boolean
+  /** Só para `kind: 'path'` — que tipo de arquivo é, ou undefined se não parecer arquivo. */
+  fileKind?: FileLinkKind
 }
 
 type TerminalBufferLine = {
@@ -22,8 +26,26 @@ export type LogicalTerminalLine = {
 }
 
 const LINK_START_PATTERN = /https?:\/\/|(?:[A-Za-z]:\\|\\\\)|(?:~|\/)(?=[^/])/g
-const MARKDOWN_PATH_PATTERN = /\.(md|markdown)(?::\d+(?::\d+)?)?$/i
+/** Sufixo `:linha` ou `:linha:coluna` que agents anexam a paths (ex.: `foo.ts:42:10`). */
+const LINE_COL_SUFFIX = /:\d+(?::\d+)?$/
+const MARKDOWN_EXT_PATTERN = /\.(md|markdown|mdx)$/i
+const IMAGE_EXT_PATTERN = /\.(png|jpe?g|gif|webp|bmp|avif|ico|svg)$/i
+const FILE_EXT_PATTERN = /\.[A-Za-z0-9]{1,12}$/
 const LINK_TRAILING_PUNCTUATION = /[\s),.;:]+$/
+
+/** Remove o sufixo `:linha:coluna` de um path pra obter o arquivo real. */
+export function stripLineColumn(text: string): string {
+  return text.replace(LINE_COL_SUFFIX, '')
+}
+
+/** Classifica um path pela extensão. `undefined` = não parece um arquivo abrível. */
+export function classifyFileLink(text: string): FileLinkKind | undefined {
+  const clean = stripLineColumn(text)
+  if (MARKDOWN_EXT_PATTERN.test(clean)) return 'markdown'
+  if (IMAGE_EXT_PATTERN.test(clean)) return 'image'
+  if (FILE_EXT_PATTERN.test(clean)) return 'text'
+  return undefined
+}
 const HARD_LINK_DELIMITERS = new Set(['\t', '\r', '\n', '<', '>', '"', "'", '`', '|'])
 
 function findLinkEnd(line: string, start: number): number {
@@ -70,7 +92,7 @@ export function detectTerminalLinks(line: string): DetectedTerminalLink[] {
       index,
       displayLength: displayText.length,
       kind,
-      isMarkdown: kind === 'path' && MARKDOWN_PATH_PATTERN.test(text),
+      fileKind: kind === 'path' ? classifyFileLink(text) : undefined,
     })
   }
   return links

@@ -113,8 +113,8 @@ type ProjectsState = ProjectsFile & {
       firstTab: { type: AgentType; cwd: string; extraArgs?: string[] }
     },
   ) => Terminal
-  /** Cria um pane de markdown (kind: 'markdown') e adiciona ao grid do projeto. */
-  createMarkdownPane: (projectId: string, args: { filePath: string; name?: string }) => Terminal
+  /** Cria um pane viewer (markdown/arquivo) e adiciona ao grid do projeto. */
+  createFilePane: (projectId: string, args: { filePath: string; name?: string }) => Terminal
   renameTerminal: (projectId: string, terminalId: string, name: string) => void
   deleteTerminal: (projectId: string, terminalId: string) => void
   /** Mata a árvore de processos do terminal + fecha o pane, mas MANTÉM o atalho na
@@ -274,8 +274,17 @@ function fileNameFromPath(filePath: string): string {
   return parts[parts.length - 1] || cleaned
 }
 
-function makeMarkdownPane(args: { filePath: string; name?: string }): Terminal {
-  const filePath = args.filePath.trim()
+const MARKDOWN_FILE_PATTERN = /\.(md|markdown|mdx)$/i
+
+/** Escolhe o viewer certo pela extensão. Imagem fica pra depois (precisa de backend). */
+function classifyPaneKind(filePath: string): 'markdown' | 'file' {
+  return MARKDOWN_FILE_PATTERN.test(filePath) ? 'markdown' : 'file'
+}
+
+function makeFilePane(args: { filePath: string; name?: string }): Terminal {
+  // Remove o sufixo `:linha:coluna` que agents anexam (ex.: `foo.ts:42:10`) —
+  // senão o read_text_file não acha o arquivo.
+  const filePath = args.filePath.trim().replace(/:\d+(?::\d+)?$/, '')
   return {
     id: nanoid(),
     name: args.name?.trim() || fileNameFromPath(filePath),
@@ -285,7 +294,7 @@ function makeMarkdownPane(args: { filePath: string; name?: string }): Terminal {
     laneVisible: null,
     lastUsedAt: Date.now(),
     tabs: [],
-    kind: 'markdown',
+    kind: classifyPaneKind(filePath),
     filePath,
   }
 }
@@ -1925,8 +1934,8 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
       return terminal
     },
 
-    createMarkdownPane: (projectId, args) => {
-      const pane = makeMarkdownPane(args)
+    createFilePane: (projectId, args) => {
+      const pane = makeFilePane(args)
       update((state) => {
         const projects = state.projects.map((p) =>
           p.id === projectId ? { ...p, terminals: [...p.terminals, pane] } : p,

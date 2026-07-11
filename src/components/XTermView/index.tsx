@@ -50,13 +50,14 @@ import {
   getLogicalTerminalLine,
   terminalLinkRange,
   type DetectedTerminalLink,
+  type FileLinkKind,
 } from './terminalLinks'
 import styles from './XTermView.module.css'
 
 type LinkActionState = {
   text: string
   kind: 'url' | 'path'
-  isMarkdown?: boolean
+  fileKind?: FileLinkKind
   x: number
   y: number
 }
@@ -318,6 +319,9 @@ export function XTermView({
   const ptyIdRef = useRef<string | null>(null)
   const lastCtrlCRef = useRef(0)
   const linkTooltipHideTimerRef = useRef<number | null>(null)
+  const linkTooltipShowTimerRef = useRef<number | null>(null)
+  const pendingLinkRef = useRef<LinkActionState | null>(null)
+  const linkActionsRef = useRef<LinkActionState | null>(null)
 
   const cliPathOverride = useProjectsStore((s) =>
     command && command !== 'shell' ? s.cliPaths[command] ?? null : null,
@@ -351,37 +355,68 @@ export function XTermView({
     linkTooltipHideTimerRef.current = null
   }, [])
 
-  const hideLinkActions = useCallback(() => {
-    clearLinkTooltipHideTimer()
-    setLinkActions(null)
-  }, [clearLinkTooltipHideTimer])
+  const clearLinkTooltipShowTimer = useCallback(() => {
+    if (linkTooltipShowTimerRef.current === null) return
+    window.clearTimeout(linkTooltipShowTimerRef.current)
+    linkTooltipShowTimerRef.current = null
+  }, [])
 
+  const hideLinkActions = useCallback(() => {
+    clearLinkTooltipShowTimer()
+    clearLinkTooltipHideTimer()
+    pendingLinkRef.current = null
+    setLinkActions(null)
+  }, [clearLinkTooltipShowTimer, clearLinkTooltipHideTimer])
+
+  // Saiu do link (ou do tooltip): fecha com folga pra dar tempo de atravessar o
+  // gap link→tooltip sem ele sumir — a causa clássica do "some antes de clicar".
   const scheduleHideLinkActions = useCallback(() => {
+    clearLinkTooltipShowTimer()
     clearLinkTooltipHideTimer()
     linkTooltipHideTimerRef.current = window.setTimeout(() => {
       linkTooltipHideTimerRef.current = null
+      pendingLinkRef.current = null
       setLinkActions(null)
-    }, 600)
-  }, [clearLinkTooltipHideTimer])
+    }, 450)
+  }, [clearLinkTooltipShowTimer, clearLinkTooltipHideTimer])
 
+  // Hover num link: só abre depois de uma intenção de hover (~320ms) pra não
+  // poluir a tela quando o mouse só passa por cima. Se já há um tooltip aberto,
+  // troca na hora (transição suave entre links vizinhos).
   const showLinkActions = useCallback(
     (event: MouseEvent, link: DetectedTerminalLink) => {
       clearLinkTooltipHideTimer()
-      setLinkActions({
+      const next: LinkActionState = {
         text: link.text,
         kind: link.kind,
-        isMarkdown: link.isMarkdown,
+        fileKind: link.fileKind,
         x: Math.min(Math.max(event.clientX, 180), window.innerWidth - 180),
         y: Math.max(event.clientY, 72),
-      })
+      }
+      pendingLinkRef.current = next
+      if (linkActionsRef.current) {
+        setLinkActions(next)
+        return
+      }
+      clearLinkTooltipShowTimer()
+      linkTooltipShowTimerRef.current = window.setTimeout(() => {
+        linkTooltipShowTimerRef.current = null
+        if (pendingLinkRef.current) setLinkActions(pendingLinkRef.current)
+      }, 320)
     },
-    [clearLinkTooltipHideTimer],
+    [clearLinkTooltipHideTimer, clearLinkTooltipShowTimer],
   )
 
-  const openMarkdownInGrid = useCallback(
+  // Espelha o estado num ref pra os handlers (que rodam no provider do xterm)
+  // lerem "tem tooltip aberto?" sem virar dependência e recriar o listener.
+  useEffect(() => {
+    linkActionsRef.current = linkActions
+  }, [linkActions])
+
+  const openFileInGrid = useCallback(
     (target: string) => {
       if (!projectId) return
-      useProjectsStore.getState().createMarkdownPane(projectId, { filePath: target })
+      useProjectsStore.getState().createFilePane(projectId, { filePath: target })
     },
     [projectId],
   )
@@ -491,6 +526,7 @@ export function XTermView({
     let forceNextResize = false
     let completionMonitor: AgentCompletionMonitor | null = null
     let linkProviderDisposable: { dispose: () => void } | null = null
+    let linkScrollDisposable: { dispose: () => void } | null = null
 
     const terminal = new Terminal({
       cursorBlink: true,
@@ -517,14 +553,30 @@ export function XTermView({
         }
         const links = detectTerminalLinks(logicalLine.text).map((link) =>
           makeXtermLink(logicalLine.startLine, terminal.cols, link, {
-            open: (text) =>
-              /^https?:\/\//i.test(text) ? openLinkInAppViewer(text) : void openLinkInBrowser(text),
+            // Clique default: URL abre no browser externo, path abre no app
+            // padrão do SO. O visualizador in-app fica opcional no botão do tooltip.
+            open: (text) => void openLinkInBrowser(text),
             hover: showLinkActions,
             leave: scheduleHideLinkActions,
           }),
         )
         callback(links.length > 0 ? links : undefined)
       },
+    })
+
+    // Se a tela rola (stream do agente), o tooltip — ancorado no ponto do cursor —
+    // apontaria pro vazio; fecha junto pra não virar fantasma.
+    linkScrollDisposable = terminal.onScroll(() => {
+      if (
+        linkActionsRef.current ||
+        pendingLinkRef.current ||
+        linkTooltipShowTimerRef.current !== null
+      ) {
+        clearLinkTooltipShowTimer()
+        clearLinkTooltipHideTimer()
+        pendingLinkRef.current = null
+        setLinkActions(null)
+      }
     })
 
     // Renderer WebGL (GPU) — o renderer DOM padrão trava a digitação,
@@ -992,9 +1044,12 @@ export function XTermView({
       unlistenExit?.()
       unlistenDragDrop?.()
       linkProviderDisposable?.dispose()
+      linkScrollDisposable?.dispose()
       completionMonitor?.dispose()
       completionMonitor = null
+      clearLinkTooltipShowTimer()
       clearLinkTooltipHideTimer()
+      pendingLinkRef.current = null
       setLinkActions(null)
       if (terminalRef.current === terminal) terminalRef.current = null
       ptyIdRef.current = null
@@ -1074,12 +1129,13 @@ export function XTermView({
             {linkActions.text}
           </span>
           <div className={styles.linkActionsButtons}>
-            {linkActions.isMarkdown && projectId ? (
+            {(linkActions.fileKind === 'markdown' || linkActions.fileKind === 'text') &&
+            projectId ? (
               <button
                 type="button"
                 className={styles.linkActionBtn}
                 onClick={() => {
-                  openMarkdownInGrid(linkActions.text)
+                  openFileInGrid(linkActions.text)
                   hideLinkActions()
                 }}
                 title={t('xterm.openInGrid')}

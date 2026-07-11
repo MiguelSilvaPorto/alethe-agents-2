@@ -123,6 +123,17 @@
   animation: linkActionsIn 120ms ease-out;
 }
 
+/* Ponte invisível cobrindo o gap link→tooltip pra o hover não "cair" no meio
+   do caminho e o tooltip sumir antes do clique. */
+.linkActions::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -14px;
+  height: 14px;
+}
+
 .linkActions::after {
   content: '';
   position: absolute;
