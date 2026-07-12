@@ -1,15 +1,15 @@
 type WheelLike = {
-  deltaMode: number
-  deltaY: number
-}
+  deltaMode: number;
+  deltaY: number;
+};
 
-const DOM_DELTA_PIXEL = 0
-const DOM_DELTA_LINE = 1
-const PAGE_SCROLL_LINES = 10
-const TERMINAL_SCROLLBACK_ROWS = 10_000
+const DOM_DELTA_PIXEL = 0;
+const DOM_DELTA_LINE = 1;
+const PAGE_SCROLL_LINES = 10;
+const TERMINAL_SCROLLBACK_ROWS = 5_000;
 
 export function getTerminalScrollbackRows(): number {
-  return TERMINAL_SCROLLBACK_ROWS
+  return TERMINAL_SCROLLBACK_ROWS;
 }
 
 /**
@@ -24,15 +24,15 @@ export function getTerminalScrollbackRows(): number {
  * Windows Terminal.
  */
 export function shouldScrollHostScrollback(
-  bufferType: 'normal' | 'alternate',
+  bufferType: "normal" | "alternate",
   shiftKey: boolean,
 ): boolean {
-  if (shiftKey) return true
-  return bufferType !== 'alternate'
+  if (shiftKey) return true;
+  return bufferType !== "alternate";
 }
 
 export function normalizePastedText(text: string): string {
-  return text.replace(/\r\n?/g, '\n').replace(/\n/g, '\r')
+  return text.replace(/\r\n?/g, "\n").replace(/\n/g, "\r");
 }
 
 /**
@@ -44,22 +44,26 @@ export function formatDroppedPaths(paths: string[]): string {
   const formatted = paths
     .filter(Boolean)
     .map((p) => (/\s/.test(p) ? `"${p}"` : p))
-    .join(' ')
-  return formatted ? `${formatted} ` : ''
+    .join(" ");
+  return formatted ? `${formatted} ` : "";
 }
 
-export function getWheelScrollLines(event: WheelLike, lineHeight: number): number {
-  if (event.deltaY === 0) return 0
+export function getWheelScrollLines(
+  event: WheelLike,
+  lineHeight: number,
+): number {
+  if (event.deltaY === 0) return 0;
 
   if (event.deltaMode === DOM_DELTA_LINE) {
-    return Math.trunc(event.deltaY)
+    return Math.trunc(event.deltaY);
   }
 
   if (event.deltaMode !== DOM_DELTA_PIXEL) {
-    return Math.sign(event.deltaY) * PAGE_SCROLL_LINES
+    return Math.sign(event.deltaY) * PAGE_SCROLL_LINES;
   }
 
-  const safeLineHeight = Number.isFinite(lineHeight) && lineHeight > 0 ? lineHeight : 18
-  const lines = Math.ceil(Math.abs(event.deltaY) / safeLineHeight)
-  return Math.sign(event.deltaY) * Math.max(1, lines)
+  const safeLineHeight =
+    Number.isFinite(lineHeight) && lineHeight > 0 ? lineHeight : 18;
+  const lines = Math.ceil(Math.abs(event.deltaY) / safeLineHeight);
+  return Math.sign(event.deltaY) * Math.max(1, lines);
 }

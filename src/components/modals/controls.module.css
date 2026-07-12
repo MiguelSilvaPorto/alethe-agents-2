@@ -29,6 +29,15 @@
 .input:focus {
   border-color: var(--accent);
 }
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238b8b95' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+  padding-right: 32px;
+}
 
 .cwdRow {
   display: flex;
@@ -62,7 +71,9 @@
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 500;
-  transition: background 100ms, border-color 100ms;
+  transition:
+    background 100ms,
+    border-color 100ms;
 }
 .btn:hover:not(:disabled) {
   background: var(--panel-hover);
@@ -110,7 +121,9 @@
   color: var(--fg);
   font-size: 13px;
   cursor: pointer;
-  transition: border-color 100ms, background 100ms;
+  transition:
+    border-color 100ms,
+    background 100ms;
 }
 .pill:hover {
   border-color: var(--border-strong);
@@ -138,7 +151,9 @@
   border-radius: var(--radius-md);
   color: var(--fg);
   cursor: pointer;
-  transition: background 100ms, border-color 100ms;
+  transition:
+    background 100ms,
+    border-color 100ms;
 }
 .iconBtn:hover:not(:disabled) {
   background: var(--panel-hover);
@@ -179,7 +194,9 @@
   color: var(--fg);
   text-align: left;
   cursor: pointer;
-  transition: border-color 100ms, background 100ms;
+  transition:
+    border-color 100ms,
+    background 100ms;
 }
 .themeCard:hover {
   border-color: var(--border-strong);

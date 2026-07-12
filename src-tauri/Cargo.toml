@@ -30,8 +30,9 @@ tokio = { version = "1", features = ["rt-multi-thread", "sync", "net"] }
 which = "6"
 zip = "0.6"
 sysinfo = "0.31"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "blocking"] }
 tiny_http = "0.12"
+ascii = "1"
 keyring = "3"
 dirs-next = "2"
 base64 = "0.22"
@@ -39,6 +40,8 @@ urlencoding = "2"
 dotenvy = "0.15"
 discord-rich-presence = "1.1.0"
 notify = "6"
+mimalloc = "0.1"
+rusqlite = { version = "0.31", features = ["bundled"] }
 
 # Dependências só-macOS para o bridge nativo do Ghostty (embutir surfaces de
 # terminal numa NSView sobre a WebView do Tauri). Versões alinhadas com as que

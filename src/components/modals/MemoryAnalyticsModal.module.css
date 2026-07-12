@@ -112,9 +112,24 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background:
-    linear-gradient(to bottom, transparent 24%, var(--border) 25%, transparent 26%),
-    linear-gradient(to bottom, transparent 49%, var(--border) 50%, transparent 51%),
-    linear-gradient(to bottom, transparent 74%, var(--border) 75%, transparent 76%),
+    linear-gradient(
+      to bottom,
+      transparent 24%,
+      var(--border) 25%,
+      transparent 26%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 49%,
+      var(--border) 50%,
+      transparent 51%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 74%,
+      var(--border) 75%,
+      transparent 76%
+    ),
     var(--bg-sunken);
 }
 

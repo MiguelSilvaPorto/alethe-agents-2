@@ -18,17 +18,17 @@ The app is local-first. Projects, preferences, layouts, scrollback, sessions, an
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Desktop shell | Tauri 2 |
-| Backend | Rust |
-| Frontend | React 18, TypeScript, Vite |
-| State | Zustand |
-| Terminal | `xterm.js` |
-| PTY | `portable-pty` |
-| Layout | `react-resizable-panels`, CSS grid |
-| Drag and drop | `@dnd-kit/core` |
-| Persistence | Local JSON files and scrollback files |
+| Layer         | Technology                            |
+| ------------- | ------------------------------------- |
+| Desktop shell | Tauri 2                               |
+| Backend       | Rust                                  |
+| Frontend      | React 18, TypeScript, Vite            |
+| State         | Zustand                               |
+| Terminal      | `xterm.js`                            |
+| PTY           | `portable-pty`                        |
+| Layout        | `react-resizable-panels`, CSS grid    |
+| Drag and drop | `@dnd-kit/core`                       |
+| Persistence   | Local JSON files and scrollback files |
 
 ## Core Model
 

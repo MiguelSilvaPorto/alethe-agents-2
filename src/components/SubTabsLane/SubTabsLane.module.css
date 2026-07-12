@@ -25,7 +25,7 @@
 /* Indicador da tab ativa — barra de acento colada na borda esquerda da lane
    (padrão activity-bar), some quando não-ativa. */
 .active::before {
-  content: '';
+  content: "";
   position: absolute;
   left: -5px;
   top: 50%;
@@ -111,7 +111,10 @@
   color: var(--fg-faint);
   cursor: pointer;
   border: 1px dashed var(--border-strong);
-  transition: background 100ms, color 100ms, border-color 100ms;
+  transition:
+    background 100ms,
+    color 100ms,
+    border-color 100ms;
 }
 .add:hover {
   background: var(--accent-soft);

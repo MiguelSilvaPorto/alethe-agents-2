@@ -6,13 +6,13 @@ import type {
   WorkspaceHistoryEntry,
   WorkspaceTab,
   WorkspaceViewSnapshot,
-} from './types'
+} from "./types";
 
-export const MAX_WORKSPACE_TABS = 10
-export const MAX_WORKSPACE_HISTORY = 50
+export const MAX_WORKSPACE_TABS = 10;
+export const MAX_WORKSPACE_HISTORY = 50;
 
 function cloneGrid(layout: GridLayout | undefined): GridLayout | undefined {
-  if (!layout) return undefined
+  if (!layout) return undefined;
   return {
     ...layout,
     cells: Object.fromEntries(
@@ -20,30 +20,34 @@ function cloneGrid(layout: GridLayout | undefined): GridLayout | undefined {
     ),
     colSizes: layout.colSizes ? [...layout.colSizes] : undefined,
     rowSizes: layout.rowSizes ? [...layout.rowSizes] : undefined,
-  }
+  };
 }
 
-export function cloneContainers(containers: WorkspaceContainer[]): WorkspaceContainer[] {
+export function cloneContainers(
+  containers: WorkspaceContainer[],
+): WorkspaceContainer[] {
   return containers.map((container) => ({
     ...container,
     paneIds: [...container.paneIds],
-  }))
+  }));
 }
 
-export function cloneWorkspaceSnapshot(snapshot: WorkspaceViewSnapshot): WorkspaceViewSnapshot {
+export function cloneWorkspaceSnapshot(
+  snapshot: WorkspaceViewSnapshot,
+): WorkspaceViewSnapshot {
   return {
     ...snapshot,
     containers: cloneContainers(snapshot.containers),
     workspaceGridLayout: cloneGrid(snapshot.workspaceGridLayout),
-  }
+  };
 }
 
 export function captureWorkspaceSnapshot(args: {
-  containers: WorkspaceContainer[]
-  activeProjectId: string | null
-  activeGroupId: string | null
-  focusedTerminalId: string | null
-  preferences: Preferences
+  containers: WorkspaceContainer[];
+  activeProjectId: string | null;
+  activeGroupId: string | null;
+  focusedTerminalId: string | null;
+  preferences: Preferences;
 }): WorkspaceViewSnapshot {
   return {
     containers: cloneContainers(args.containers),
@@ -53,51 +57,68 @@ export function captureWorkspaceSnapshot(args: {
     workspaceFlat: args.preferences.workspaceFlat,
     fullscreenContainerId: args.preferences.fullscreenContainerId,
     workspaceGridLayout: cloneGrid(args.preferences.workspaceGridLayout),
-  }
+  };
 }
 
 export function sanitizeWorkspaceSnapshot(
   snapshot: WorkspaceViewSnapshot,
   projects: Project[],
 ): WorkspaceViewSnapshot {
-  const projectsById = new Map(projects.map((project) => [project.id, project]))
+  const projectsById = new Map(
+    projects.map((project) => [project.id, project]),
+  );
   const containers = snapshot.containers.flatMap((container) => {
-    const project = projectsById.get(container.projectId)
-    if (!project) return []
-    const terminalIds = new Set(project.terminals.map((terminal) => terminal.id))
-    const paneIds = container.paneIds.filter((id) => terminalIds.has(id))
-    return paneIds.length > 0 ? [{ ...container, paneIds }] : []
-  })
-  const visibleTerminalIds = new Set(containers.flatMap((container) => container.paneIds))
-  const visibleProjectIds = new Set(containers.map((container) => container.projectId))
+    const project = projectsById.get(container.projectId);
+    if (!project) return [];
+    const terminalIds = new Set(
+      project.terminals.map((terminal) => terminal.id),
+    );
+    const paneIds = container.paneIds.filter((id) => terminalIds.has(id));
+    return paneIds.length > 0 ? [{ ...container, paneIds }] : [];
+  });
+  const visibleTerminalIds = new Set(
+    containers.flatMap((container) => container.paneIds),
+  );
+  const visibleProjectIds = new Set(
+    containers.map((container) => container.projectId),
+  );
   return {
     ...cloneWorkspaceSnapshot(snapshot),
     containers,
     activeProjectId:
-      snapshot.activeProjectId && visibleProjectIds.has(snapshot.activeProjectId)
+      snapshot.activeProjectId &&
+      visibleProjectIds.has(snapshot.activeProjectId)
         ? snapshot.activeProjectId
-        : containers[0]?.projectId ?? null,
+        : (containers[0]?.projectId ?? null),
     focusedTerminalId:
-      snapshot.focusedTerminalId && visibleTerminalIds.has(snapshot.focusedTerminalId)
+      snapshot.focusedTerminalId &&
+      visibleTerminalIds.has(snapshot.focusedTerminalId)
         ? snapshot.focusedTerminalId
         : null,
     fullscreenContainerId:
-      snapshot.fullscreenContainerId && visibleProjectIds.has(snapshot.fullscreenContainerId)
+      snapshot.fullscreenContainerId &&
+      visibleProjectIds.has(snapshot.fullscreenContainerId)
         ? snapshot.fullscreenContainerId
         : null,
-  }
+  };
 }
 
-export function compositionLabel(snapshot: WorkspaceViewSnapshot, projects: Project[]): string {
+export function compositionLabel(
+  snapshot: WorkspaceViewSnapshot,
+  projects: Project[],
+): string {
   const names = snapshot.containers
-    .map((container) => projects.find((project) => project.id === container.projectId)?.name)
-    .filter((name): name is string => Boolean(name))
-  if (names.length === 0) return 'Workspace'
+    .map(
+      (container) =>
+        projects.find((project) => project.id === container.projectId)?.name,
+    )
+    .filter((name): name is string => Boolean(name));
+  if (names.length === 0) return "Workspace";
   if (names.length === 1) {
-    const paneCount = snapshot.containers[0]?.paneIds.length ?? 0
-    return paneCount > 1 ? `${names[0]} + ${paneCount - 1}` : names[0]
+    const paneCount = snapshot.containers[0]?.paneIds.length ?? 0;
+    return paneCount > 1 ? `${names[0]} + ${paneCount - 1}` : names[0];
   }
-  return `${names[0]} + ${names.length - 1}`
+  return `${names[0]} + ${names.length - 1}`;
 }
 
 export function pushWorkspaceHistory(
@@ -105,11 +126,12 @@ export function pushWorkspaceHistory(
   historyIndex: number,
   entry: WorkspaceHistoryEntry,
 ): { history: WorkspaceHistoryEntry[]; historyIndex: number } {
-  const branch = history.slice(0, historyIndex + 1)
-  const next = [...branch, { ...entry, snapshot: cloneWorkspaceSnapshot(entry.snapshot) }].slice(
-    -MAX_WORKSPACE_HISTORY,
-  )
-  return { history: next, historyIndex: next.length - 1 }
+  const branch = history.slice(0, historyIndex + 1);
+  const next = [
+    ...branch,
+    { ...entry, snapshot: cloneWorkspaceSnapshot(entry.snapshot) },
+  ].slice(-MAX_WORKSPACE_HISTORY);
+  return { history: next, historyIndex: next.length - 1 };
 }
 
 export function replaceCurrentHistorySnapshot(
@@ -117,7 +139,7 @@ export function replaceCurrentHistorySnapshot(
   historyIndex: number,
   tab: WorkspaceTab,
 ): WorkspaceHistoryEntry[] {
-  if (historyIndex < 0 || historyIndex >= history.length) return history
+  if (historyIndex < 0 || historyIndex >= history.length) return history;
   return history.map((entry, index) =>
     index === historyIndex
       ? {
@@ -127,5 +149,5 @@ export function replaceCurrentHistorySnapshot(
           snapshot: cloneWorkspaceSnapshot(tab.snapshot),
         }
       : entry,
-  )
+  );
 }

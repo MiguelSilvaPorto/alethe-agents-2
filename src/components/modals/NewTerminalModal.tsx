@@ -1,43 +1,50 @@
-import { Folder, FolderCheck, Zap } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Folder, FolderCheck, Zap } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
-import { useUiStore } from '../../stores/uiStore'
-import { getProjectDefaultCwd, useProjectsStore } from '../../stores/projectsStore'
-import { pickDirectory } from '../../lib/dialog'
-import { UNRESTRICTED_FLAG, type AgentType } from '../../lib/types'
-import { AgentIcon } from '../icons/AgentIcons'
-import { useT } from '../../lib/i18n'
-import { Modal } from './Modal'
-import controls from './controls.module.css'
-import picker from './agentPicker.module.css'
+import { useUiStore } from "../../stores/uiStore";
+import {
+  getProjectDefaultCwd,
+  useProjectsStore,
+} from "../../stores/projectsStore";
+import { pickDirectory } from "../../lib/dialog";
+import { UNRESTRICTED_FLAG, type AgentType } from "../../lib/types";
+import { AgentIcon } from "../icons/AgentIcons";
+import { useT } from "../../lib/i18n";
+import { Modal } from "./Modal";
+import controls from "./controls.module.css";
+import picker from "./agentPicker.module.css";
 
 const AGENTS: { type: AgentType; label: string }[] = [
-  { type: 'shell', label: 'Shell' },
-  { type: 'claude', label: 'Claude' },
-  { type: 'codex', label: 'Codex' },
-  { type: 'opencode', label: 'OpenCode' },
-  { type: 'freebuff', label: 'Freebuff' },
-  { type: 'mimo', label: 'Mimo' },
-]
+  { type: "shell", label: "Shell" },
+  { type: "claude", label: "Claude" },
+  { type: "codex", label: "Codex" },
+  { type: "opencode", label: "OpenCode" },
+  { type: "freebuff", label: "Freebuff" },
+  { type: "mimo", label: "Mimo" },
+];
 
 export function NewTerminalModal() {
-  const t = useT()
-  const open = useUiStore((s) => s.openModal === 'newTerminal')
-  const context = useUiStore((s) => s.modalContext) as { projectId?: string } | null
-  const closeModal = useUiStore((s) => s.closeModal)
-  const createTerminal = useProjectsStore((s) => s.createTerminal)
+  const t = useT();
+  const open = useUiStore((s) => s.openModal === "newTerminal");
+  const context = useUiStore((s) => s.modalContext) as {
+    projectId?: string;
+  } | null;
+  const closeModal = useUiStore((s) => s.closeModal);
+  const createTerminal = useProjectsStore((s) => s.createTerminal);
   const project = useProjectsStore((s) =>
-    context?.projectId ? s.projects.find((p) => p.id === context.projectId) ?? null : null,
-  )
-  const projects = useProjectsStore((s) => s.projects)
-  const enabled = useProjectsStore((s) => s.preferences.enabledAgents)
+    context?.projectId
+      ? (s.projects.find((p) => p.id === context.projectId) ?? null)
+      : null,
+  );
+  const projects = useProjectsStore((s) => s.projects);
+  const enabled = useProjectsStore((s) => s.preferences.enabledAgents);
   const terminalTheme = useProjectsStore(
     (s) => s.preferences.terminalTheme ?? s.preferences.uiTheme,
-  )
+  );
 
-  const [name, setName] = useState('')
-  const [type, setType] = useState<AgentType>('shell')
-  const [cwd, setCwd] = useState('')
+  const [name, setName] = useState("");
+  const [type, setType] = useState<AgentType>("shell");
+  const [cwd, setCwd] = useState("");
   const [unrestricted, setUnrestricted] = useState<Record<AgentType, boolean>>({
     shell: false,
     claude: false,
@@ -45,55 +52,67 @@ export function NewTerminalModal() {
     opencode: false,
     freebuff: false,
     mimo: false,
-  })
+  });
 
-  const visibleAgents = AGENTS.filter((a) => enabled[a.type])
-  const inheritedCwd = useMemo(() => getProjectDefaultCwd(project, projects), [project, projects])
+  const visibleAgents = AGENTS.filter((a) => enabled[a.type]);
+  const inheritedCwd = useMemo(
+    () => getProjectDefaultCwd(project, projects),
+    [project, projects],
+  );
 
   useEffect(() => {
-    if (!open) return
-    setCwd(inheritedCwd)
-  }, [open, context?.projectId, inheritedCwd])
+    if (!open) return;
+    setCwd(inheritedCwd);
+  }, [open, context?.projectId, inheritedCwd]);
 
   const reset = () => {
-    setName('')
-    setType('shell')
-    setCwd('')
-    setUnrestricted({ shell: false, claude: false, codex: false, opencode: false, freebuff: false, mimo: false })
-  }
+    setName("");
+    setType("shell");
+    setCwd("");
+    setUnrestricted({
+      shell: false,
+      claude: false,
+      codex: false,
+      opencode: false,
+      freebuff: false,
+      mimo: false,
+    });
+  };
 
   const submit = () => {
-    if (!context?.projectId) return
-    const finalName = name.trim() || type
-    const finalCwd = cwd.trim() || inheritedCwd
-    const flag = UNRESTRICTED_FLAG[type]
-    const extraArgs = unrestricted[type] && flag ? [flag] : undefined
+    if (!context?.projectId) return;
+    const finalName = name.trim() || type;
+    const finalCwd = cwd.trim() || inheritedCwd;
+    const flag = UNRESTRICTED_FLAG[type];
+    const extraArgs = unrestricted[type] && flag ? [flag] : undefined;
     createTerminal(context.projectId, {
       name: finalName,
       cwd: finalCwd,
       firstTab: { type, cwd: finalCwd, extraArgs },
-    })
-    reset()
-    closeModal()
-  }
+    });
+    reset();
+    closeModal();
+  };
 
   const browse = async () => {
-    const dir = await pickDirectory({ defaultPath: cwd || inheritedCwd || undefined })
-    if (dir) setCwd(dir)
-  }
+    const dir = await pickDirectory({
+      defaultPath: cwd || inheritedCwd || undefined,
+    });
+    if (dir) setCwd(dir);
+  };
 
   return (
     <Modal
       open={open}
       onClose={() => {
-        reset()
-        closeModal()
+        reset();
+        closeModal();
       }}
-      title={t('term.newTerminalTitle')}
+      title={t("term.newTerminalTitle")}
       footer={
         <>
           <button type="button" className={controls.btn} onClick={closeModal}>
-            {t('term.cancel')}
+            {t("term.cancel")}
           </button>
           <button
             type="button"
@@ -101,21 +120,21 @@ export function NewTerminalModal() {
             onClick={submit}
             disabled={!context?.projectId}
           >
-            {t('term.create')}
+            {t("term.create")}
           </button>
         </>
       }
     >
       <div className={controls.field}>
-        <label className={controls.label}>{t('term.type')}</label>
+        <label className={controls.label}>{t("term.type")}</label>
         <div className={picker.list}>
           {visibleAgents.map((a) => {
-            const active = type === a.type
+            const active = type === a.type;
             return (
               <button
                 key={a.type}
                 type="button"
-                className={`${picker.row} ${active ? picker.rowActive : ''}`}
+                className={`${picker.row} ${active ? picker.rowActive : ""}`}
                 onClick={() => setType(a.type)}
               >
                 <span className={picker.rowIcon}>
@@ -126,47 +145,60 @@ export function NewTerminalModal() {
                   {UNRESTRICTED_FLAG[a.type] ? (
                     <button
                       type="button"
-                      className={`${picker.cwdBtn} ${unrestricted[a.type] ? picker.boltActive : ''}`}
+                      className={`${picker.cwdBtn} ${unrestricted[a.type] ? picker.boltActive : ""}`}
                       onClick={(e) => {
-                        e.stopPropagation()
-                        setType(a.type)
-                        setUnrestricted((u) => ({ ...u, [a.type]: !u[a.type] }))
+                        e.stopPropagation();
+                        setType(a.type);
+                        setUnrestricted((u) => ({
+                          ...u,
+                          [a.type]: !u[a.type],
+                        }));
                       }}
                       title={
                         unrestricted[a.type]
-                          ? t('term.unrestrictedActive', { flag: UNRESTRICTED_FLAG[a.type] ?? '' })
-                          : t('term.unrestrictedEnableSkip')
+                          ? t("term.unrestrictedActive", {
+                              flag: UNRESTRICTED_FLAG[a.type] ?? "",
+                            })
+                          : t("term.unrestrictedEnableSkip")
                       }
-                      aria-label={t('term.unrestricted')}
+                      aria-label={t("term.unrestricted")}
                     >
                       <Zap
                         size={14}
-                        className={unrestricted[a.type] ? picker.bolt : ''}
+                        className={unrestricted[a.type] ? picker.bolt : ""}
                       />
                     </button>
                   ) : null}
                   <button
                     type="button"
-                    className={`${picker.cwdBtn} ${active && (cwd || inheritedCwd) ? picker.set : ''}`}
+                    className={`${picker.cwdBtn} ${active && (cwd || inheritedCwd) ? picker.set : ""}`}
                     onClick={(e) => {
-                      e.stopPropagation()
-                      setType(a.type)
-                      void browse()
+                      e.stopPropagation();
+                      setType(a.type);
+                      void browse();
                     }}
-                    title={active && (cwd || inheritedCwd) ? cwd || inheritedCwd : t('term.chooseFolder')}
-                    aria-label={t('term.chooseFolder')}
+                    title={
+                      active && (cwd || inheritedCwd)
+                        ? cwd || inheritedCwd
+                        : t("term.chooseFolder")
+                    }
+                    aria-label={t("term.chooseFolder")}
                   >
-                    {active && (cwd || inheritedCwd) ? <FolderCheck size={14} /> : <Folder size={14} />}
+                    {active && (cwd || inheritedCwd) ? (
+                      <FolderCheck size={14} />
+                    ) : (
+                      <Folder size={14} />
+                    )}
                   </button>
                 </span>
               </button>
-            )
+            );
           })}
         </div>
       </div>
 
       <div className={controls.field}>
-        <label className={controls.label}>{t('term.nameOptional')}</label>
+        <label className={controls.label}>{t("term.nameOptional")}</label>
         <input
           className={controls.input}
           value={name}
@@ -176,25 +208,25 @@ export function NewTerminalModal() {
       </div>
 
       <div className={controls.field}>
-        <label className={controls.label}>{t('term.folderCwd')}</label>
+        <label className={controls.label}>{t("term.folderCwd")}</label>
         <div className={controls.cwdRow}>
           <input
             className={controls.input}
             value={cwd}
             onChange={(e) => setCwd(e.target.value)}
-            placeholder={inheritedCwd || t('term.shellDefaultPlaceholder')}
+            placeholder={inheritedCwd || t("term.shellDefaultPlaceholder")}
           />
           <button
             type="button"
             className={controls.btn}
             onClick={browse}
-            aria-label={t('term.chooseFolder')}
-            title={t('term.chooseFolder')}
+            aria-label={t("term.chooseFolder")}
+            title={t("term.chooseFolder")}
           >
             <Folder size={14} />
           </button>
         </div>
       </div>
     </Modal>
-  )
+  );
 }

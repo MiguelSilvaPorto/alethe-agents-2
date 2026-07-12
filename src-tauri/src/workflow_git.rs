@@ -46,7 +46,7 @@ pub fn create_agent_branch(repo_root: &PathBuf, _agent_type: &str, pty_id: &str,
     }
 }
 
-pub fn commit_step(repo_root: &PathBuf, message: &str, _agent_type: &str) -> Result<String, String> {
+pub fn commit_step(repo_root: &PathBuf, message: &str, agent_type: &str) -> Result<String, String> {
     let full_msg = format!("[alethe:workflow] agent={} {}", agent_type, message);
     git_cmd(repo_root, &["add", "-A"])?;
     let status = git_cmd(repo_root, &["status", "--porcelain"])?;
@@ -57,6 +57,7 @@ pub fn commit_step(repo_root: &PathBuf, message: &str, _agent_type: &str) -> Res
     git_cmd(repo_root, &["rev-parse", "--short", "HEAD"])
 }
 
+#[allow(dead_code)]
 pub fn get_agent_history(repo_root: &PathBuf, branch: &str, max_count: u32) -> Result<Vec<String>, String> {
     let count = max_count.to_string();
     let raw = git_cmd(repo_root, &["log", &branch, &format!("--max-count={}", count), "--oneline", "--format=%h %s"])?;
@@ -100,6 +101,7 @@ pub fn get_workflow_status(repo_root: &PathBuf, branch: &str) -> Result<GitWorkf
     })
 }
 
+#[allow(dead_code)]
 pub fn merge_workflow(repo_root: &PathBuf, branch: &str, delete_branch: bool) -> Result<String, String> {
     git_cmd(repo_root, &["checkout", branch])?;
     git_cmd(repo_root, &["checkout", "main"])?;
@@ -110,10 +112,12 @@ pub fn merge_workflow(repo_root: &PathBuf, branch: &str, delete_branch: bool) ->
     Ok(format!("merged {branch} into main"))
 }
 
+#[allow(dead_code)]
 pub fn switch_to_branch(repo_root: &PathBuf, branch: &str) -> Result<String, String> {
     git_cmd(repo_root, &["checkout", branch])
 }
 
+#[allow(dead_code)]
 pub fn current_branch(repo_root: &PathBuf) -> Result<String, String> {
     let symbolic = git_cmd(repo_root, &["symbolic-ref", "--short", "-q", "HEAD"]);
     if let Ok(branch) = symbolic {

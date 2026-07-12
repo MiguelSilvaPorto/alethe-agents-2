@@ -1,23 +1,23 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
-import styles from './EmptyState.module.css'
+import styles from "./EmptyState.module.css";
 
 type Action = {
-  label: string
-  onClick: () => void
-  disabled?: boolean
-}
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+};
 
 type EmptyStateProps = {
-  icon: ReactNode
-  title: ReactNode
-  description?: ReactNode
-  primaryAction?: Action
-  secondaryAction?: Action
-  compact?: boolean
-  tone?: 'default' | 'positive'
-  className?: string
-}
+  icon: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  primaryAction?: Action;
+  secondaryAction?: Action;
+  compact?: boolean;
+  tone?: "default" | "positive";
+  className?: string;
+};
 
 export function EmptyState({
   icon,
@@ -26,26 +26,28 @@ export function EmptyState({
   primaryAction,
   secondaryAction,
   compact = false,
-  tone = 'default',
+  tone = "default",
   className,
 }: EmptyStateProps) {
   return (
     <div
       className={[
         styles.root,
-        compact ? styles.compact : '',
-        tone === 'positive' ? styles.positive : '',
-        className ?? '',
+        compact ? styles.compact : "",
+        tone === "positive" ? styles.positive : "",
+        className ?? "",
       ]
         .filter(Boolean)
-        .join(' ')}
+        .join(" ")}
     >
       <div className={styles.iconWrap} aria-hidden>
         {icon}
       </div>
       <div className={styles.copy}>
         <div className={styles.title}>{title}</div>
-        {description ? <div className={styles.description}>{description}</div> : null}
+        {description ? (
+          <div className={styles.description}>{description}</div>
+        ) : null}
       </div>
       {primaryAction || secondaryAction ? (
         <div className={styles.actions}>
@@ -72,5 +74,5 @@ export function EmptyState({
         </div>
       ) : null}
     </div>
-  )
+  );
 }

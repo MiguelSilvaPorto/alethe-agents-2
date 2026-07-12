@@ -4,7 +4,7 @@
    opencode cinza) batem com os ícones existentes. */
 
 :root,
-[data-theme='dark'] {
+[data-theme="dark"] {
   /* superfícies */
   --bg: #101114;
   --bg-elevated: #1f2125;
@@ -30,7 +30,7 @@
   --accent-soft: rgba(243, 244, 246, 0.06);
   --accent-faint: rgba(243, 244, 246, 0.06);
   --accent-border: rgba(243, 244, 246, 0.22);
-  --accent-ring: rgba(243, 244, 246, 0.10);
+  --accent-ring: rgba(243, 244, 246, 0.1);
   --accent-bg-soft: rgba(243, 244, 246, 0.06);
   --accent-border-soft: rgba(243, 244, 246, 0.22);
 
@@ -86,12 +86,11 @@
 
   --font-sans:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', sans-serif;
-  --font-mono:
-    'Cascadia Mono', Consolas, 'Courier New', monospace;
+    "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, "Courier New", monospace;
 }
 
-[data-theme='light'] {
+[data-theme="light"] {
   --bg: #f6f7fb;
   --bg-elevated: #ffffff;
   --bg-sunken: #eef2f7;
@@ -143,7 +142,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
-[data-theme='dracula'] {
+[data-theme="dracula"] {
   --bg: #282a36;
   --bg-elevated: #343746;
   --bg-sunken: #21222c;
@@ -205,7 +204,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.58);
 }
 
-[data-theme='nord'] {
+[data-theme="nord"] {
   --bg: #2e3440;
   --bg-elevated: #3b4252;
   --bg-sunken: #242933;
@@ -256,7 +255,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.54);
 }
 
-[data-theme='gruvbox'] {
+[data-theme="gruvbox"] {
   --bg: #282828;
   --bg-elevated: #3c3836;
   --bg-sunken: #1d2021;
@@ -307,7 +306,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.56);
 }
 
-[data-theme='solarized'] {
+[data-theme="solarized"] {
   --bg: #002b36;
   --bg-elevated: #073642;
   --bg-sunken: #00212a;
@@ -358,7 +357,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.56);
 }
 
-[data-theme='tokyo-night'] {
+[data-theme="tokyo-night"] {
   --bg: #1a1b26;
   --bg-elevated: #24283b;
   --bg-sunken: #16161e;
@@ -409,7 +408,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.58);
 }
 
-[data-theme='vscode'] {
+[data-theme="vscode"] {
   --bg: #1e1e1e;
   --bg-elevated: #252526;
   --bg-sunken: #181818;
@@ -471,7 +470,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
-[data-theme='min-dark'] {
+[data-theme="min-dark"] {
   --bg: #1f1f1f;
   --bg-elevated: #2a2a2a;
   --bg-sunken: #1a1a1a;
@@ -533,7 +532,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
-[data-theme='min-light'] {
+[data-theme="min-light"] {
   --bg: #ffffff;
   --bg-elevated: #ffffff;
   --bg-sunken: #f6f6f6;
@@ -553,11 +552,11 @@
   --accent: #1976d2;
   --accent-strong: #6f42c1;
   --accent-on: #ffffff;
-  --accent-soft: rgba(25, 118, 210, 0.10);
-  --accent-faint: rgba(25, 118, 210, 0.10);
+  --accent-soft: rgba(25, 118, 210, 0.1);
+  --accent-faint: rgba(25, 118, 210, 0.1);
   --accent-border: rgba(25, 118, 210, 0.34);
   --accent-ring: rgba(25, 118, 210, 0.16);
-  --accent-bg-soft: rgba(25, 118, 210, 0.10);
+  --accent-bg-soft: rgba(25, 118, 210, 0.1);
   --accent-border-soft: rgba(25, 118, 210, 0.28);
 
   --surface-modal: #ffffff;
@@ -590,7 +589,7 @@
   --shape-tabs-lane-bg: #f6f6f6;
   --shape-tabs-lane-border: rgba(33, 33, 33, 0.08);
 
-  --shadow-sm: 0 1px 2px rgba(33, 33, 33, 0.10);
+  --shadow-sm: 0 1px 2px rgba(33, 33, 33, 0.1);
   --shadow-md: 0 4px 12px rgba(33, 33, 33, 0.14);
   --shadow-lg: 0 12px 32px rgba(33, 33, 33, 0.18);
 }
@@ -598,7 +597,7 @@
 /* Dark Lemon Material (lucafluri.dark-lemon-material) — quase preto #141414
    uniforme, texto branco e acento limão #ffff50. Sintaxe estilo Material+
    nos ANSI do terminal. */
-[data-theme='dark-lemon'] {
+[data-theme="dark-lemon"] {
   --bg: #141414;
   --bg-elevated: #1e1e1e;
   --bg-sunken: #0f0f0f;
@@ -618,17 +617,17 @@
   --accent: #ffff50;
   --accent-strong: #ffff7a;
   --accent-on: #141414;
-  --accent-soft: rgba(255, 255, 80, 0.10);
-  --accent-faint: rgba(255, 255, 80, 0.10);
+  --accent-soft: rgba(255, 255, 80, 0.1);
+  --accent-faint: rgba(255, 255, 80, 0.1);
   --accent-border: rgba(255, 255, 80, 0.42);
   --accent-ring: rgba(255, 255, 80, 0.18);
-  --accent-bg-soft: rgba(255, 255, 80, 0.10);
+  --accent-bg-soft: rgba(255, 255, 80, 0.1);
   --accent-border-soft: rgba(255, 255, 80, 0.34);
 
   --surface-modal: #1c1c1c;
   --surface-card-default: #242424;
   --surface-card-default-strong: #2c2c2c;
-  --surface-card-selected: rgba(255, 255, 80, 0.10);
+  --surface-card-selected: rgba(255, 255, 80, 0.1);
   --border-subtle: #262626;
   --border-accent: rgba(255, 255, 80, 0.42);
 

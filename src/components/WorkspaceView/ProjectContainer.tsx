@@ -1,4 +1,4 @@
-import { useDraggable, useDroppable } from '@dnd-kit/core'
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import {
   ChevronRight,
   GripVertical,
@@ -6,23 +6,28 @@ import {
   Minimize2,
   Minus,
   TerminalSquare,
-} from 'lucide-react'
-import { memo, useMemo } from 'react'
+} from "lucide-react";
+import { memo, useMemo } from "react";
 
-import type { Group, Project, Terminal, WorkspaceContainer } from '../../lib/types'
-import { useT } from '../../lib/i18n'
-import { useProjectsStore } from '../../stores/projectsStore'
-import { EmptyState } from '../EmptyState/EmptyState'
-import { PaneArea } from './PaneArea'
-import styles from './ProjectContainer.module.css'
+import type {
+  Group,
+  Project,
+  Terminal,
+  WorkspaceContainer,
+} from "../../lib/types";
+import { useT } from "../../lib/i18n";
+import { useProjectsStore } from "../../stores/projectsStore";
+import { EmptyState } from "../EmptyState/EmptyState";
+import { PaneArea } from "./PaneArea";
+import styles from "./ProjectContainer.module.css";
 
 export type ProjectContainerProps = {
-  container: WorkspaceContainer
-  project: Project
-  group: Group | null
+  container: WorkspaceContainer;
+  project: Project;
+  group: Group | null;
   /** True quando o container é o único visível (fullscreen). */
-  isFullscreen?: boolean
-}
+  isFullscreen?: boolean;
+};
 
 export const ProjectContainer = memo(function ProjectContainer({
   container,
@@ -30,146 +35,157 @@ export const ProjectContainer = memo(function ProjectContainer({
   group,
   isFullscreen = false,
 }: ProjectContainerProps) {
-  const t = useT()
-  const setCollapsed = useProjectsStore((s) => s.setContainerCollapsed)
-  const setFullscreen = useProjectsStore((s) => s.setFullscreenContainer)
-  const setWorkspaceFlat = useProjectsStore((s) => s.setWorkspaceFlat)
-  const closeContainer = useProjectsStore((s) => s.closeContainer)
-  const openContainerWithAllPanes = useProjectsStore((s) => s.openContainerWithAllPanes)
-  const setWorkspaceGridLayout = useProjectsStore((s) => s.setWorkspaceGridLayout)
-  const setGroupGridLayout = useProjectsStore((s) => s.setGroupGridLayout)
+  const t = useT();
+  const setCollapsed = useProjectsStore((s) => s.setContainerCollapsed);
+  const setFullscreen = useProjectsStore((s) => s.setFullscreenContainer);
+  const setWorkspaceFlat = useProjectsStore((s) => s.setWorkspaceFlat);
+  const closeContainer = useProjectsStore((s) => s.closeContainer);
+  const openContainerWithAllPanes = useProjectsStore(
+    (s) => s.openContainerWithAllPanes,
+  );
+  const setWorkspaceGridLayout = useProjectsStore(
+    (s) => s.setWorkspaceGridLayout,
+  );
+  const setGroupGridLayout = useProjectsStore((s) => s.setGroupGridLayout);
   const workspaceGridLayout = useProjectsStore(
     (s) => s.preferences.workspaceGridLayout,
-  )
+  );
   const activeGroupGrid = useMemo(() => {
-    if (!group) return null
-    if (group.layoutMode !== 'grid' || !group.gridLayout) return null
-    return { groupId: group.id, layout: group.gridLayout }
-  }, [group])
+    if (!group) return null;
+    if (group.layoutMode !== "grid" || !group.gridLayout) return null;
+    return { groupId: group.id, layout: group.gridLayout };
+  }, [group]);
 
   // Resize LIVRE: arrasta o canto inferior-direito pra ajustar a proporção
   // `fr` da última col/row que esse container ocupa, roubando da col/row
   // adjacente. Diferente do LayoutDesigner que muda colSpan inteiro — aqui
   // o ajuste é contínuo (alguns pixels = poucos %).
   const startGridResize = (e: React.PointerEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+    e.preventDefault();
+    e.stopPropagation();
     const grid = workspaceGridLayout
-      ? { kind: 'workspace' as const, layout: workspaceGridLayout }
+      ? { kind: "workspace" as const, layout: workspaceGridLayout }
       : activeGroupGrid
-        ? { kind: 'group' as const, groupId: activeGroupGrid.groupId, layout: activeGroupGrid.layout }
-        : null
-    if (!grid) return
-    const cell = grid.layout.cells[project.id]
-    if (!cell) return
+        ? {
+            kind: "group" as const,
+            groupId: activeGroupGrid.groupId,
+            layout: activeGroupGrid.layout,
+          }
+        : null;
+    if (!grid) return;
+    const cell = grid.layout.cells[project.id];
+    if (!cell) return;
 
     const node = (e.currentTarget as HTMLElement).closest(
       '[data-pane-box="1"]',
-    ) as HTMLElement | null
-    if (!node) return
-    let gridEl: HTMLElement | null = node.parentElement
-    while (gridEl && getComputedStyle(gridEl).display !== 'grid') {
-      gridEl = gridEl.parentElement
+    ) as HTMLElement | null;
+    if (!node) return;
+    let gridEl: HTMLElement | null = node.parentElement;
+    while (gridEl && getComputedStyle(gridEl).display !== "grid") {
+      gridEl = gridEl.parentElement;
     }
-    if (!gridEl) return
+    if (!gridEl) return;
 
-    const rect = gridEl.getBoundingClientRect()
-    const initialCols = (grid.layout.colSizes && grid.layout.colSizes.length === grid.layout.cols
-      ? grid.layout.colSizes
-      : Array(grid.layout.cols).fill(1)
-    ).slice()
-    const initialRows = (grid.layout.rowSizes && grid.layout.rowSizes.length === grid.layout.rows
-      ? grid.layout.rowSizes
-      : Array(grid.layout.rows).fill(1)
-    ).slice()
-    const totalColUnits = initialCols.reduce((a, b) => a + b, 0)
-    const totalRowUnits = initialRows.reduce((a, b) => a + b, 0)
+    const rect = gridEl.getBoundingClientRect();
+    const initialCols = (
+      grid.layout.colSizes && grid.layout.colSizes.length === grid.layout.cols
+        ? grid.layout.colSizes
+        : Array(grid.layout.cols).fill(1)
+    ).slice();
+    const initialRows = (
+      grid.layout.rowSizes && grid.layout.rowSizes.length === grid.layout.rows
+        ? grid.layout.rowSizes
+        : Array(grid.layout.rows).fill(1)
+    ).slice();
+    const totalColUnits = initialCols.reduce((a, b) => a + b, 0);
+    const totalRowUnits = initialRows.reduce((a, b) => a + b, 0);
 
     // 0-based índices da última col/row da célula
-    const lastColIdx = cell.col + cell.colSpan - 2 // a col que cresce
-    const nextColIdx = lastColIdx + 1 // a col que encolhe
-    const lastRowIdx = cell.row + cell.rowSpan - 2
-    const nextRowIdx = lastRowIdx + 1
+    const lastColIdx = cell.col + cell.colSpan - 2; // a col que cresce
+    const nextColIdx = lastColIdx + 1; // a col que encolhe
+    const lastRowIdx = cell.row + cell.rowSpan - 2;
+    const nextRowIdx = lastRowIdx + 1;
 
-    const canResizeX = nextColIdx >= 0 && nextColIdx < grid.layout.cols
-    const canResizeY = nextRowIdx >= 0 && nextRowIdx < grid.layout.rows
+    const canResizeX = nextColIdx >= 0 && nextColIdx < grid.layout.cols;
+    const canResizeY = nextRowIdx >= 0 && nextRowIdx < grid.layout.rows;
 
-    const startX = e.clientX
-    const startY = e.clientY
-    const minFr = 0.1
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const minFr = 0.1;
 
     const onMove = (ev: PointerEvent) => {
-      const dx = ev.clientX - startX
-      const dy = ev.clientY - startY
-      const colSizes = initialCols.slice()
-      const rowSizes = initialRows.slice()
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      const colSizes = initialCols.slice();
+      const rowSizes = initialRows.slice();
 
       if (canResizeX) {
-        const deltaFr = (dx * totalColUnits) / rect.width
-        const combined = initialCols[lastColIdx] + initialCols[nextColIdx]
+        const deltaFr = (dx * totalColUnits) / rect.width;
+        const combined = initialCols[lastColIdx] + initialCols[nextColIdx];
         const grown = Math.max(
           minFr,
           Math.min(combined - minFr, initialCols[lastColIdx] + deltaFr),
-        )
-        colSizes[lastColIdx] = grown
-        colSizes[nextColIdx] = combined - grown
+        );
+        colSizes[lastColIdx] = grown;
+        colSizes[nextColIdx] = combined - grown;
       }
       if (canResizeY) {
-        const deltaFr = (dy * totalRowUnits) / rect.height
-        const combined = initialRows[lastRowIdx] + initialRows[nextRowIdx]
+        const deltaFr = (dy * totalRowUnits) / rect.height;
+        const combined = initialRows[lastRowIdx] + initialRows[nextRowIdx];
         const grown = Math.max(
           minFr,
           Math.min(combined - minFr, initialRows[lastRowIdx] + deltaFr),
-        )
-        rowSizes[lastRowIdx] = grown
-        rowSizes[nextRowIdx] = combined - grown
+        );
+        rowSizes[lastRowIdx] = grown;
+        rowSizes[nextRowIdx] = combined - grown;
       }
-      if (!canResizeX && !canResizeY) return
+      if (!canResizeX && !canResizeY) return;
 
-      const next = { ...grid.layout, colSizes, rowSizes }
-      if (grid.kind === 'workspace') setWorkspaceGridLayout(next)
-      else setGroupGridLayout(grid.groupId, next)
-    }
+      const next = { ...grid.layout, colSizes, rowSizes };
+      if (grid.kind === "workspace") setWorkspaceGridLayout(next);
+      else setGroupGridLayout(grid.groupId, next);
+    };
     const onUp = () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-    }
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-  }
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
 
-  const showResizeHandle = Boolean(workspaceGridLayout || activeGroupGrid) && !isFullscreen
+  const showResizeHandle =
+    Boolean(workspaceGridLayout || activeGroupGrid) && !isFullscreen;
 
   // Drag-and-drop pra reordenar containers entre si na workspace.
   // Disabled em fullscreen (não faz sentido reordenar quando só tem 1).
-  const dragId = `cont:${project.id}`
-  const draggable = useDraggable({ id: dragId, disabled: isFullscreen })
-  const droppable = useDroppable({ id: dragId, disabled: isFullscreen })
+  const dragId = `cont:${project.id}`;
+  const draggable = useDraggable({ id: dragId, disabled: isFullscreen });
+  const droppable = useDroppable({ id: dragId, disabled: isFullscreen });
   const setRefs = (node: HTMLDivElement | null) => {
-    draggable.setNodeRef(node)
-    droppable.setNodeRef(node)
-  }
-  const isDropTarget = droppable.isOver && !draggable.isDragging
+    draggable.setNodeRef(node);
+    droppable.setNodeRef(node);
+  };
+  const isDropTarget = droppable.isOver && !draggable.isDragging;
 
   const terminals = useMemo<Terminal[]>(() => {
-    const map = new Map(project.terminals.map((t) => [t.id, t]))
+    const map = new Map(project.terminals.map((t) => [t.id, t]));
     return container.paneIds
       .map((id) => map.get(id))
-      .filter((t): t is Terminal => Boolean(t))
-  }, [project.terminals, container.paneIds])
+      .filter((t): t is Terminal => Boolean(t));
+  }, [project.terminals, container.paneIds]);
 
   // Cor do container = cor do PROJETO (cada projeto fica visualmente único).
   // Cor do grupo fica reservada pro bullet/tag na sidebar (organização).
   // Fallback pro neutro se o projeto não tem cor.
-  const accent = project.color || group?.color || 'var(--border-strong)'
+  const accent = project.color || group?.color || "var(--border-strong)";
 
   if (container.collapsed) {
     return (
       <div
         className={styles.collapsed}
-        style={{ ['--container-accent' as string]: accent }}
+        style={{ ["--container-accent" as string]: accent }}
         onClick={() => setCollapsed(project.id, false)}
-        title={`${group ? group.name + ' · ' : ''}${t('ws.containerExpandHint', { name: project.name })}`}
+        title={`${group ? group.name + " · " : ""}${t("ws.containerExpandHint", { name: project.name })}`}
       >
         {project.iconUrl ? (
           <img src={project.iconUrl} alt="" className={styles.projectIcon} />
@@ -177,19 +193,21 @@ export const ProjectContainer = memo(function ProjectContainer({
           <span className={styles.bullet} style={{ background: accent }} />
         )}
         <span className={styles.collapsedName}>{project.name}</span>
-        <span className={styles.collapsedCount}>{container.paneIds.length}</span>
+        <span className={styles.collapsedCount}>
+          {container.paneIds.length}
+        </span>
       </div>
-    )
+    );
   }
 
   return (
     <div
       ref={setRefs}
       data-pane-box="1"
-      className={`${styles.box} ${draggable.isDragging ? styles.boxDragging : ''} ${
-        isDropTarget ? styles.boxDropTarget : ''
+      className={`${styles.box} ${draggable.isDragging ? styles.boxDragging : ""} ${
+        isDropTarget ? styles.boxDropTarget : ""
       }`}
-      style={{ ['--container-accent' as string]: accent }}
+      style={{ ["--container-accent" as string]: accent }}
     >
       <div className={styles.tag}>
         {!isFullscreen ? (
@@ -198,8 +216,8 @@ export const ProjectContainer = memo(function ProjectContainer({
             className={styles.dragHandle}
             {...draggable.attributes}
             {...draggable.listeners}
-            title={t('ws.dragToReorderContainer')}
-            aria-label={t('ws.dragContainer')}
+            title={t("ws.dragToReorderContainer")}
+            aria-label={t("ws.dragContainer")}
           >
             <GripVertical size={11} />
           </button>
@@ -218,11 +236,11 @@ export const ProjectContainer = memo(function ProjectContainer({
             type="button"
             className={styles.tagBtn}
             onClick={(e) => {
-              e.stopPropagation()
-              setCollapsed(project.id, true)
+              e.stopPropagation();
+              setCollapsed(project.id, true);
             }}
-            title={t('ws.collapseContainer')}
-            aria-label={t('ws.collapse')}
+            title={t("ws.collapseContainer")}
+            aria-label={t("ws.collapse")}
           >
             <ChevronRight size={11} />
           </button>
@@ -230,16 +248,20 @@ export const ProjectContainer = memo(function ProjectContainer({
             type="button"
             className={styles.tagBtn}
             onClick={(e) => {
-              e.stopPropagation()
+              e.stopPropagation();
               if (isFullscreen) {
-                setFullscreen(null)
-                return
+                setFullscreen(null);
+                return;
               }
-              setWorkspaceFlat(false)
-              setFullscreen(project.id)
+              setWorkspaceFlat(false);
+              setFullscreen(project.id);
             }}
-            title={isFullscreen ? t('ws.exitFullscreen') : t('ws.containerFullscreen')}
-            aria-label={t('ws.toggleFullscreen')}
+            title={
+              isFullscreen
+                ? t("ws.exitFullscreen")
+                : t("ws.containerFullscreen")
+            }
+            aria-label={t("ws.toggleFullscreen")}
           >
             {isFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
           </button>
@@ -247,11 +269,11 @@ export const ProjectContainer = memo(function ProjectContainer({
             type="button"
             className={styles.tagBtn}
             onClick={(e) => {
-              e.stopPropagation()
-              closeContainer(project.id)
+              e.stopPropagation();
+              closeContainer(project.id);
             }}
-            title={t('ws.closeContainer')}
-            aria-label={t('ws.close')}
+            title={t("ws.closeContainer")}
+            aria-label={t("ws.close")}
           >
             <Minus size={11} />
           </button>
@@ -263,10 +285,10 @@ export const ProjectContainer = memo(function ProjectContainer({
             <EmptyState
               compact
               icon={<TerminalSquare size={18} />}
-              title={t('ws.panesEmptyTitle')}
-              description={t('ws.panesEmptyDesc')}
+              title={t("ws.panesEmptyTitle")}
+              description={t("ws.panesEmptyDesc")}
               primaryAction={{
-                label: t('ws.panesEmptyAction'),
+                label: t("ws.panesEmptyAction"),
                 onClick: () => openContainerWithAllPanes(project.id),
               }}
             />
@@ -285,9 +307,9 @@ export const ProjectContainer = memo(function ProjectContainer({
         <div
           className={styles.gridResize}
           onPointerDown={startGridResize}
-          title={t('ws.dragToResizeSpan')}
+          title={t("ws.dragToResizeSpan")}
         />
       ) : null}
     </div>
-  )
-})
+  );
+});

@@ -1,6 +1,6 @@
-import { useNowPlaying } from '../../hooks/useNowPlaying'
-import { useT } from '../../lib/i18n'
-import styles from './SidebarNowPlaying.module.css'
+import { useNowPlaying } from "../../hooks/useNowPlaying";
+import { useT } from "../../lib/i18n";
+import styles from "./SidebarNowPlaying.module.css";
 
 /**
  * Versão discreta do Now Playing — fica acima do UserProfile na sidebar.
@@ -8,14 +8,14 @@ import styles from './SidebarNowPlaying.module.css'
  * (o user usa o botão maior na Home pra primeira conexão).
  */
 export function SidebarNowPlaying() {
-  const t = useT()
-  const { connected, current } = useNowPlaying(true)
-  if (!connected || !current) return null
+  const t = useT();
+  const { connected, current } = useNowPlaying(true);
+  if (!connected || !current) return null;
 
   return (
     <div
       className={styles.row}
-      title={`${current.track} — ${current.artist}${current.playing ? '' : ` (${t('widget.paused')})`}`}
+      title={`${current.track} — ${current.artist}${current.playing ? "" : ` (${t("widget.paused")})`}`}
     >
       <div className={styles.cover}>
         {current.cover_url ? (
@@ -24,7 +24,7 @@ export function SidebarNowPlaying() {
             alt=""
             draggable={false}
             onError={(e) => {
-              ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+              (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
             }}
           />
         ) : null}
@@ -35,24 +35,28 @@ export function SidebarNowPlaying() {
       </div>
       {current.playing ? <Equalizer /> : <Paused />}
     </div>
-  )
+  );
 }
 
 function Equalizer() {
   return (
     <span className={styles.eq} aria-hidden="true">
-      <span className={styles.eqBar} style={{ animationDelay: '0s' }} />
-      <span className={styles.eqBar} style={{ animationDelay: '0.18s' }} />
-      <span className={styles.eqBar} style={{ animationDelay: '0.36s' }} />
+      <span className={styles.eqBar} style={{ animationDelay: "0s" }} />
+      <span className={styles.eqBar} style={{ animationDelay: "0.18s" }} />
+      <span className={styles.eqBar} style={{ animationDelay: "0.36s" }} />
     </span>
-  )
+  );
 }
 
 function Paused() {
-  const t = useT()
+  const t = useT();
   return (
-    <span className={styles.pausedDot} aria-label={t('widget.paused')} title={t('widget.paused')}>
+    <span
+      className={styles.pausedDot}
+      aria-label={t("widget.paused")}
+      title={t("widget.paused")}
+    >
       ‖
     </span>
-  )
+  );
 }

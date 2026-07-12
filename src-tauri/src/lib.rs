@@ -29,6 +29,8 @@ mod profiles;
 mod pty;
 mod session_watcher;
 mod spotify;
+mod telemetry_db;
+mod telemetry_proxy;
 mod stats;
 mod workflow_engine;
 mod workflow_git;
@@ -40,6 +42,9 @@ use std::sync::{Arc, Mutex};
 use crate::pty::{PtySession, PtySessions};
 #[cfg(debug_assertions)]
 use tauri::Manager;
+
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -71,6 +76,8 @@ pub fn run() {
             pty::cleanup_orphan_scrollback(app.handle());
             agent_events::start_listener(app.handle().clone());
             session_watcher::start_watcher(app.handle().clone());
+            let _ = telemetry_db::init_db(app.handle());
+            telemetry_proxy::start_proxy(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -157,6 +164,8 @@ pub fn run() {
             agent_cost::get_session_cost,
             agent_cost::get_transcript_cost,
             agent_cost::get_model_pricing,
+            telemetry_db::get_telemetry_summary,
+            telemetry_db::clear_telemetry_stats,
             crash_watch::get_last_crash_report,
             context_objectives::context_get_state,
             context_objectives::context_set_objective,

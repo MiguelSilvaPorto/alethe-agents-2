@@ -1,33 +1,46 @@
-import { ChevronDown, ChevronRight, File, Folder, FolderOpen, RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  ChevronDown,
+  ChevronRight,
+  File,
+  Folder,
+  FolderOpen,
+  RefreshCw,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
-import { getPtyCwd, listDirectory, type DirectoryEntry } from '../../lib/tauri'
-import styles from './FileExplorer.module.css'
+import { getPtyCwd, listDirectory, type DirectoryEntry } from "../../lib/tauri";
+import styles from "./FileExplorer.module.css";
 
 type FileExplorerProps = {
-  cwd: string
-  ptyId: string | null
-  terminalName: string
-}
+  cwd: string;
+  ptyId: string | null;
+  terminalName: string;
+};
 
 export function FileExplorer({ cwd, ptyId, terminalName }: FileExplorerProps) {
-  const [reloadKey, setReloadKey] = useState(0)
-  const [liveCwd, setLiveCwd] = useState(cwd)
+  const [reloadKey, setReloadKey] = useState(0);
+  const [liveCwd, setLiveCwd] = useState(cwd);
 
   useEffect(() => {
-    setLiveCwd(cwd)
-    if (cwd || !ptyId) return
-    let cancelled = false
-    getPtyCwd(ptyId).then((value) => {
-      if (!cancelled && value) setLiveCwd(value)
-    }).catch(() => undefined)
+    setLiveCwd(cwd);
+    if (cwd || !ptyId) return;
+    let cancelled = false;
+    getPtyCwd(ptyId)
+      .then((value) => {
+        if (!cancelled && value) setLiveCwd(value);
+      })
+      .catch(() => undefined);
     return () => {
-      cancelled = true
-    }
-  }, [cwd, ptyId])
+      cancelled = true;
+    };
+  }, [cwd, ptyId]);
 
   if (!liveCwd) {
-    return <div className={styles.message}>Este terminal nao possui uma pasta ativa.</div>
+    return (
+      <div className={styles.message}>
+        Este terminal nao possui uma pasta ativa.
+      </div>
+    );
   }
 
   return (
@@ -45,9 +58,15 @@ export function FileExplorer({ cwd, ptyId, terminalName }: FileExplorerProps) {
           <RefreshCw size={13} />
         </button>
       </div>
-      <DirectoryNode path={liveCwd} name={rootName(liveCwd)} depth={0} initialOpen reloadKey={reloadKey} />
+      <DirectoryNode
+        path={liveCwd}
+        name={rootName(liveCwd)}
+        depth={0}
+        initialOpen
+        reloadKey={reloadKey}
+      />
     </div>
-  )
+  );
 }
 
 function DirectoryNode({
@@ -57,42 +76,42 @@ function DirectoryNode({
   initialOpen = false,
   reloadKey,
 }: {
-  path: string
-  name: string
-  depth: number
-  initialOpen?: boolean
-  reloadKey: number
+  path: string;
+  name: string;
+  depth: number;
+  initialOpen?: boolean;
+  reloadKey: number;
 }) {
-  const [open, setOpen] = useState(initialOpen)
-  const [entries, setEntries] = useState<DirectoryEntry[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const [open, setOpen] = useState(initialOpen);
+  const [entries, setEntries] = useState<DirectoryEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!open) return
-    let cancelled = false
-    setLoading(true)
-    setError(false)
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
     listDirectory(path)
       .then((result) => {
-        if (!cancelled) setEntries(result)
+        if (!cancelled) setEntries(result);
       })
       .catch(() => {
-        if (!cancelled) setError(true)
+        if (!cancelled) setError(true);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+        if (!cancelled) setLoading(false);
+      });
     return () => {
-      cancelled = true
-    }
-  }, [open, path, reloadKey])
+      cancelled = true;
+    };
+  }, [open, path, reloadKey]);
 
   return (
     <div>
       <button
         type="button"
-        className={`${styles.row} ${depth === 0 ? styles.rootRow : ''}`}
+        className={`${styles.row} ${depth === 0 ? styles.rootRow : ""}`}
         style={{ paddingLeft: 8 + depth * 14 }}
         onClick={() => setOpen((value) => !value)}
         title={path}
@@ -104,7 +123,11 @@ function DirectoryNode({
       {open ? (
         <div>
           {loading ? <div className={styles.message}>Carregando...</div> : null}
-          {error ? <div className={styles.message}>Nao foi possivel ler esta pasta.</div> : null}
+          {error ? (
+            <div className={styles.message}>
+              Nao foi possivel ler esta pasta.
+            </div>
+          ) : null}
           {!loading && !error
             ? entries.map((entry) =>
                 entry.is_dir ? (
@@ -131,10 +154,10 @@ function DirectoryNode({
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
 function rootName(path: string): string {
-  const normalized = path.replace(/[\\/]+$/, '')
-  return normalized.split(/[\\/]/).pop() || normalized
+  const normalized = path.replace(/[\\/]+$/, "");
+  return normalized.split(/[\\/]/).pop() || normalized;
 }

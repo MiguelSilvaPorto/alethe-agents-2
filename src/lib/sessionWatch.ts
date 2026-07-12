@@ -6,29 +6,33 @@
  * inexistente, watcher falhou), nada quebra.
  */
 
-import { listen } from '@tauri-apps/api/event'
+import { listen } from "@tauri-apps/api/event";
 
-type WatchAgent = 'claude' | 'codex' | 'opencode'
+type WatchAgent = "claude" | "codex" | "opencode";
 
-const waiters: Record<WatchAgent, Array<() => void>> = { claude: [], codex: [], opencode: [] }
-let started = false
+const waiters: Record<WatchAgent, Array<() => void>> = {
+  claude: [],
+  codex: [],
+  opencode: [],
+};
+let started = false;
 
 function ensureStarted(): void {
-  if (started) return
-  started = true
-  void listen<{ agent?: string }>('session://new', (event) => {
-    const agent = event.payload?.agent
-    if (agent !== 'claude' && agent !== 'codex' && agent !== 'opencode') return
-    const pending = waiters[agent as WatchAgent]
-    waiters[agent as WatchAgent] = []
-    for (const resolve of pending) resolve()
-  })
+  if (started) return;
+  started = true;
+  void listen<{ agent?: string }>("session://new", (event) => {
+    const agent = event.payload?.agent;
+    if (agent !== "claude" && agent !== "codex" && agent !== "opencode") return;
+    const pending = waiters[agent as WatchAgent];
+    waiters[agent as WatchAgent] = [];
+    for (const resolve of pending) resolve();
+  });
 }
 
 /** Resolve quando o próximo hint do agente chegar. Use em `Promise.race` com um sleep. */
 export function waitForSessionHint(agent: WatchAgent): Promise<void> {
-  ensureStarted()
+  ensureStarted();
   return new Promise((resolve) => {
-    waiters[agent].push(resolve)
-  })
+    waiters[agent].push(resolve);
+  });
 }

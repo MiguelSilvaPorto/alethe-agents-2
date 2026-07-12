@@ -115,12 +115,27 @@ Use the published installers from [Releases](https://github.com/Kc1t/alethe-agen
 
 ## Run From Source
 
+### Linux
+
+```sh
+git clone https://github.com/Kc1t/alethe-agents.git
+cd alethe-agents
+npm run setup
+npm run app
+```
+
+The `setup` script detects your distro, installs system libraries, checks/installs Rust and Node.js, and runs `npm install`.
+
+### macOS / Windows
+
 ```sh
 git clone https://github.com/Kc1t/alethe-agents.git
 cd alethe-agents
 npm install
 npm run app
 ```
+
+On macOS, also run `bash src-tauri/vendor/fetch-ghostty.sh` before building for native Ghostty terminal support.
 
 ## Requirements
 
@@ -132,14 +147,51 @@ npm run app
 
 Linux dependencies:
 
+<details>
+<summary>Debian / Ubuntu (apt)</summary>
+
 ```sh
 sudo apt update
-sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+sudo apt install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf build-essential libssl-dev file
 ```
+
+</details>
+
+<details>
+<summary>Fedora (dnf)</summary>
+
+```sh
+sudo dnf install -y webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel patchelf gcc-c++ openssl-devel file
+```
+
+</details>
+
+<details>
+<summary>Arch Linux (pacman)</summary>
+
+```sh
+sudo pacman -S --noconfirm webkit2gtk-4.1 libappindicator-gtk3 librsvg patchelf base-devel file
+```
+
+</details>
+
+<details>
+<summary>openSUSE (zypper)</summary>
+
+```sh
+sudo zypper install -y libwebkit2gtk-4_1-devel libappindicator3-devel librsvg2-devel patchelf gcc-c++ libopenssl-devel file
+```
+
+</details>
+
+Or run `npm run setup` to install them automatically.
 
 ## Commands
 
 ```sh
+# install system dependencies and Node/Rust tooling (Linux)
+npm run setup
+
 # run the desktop app in development mode
 npm run app
 

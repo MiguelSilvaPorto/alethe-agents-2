@@ -22,11 +22,74 @@ struct Pricing {
     cache_read: f64,
 }
 
+fn opencode_db_path() -> Option<PathBuf> {
+    #[cfg(target_os = "linux")]
+    {
+        dirs_next::data_local_dir().map(|d| d.join("opencode").join("opencode.db"))
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        dirs_next::data_dir().map(|d| d.join("opencode").join("opencode.db"))
+    }
+}
+
 /// Resolve o preço por prefixo do model id (ex.: "claude-opus-4-8",
 /// "claude-sonnet-4-6", "claude-haiku-4-5"). Codex usa modelos GPT, sem preço
 /// público estável aqui — retorna None (tokens ainda somam, custo fica null).
 fn pricing_for(model: &str) -> Option<Pricing> {
     let m = model.to_ascii_lowercase();
+
+    // Suporte aos modelos de precificação conhecidos do OpenCode
+    if m.contains("deepseek-v4-pro") {
+        return Some(Pricing {
+            input: 1.74,
+            output: 3.48,
+            cache_write_5m: 0.0,
+            cache_write_1h: 0.0,
+            cache_read: 0.0145,
+        });
+    } else if m.contains("qwen3.7-max") {
+        return Some(Pricing {
+            input: 2.50,
+            output: 7.50,
+            cache_write_5m: 3.125,
+            cache_write_1h: 3.125,
+            cache_read: 0.50,
+        });
+    } else if m.contains("glm-5.2") {
+        return Some(Pricing {
+            input: 1.40,
+            output: 4.40,
+            cache_write_5m: 0.0,
+            cache_write_1h: 0.0,
+            cache_read: 0.26,
+        });
+    } else if m.contains("kimi-k2.7-code") {
+        return Some(Pricing {
+            input: 0.95,
+            output: 4.00,
+            cache_write_5m: 0.0,
+            cache_write_1h: 0.0,
+            cache_read: 0.19,
+        });
+    } else if m.contains("deepseek-v4-flash-free") {
+        return Some(Pricing {
+            input: 0.0,
+            output: 0.0,
+            cache_write_5m: 0.0,
+            cache_write_1h: 0.0,
+            cache_read: 0.0,
+        });
+    } else if m.contains("minimax-m3") {
+        return Some(Pricing {
+            input: 0.55,
+            output: 2.19,
+            cache_write_5m: 0.0,
+            cache_write_1h: 0.0,
+            cache_read: 0.055,
+        });
+    }
+
     // input, output → derivados: 5m=1.25x, 1h=2x, read=0.1x
     let base = if m.contains("opus") {
         (5.0, 25.0)
@@ -203,18 +266,20 @@ fn find_codex_session_path(session_id: &str) -> Option<PathBuf> {
 
 #[tauri::command]
 pub async fn get_session_cost(
+    app: tauri::AppHandle,
     agent: String,
     cwd: String,
     session_id: String,
 ) -> Result<SessionCost, String> {
-    // Parse de JSONL é IO/CPU pesado e é pollado a cada 4s no canvas → spawn_blocking
+    // Parse de JSONL/SQLite é IO/CPU pesado e é pollado a cada 4s no canvas → spawn_blocking
     // pra não bloquear a thread principal do Tauri (UI travaria).
-    tokio::task::spawn_blocking(move || get_session_cost_inner(agent, cwd, session_id))
+    tokio::task::spawn_blocking(move || get_session_cost_inner(app, agent, cwd, session_id))
         .await
         .map_err(|e| e.to_string())?
 }
 
 fn get_session_cost_inner(
+    app: tauri::AppHandle,
     agent: String,
     cwd: String,
     session_id: String,
@@ -241,29 +306,110 @@ fn get_session_cost_inner(
             };
             parse_claude_cost(&path).into_values().collect()
         }
+        "opencode" => {
+            let db_path = opencode_db_path().ok_or_else(|| "Caminho do banco de dados do OpenCode não encontrado".to_string())?;
+            if !db_path.is_file() {
+                return Err(format!("banco de dados do OpenCode não encontrado em: {:?}", db_path));
+            }
+            
+            let conn = rusqlite::Connection::open_with_flags(
+                &db_path,
+                rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX
+            ).map_err(|e| format!("falha ao abrir banco do OpenCode: {e}"))?;
+            
+            let mut stmt = conn.prepare(
+                "SELECT model, tokens_input, tokens_output, tokens_cache_read, tokens_cache_write FROM session WHERE id = ?1"
+            ).map_err(|e| format!("falha ao preparar query: {e}"))?;
+            
+            let mut rows = stmt.query(rusqlite::params![session_id])
+                .map_err(|e| format!("falha ao executar query: {e}"))?;
+                
+            let mut result_by_model = Vec::new();
+            if let Some(row) = rows.next().map_err(|e| format!("falha ao ler linha: {e}"))? {
+                let model_raw: String = row.get(0).unwrap_or_default();
+                let tokens_input: u64 = row.get(1).unwrap_or(0);
+                let tokens_output: u64 = row.get(2).unwrap_or(0);
+                let tokens_cache_read: u64 = row.get(3).unwrap_or(0);
+                let tokens_cache_write: u64 = row.get(4).unwrap_or(0);
+                
+                let model_name = if let Ok(v) = serde_json::from_str::<serde_json::Value>(&model_raw) {
+                    v.get("id").and_then(|id| id.as_str()).unwrap_or(&model_raw).to_string()
+                } else {
+                    model_raw
+                };
+                
+                let mc = ModelCost {
+                    model: model_name,
+                    input: tokens_input,
+                    output: tokens_output,
+                    cache_read: tokens_cache_read,
+                    cache_write_5m: tokens_cache_write,
+                    ..Default::default()
+                };
+                
+                result_by_model.push(mc);
+            }
+            result_by_model
+        }
         other => return Err(format!("agente sem custo suportado: {other}")),
     };
 
-    Ok(aggregate(agent, session_id, by_model))
+    let total = aggregate(agent, session_id, by_model);
+
+    // Grava/Atualiza a telemetria consolidada na base local do Alethe
+    if let Some(ref model_name) = total.model {
+        let _ = crate::telemetry_db::upsert_ledger_entry(
+            &app,
+            &total.session_id,
+            &total.agent,
+            Some(&cwd),
+            model_name,
+            total.input,
+            total.output,
+            total.cache_read,
+            total.cache_write_5m + total.cache_write_1h,
+            total.cost_usd.unwrap_or(0.0),
+        );
+    }
+
+    Ok(total)
 }
 
 /// Custo direto de um transcript JSONL do Claude por path absoluto — usado pelos
 /// nós do agent canvas (cada subagent/teammate tem `agent_transcript_path`).
 /// Mesmo formato/parses do Claude; só não precisa resolver cwd+session_id.
 #[tauri::command]
-pub async fn get_transcript_cost(path: String) -> Result<SessionCost, String> {
-    tokio::task::spawn_blocking(move || get_transcript_cost_inner(path))
+pub async fn get_transcript_cost(app: tauri::AppHandle, path: String) -> Result<SessionCost, String> {
+    tokio::task::spawn_blocking(move || get_transcript_cost_inner(app, path))
         .await
         .map_err(|e| e.to_string())?
 }
 
-fn get_transcript_cost_inner(path: String) -> Result<SessionCost, String> {
+fn get_transcript_cost_inner(app: tauri::AppHandle, path: String) -> Result<SessionCost, String> {
     let pb = PathBuf::from(&path);
     if !pb.is_file() {
         return Err(format!("transcript não encontrado: {path}"));
     }
     let by_model: Vec<ModelCost> = parse_claude_cost(&pb).into_values().collect();
-    Ok(aggregate("claude".to_string(), path, by_model))
+    let total = aggregate("claude".to_string(), path, by_model);
+
+    // Grava no ledger também os transcripts de subagentes iniciados no canvas
+    if let Some(ref model_name) = total.model {
+        let _ = crate::telemetry_db::upsert_ledger_entry(
+            &app,
+            &total.session_id,
+            &total.agent,
+            None,
+            model_name,
+            total.input,
+            total.output,
+            total.cache_read,
+            total.cache_write_5m + total.cache_write_1h,
+            total.cost_usd.unwrap_or(0.0),
+        );
+    }
+
+    Ok(total)
 }
 
 /// Soma o breakdown por modelo num total de sessão (computa custo, escolhe o

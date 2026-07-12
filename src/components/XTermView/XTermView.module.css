@@ -130,7 +130,7 @@
 }
 
 .linkActions::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 50%;
   bottom: -5px;
@@ -190,7 +190,9 @@
 }
 
 @keyframes bootSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes linkActionsIn {

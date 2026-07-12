@@ -17,6 +17,17 @@ fn shared_system() -> &'static Mutex<System> {
     SYS.get_or_init(|| Mutex::new(System::new()))
 }
 
+fn is_thread(sys: &System, process: &sysinfo::Process) -> bool {
+    if let Some(parent_pid) = process.parent() {
+        if let Some(parent) = sys.process(parent_pid) {
+            if let Some(tasks) = parent.tasks() {
+                return tasks.contains(&process.pid());
+            }
+        }
+    }
+    false
+}
+
 pub fn collect_memory_stats() -> MemoryStats {
     use sysinfo::Pid;
     let sys_lock = shared_system();
@@ -34,6 +45,9 @@ pub fn collect_memory_stats() -> MemoryStats {
             continue;
         }
         for (other_pid, process) in sys.processes() {
+            if is_thread(&sys, process) {
+                continue;
+            }
             if let Some(parent) = process.parent() {
                 if parent.as_u32() as usize == pid {
                     frontier.push(other_pid.as_u32() as usize);
@@ -53,7 +67,11 @@ pub fn collect_memory_stats() -> MemoryStats {
         let name = process.name().to_string_lossy().to_ascii_lowercase();
         if *pid == root_pid || name.contains("alethe") || name.contains("ensemble") {
             app_bytes += mem;
-        } else if name.contains("msedgewebview2") {
+        } else if name.contains("msedgewebview2")
+            || name.contains("webkitwebprocess")
+            || name.contains("webkit")
+            || name.contains("webcontent")
+        {
             webview_bytes += mem;
         } else {
             pty_bytes += mem;
@@ -97,4 +115,71 @@ pub fn get_memory_stats() -> MemoryStats {
 /// a varredura sem refazer o `refresh_processes(All)` quando o front acabou de pollar.
 pub fn memory_stats_cached() -> MemoryStats {
     cached_memory_stats()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn is_thread(sys: &System, process: &sysinfo::Process) -> bool {
+        if let Some(parent_pid) = process.parent() {
+            if let Some(parent) = sys.process(parent_pid) {
+                if let Some(tasks) = parent.tasks() {
+                    return tasks.contains(&process.pid());
+                }
+            }
+        }
+        false
+    }
+
+    #[test]
+    fn test_print_subtree() {
+        let mut sys = System::new_all();
+        sys.refresh_all();
+
+        let root_pid = std::process::id() as usize;
+        println!("\n=== DIAGNOSTICO MEMORIA SUBTREE ===");
+        println!("Root PID: {}", root_pid);
+
+        let mut visited = std::collections::HashSet::<usize>::new();
+        let mut frontier = vec![root_pid];
+        let mut parent_map = std::collections::HashMap::<usize, usize>::new();
+
+        while let Some(pid) = frontier.pop() {
+            if !visited.insert(pid) {
+                continue;
+            }
+            for (other_pid, process) in sys.processes() {
+                if is_thread(&sys, process) {
+                    continue;
+                }
+                if let Some(parent) = process.parent() {
+                    if parent.as_u32() as usize == pid {
+                        let child_pid = other_pid.as_u32() as usize;
+                        parent_map.insert(child_pid, pid);
+                        frontier.push(child_pid);
+                    }
+                }
+            }
+        }
+
+        println!("Total visited processes count: {}", visited.len());
+        let mut total_bytes: u64 = 0;
+        for pid in &visited {
+            if let Some(process) = sys.process(sysinfo::Pid::from(*pid)) {
+                let mem = process.memory();
+                let parent_pid = parent_map.get(pid).cloned().unwrap_or(0);
+                println!(
+                    "PID: {} | Parent: {} | Name: {} | Memory: {:.2} MB",
+                    pid,
+                    parent_pid,
+                    process.name().to_string_lossy(),
+                    mem as f64 / 1024.0 / 1024.0
+                );
+                total_bytes += mem;
+            }
+        }
+        println!("Total calculated memory: {:.2} MB", total_bytes as f64 / 1024.0 / 1024.0);
+        println!("===================================\n");
+    }
 }

@@ -2,13 +2,13 @@ import {
   isPermissionGranted,
   requestPermission,
   sendNotification,
-} from '@tauri-apps/plugin-notification'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+} from "@tauri-apps/plugin-notification";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
-import { useUiStore } from '../stores/uiStore'
-import type { AgentType } from './types'
+import { useUiStore } from "../stores/uiStore";
+import type { AgentType } from "./types";
 
-let permissionPromise: Promise<boolean> | null = null
+let permissionPromise: Promise<boolean> | null = null;
 
 /**
  * App "na frente" = janela focada e não minimizada. Quando true mostramos o
@@ -17,14 +17,17 @@ let permissionPromise: Promise<boolean> | null = null
  */
 async function appInForeground(): Promise<boolean> {
   try {
-    const win = getCurrentWindow()
-    const [focused, minimized] = await Promise.all([win.isFocused(), win.isMinimized()])
-    return focused && !minimized
+    const win = getCurrentWindow();
+    const [focused, minimized] = await Promise.all([
+      win.isFocused(),
+      win.isMinimized(),
+    ]);
+    return focused && !minimized;
   } catch {
     try {
-      return document.hasFocus()
+      return document.hasFocus();
     } catch {
-      return true
+      return true;
     }
   }
 }
@@ -33,37 +36,41 @@ async function ensureNotificationPermission(): Promise<boolean> {
   if (!permissionPromise) {
     permissionPromise = (async () => {
       try {
-        if (await isPermissionGranted()) return true
-        return (await requestPermission()) === 'granted'
+        if (await isPermissionGranted()) return true;
+        return (await requestPermission()) === "granted";
       } catch {
-        return false
+        return false;
       }
-    })()
+    })();
   }
-  return permissionPromise
+  return permissionPromise;
 }
 
-async function deliver(title: string, body: string, agent?: AgentType): Promise<void> {
-  const pushToast = useUiStore.getState().pushToast
+async function deliver(
+  title: string,
+  body: string,
+  agent?: AgentType,
+): Promise<void> {
+  const pushToast = useUiStore.getState().pushToast;
 
   // App na frente → só o banner in-app (banner + histórico).
   if (await appInForeground()) {
-    pushToast({ title, body, agent })
-    return
+    pushToast({ title, body, agent });
+    return;
   }
 
   // App fora de foco/minimizado → notificação do SO. Sem permissão, cai
   // pro banner pra não perder o aviso. Em ambos os casos entra no histórico
   // uma única vez (silent quando vai pro SO).
   if (await ensureNotificationPermission()) {
-    pushToast({ title, body, agent, silent: true })
+    pushToast({ title, body, agent, silent: true });
     try {
-      sendNotification({ title, body })
+      sendNotification({ title, body });
     } catch {
       /* Notification failures should not affect the terminal session. */
     }
   } else {
-    pushToast({ title, body, agent })
+    pushToast({ title, body, agent });
   }
 }
 
@@ -72,7 +79,7 @@ export async function notifyAgentDone(
   body: string,
   meta?: { agent?: AgentType },
 ): Promise<void> {
-  return deliver(title, body, meta?.agent)
+  return deliver(title, body, meta?.agent);
 }
 
 /** Aviso de reset de janela de uso (Claude/Codex). `agent` colore o toast in-app. */
@@ -81,5 +88,5 @@ export async function notifyLimitReset(
   body: string,
   agent?: AgentType,
 ): Promise<void> {
-  return deliver(title, body, agent)
+  return deliver(title, body, agent);
 }

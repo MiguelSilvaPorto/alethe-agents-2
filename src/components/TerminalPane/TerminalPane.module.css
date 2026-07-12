@@ -89,7 +89,8 @@
 .dragging {
   opacity: 0.55;
   border-color: color-mix(in srgb, var(--focus-ring) 55%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--focus-ring) 30%, transparent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--focus-ring) 30%, transparent);
 }
 
 .dropTarget {
@@ -103,7 +104,9 @@
 .gripBtn {
   cursor: grab;
   opacity: 0.55;
-  transition: opacity 0.12s ease, background 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease;
 }
 .gripBtn:hover {
   opacity: 1;
@@ -189,15 +192,31 @@
   background: var(--status-stopped);
   flex-shrink: 0;
 }
-.status_working { background: var(--status-working); animation: pulse 1.4s infinite; }
-.status_waiting { background: var(--status-waiting); }
-.status_stopped { background: var(--status-stopped); }
-.status_disabled { background: var(--status-disabled); }
-.status_offline { background: var(--status-offline); }
+.status_working {
+  background: var(--status-working);
+  animation: pulse 1.4s infinite;
+}
+.status_waiting {
+  background: var(--status-waiting);
+}
+.status_stopped {
+  background: var(--status-stopped);
+}
+.status_disabled {
+  background: var(--status-disabled);
+}
+.status_offline {
+  background: var(--status-offline);
+}
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* Actions sempre visíveis. As secundárias só aparecem quando expandido
@@ -230,7 +249,9 @@
   border-radius: 5px;
   color: var(--fg-faint);
   cursor: pointer;
-  transition: background 0.1s ease, color 0.1s ease;
+  transition:
+    background 0.1s ease,
+    color 0.1s ease;
 }
 .action:hover:not(:disabled) {
   background: var(--accent-soft);
@@ -325,7 +346,9 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.1s ease, border-color 0.1s ease;
+  transition:
+    background 0.1s ease,
+    border-color 0.1s ease;
 }
 .reactivateBtn:hover {
   background: var(--panel-hover);
@@ -367,7 +390,9 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.1s ease, border-color 0.1s ease;
+  transition:
+    background 0.1s ease,
+    border-color 0.1s ease;
   margin-top: 4px;
 }
 .restartBtn:hover {

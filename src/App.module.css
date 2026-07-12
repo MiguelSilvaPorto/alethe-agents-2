@@ -37,7 +37,9 @@
     filter: drop-shadow(0 0 8px var(--accent-ring));
   }
   50% {
-    filter: drop-shadow(0 0 28px color-mix(in srgb, var(--accent) 45%, transparent));
+    filter: drop-shadow(
+      0 0 28px color-mix(in srgb, var(--accent) 45%, transparent)
+    );
   }
 }
 
@@ -71,7 +73,8 @@
   gap: 9px;
   max-width: 100%;
   padding: 6px 8px;
-  border: 1px solid color-mix(in srgb, var(--toast-accent, var(--accent)) 30%, var(--border));
+  border: 1px solid
+    color-mix(in srgb, var(--toast-accent, var(--accent)) 30%, var(--border));
   border-radius: 999px;
   background: var(--surface-modal);
   color: var(--fg);
@@ -88,7 +91,11 @@
   flex-shrink: 0;
   border-radius: 50%;
   color: var(--toast-accent, var(--accent));
-  background: color-mix(in srgb, var(--toast-accent, var(--accent)) 16%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--toast-accent, var(--accent)) 16%,
+    transparent
+  );
 }
 
 .toastText {

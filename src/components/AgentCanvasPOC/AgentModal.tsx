@@ -1,33 +1,35 @@
-import { X } from 'lucide-react'
-import { useEffect } from 'react'
+import { X } from "lucide-react";
+import { useEffect } from "react";
 
-import { fmtTokens, fmtUsd, shortModel } from '../../lib/costFormat'
-import { useT, intlLocale } from '../../lib/i18n'
-import { useAgentCanvasStore } from '../../stores/agentCanvasStore'
-import { useNodeCostStore } from '../../stores/nodeCostStore'
-import { useProjectsStore } from '../../stores/projectsStore'
-import styles from './AgentCanvasPOC.module.css'
+import { fmtTokens, fmtUsd, shortModel } from "../../lib/costFormat";
+import { useT, intlLocale } from "../../lib/i18n";
+import { useAgentCanvasStore } from "../../stores/agentCanvasStore";
+import { useNodeCostStore } from "../../stores/nodeCostStore";
+import { useProjectsStore } from "../../stores/projectsStore";
+import styles from "./AgentCanvasPOC.module.css";
 
 /** Modal central com o feed completo do subagent selecionado no canvas. */
 export function AgentModal() {
-  const t = useT()
-  const language = useProjectsStore((s) => s.preferences.language)
+  const t = useT();
+  const language = useProjectsStore((s) => s.preferences.language);
   const node = useAgentCanvasStore((s) =>
-    s.selectedId ? s.nodes.find((n) => n.id === s.selectedId) ?? null : null,
-  )
-  const cost = useNodeCostStore((s) => (node ? (s.byNodeId[node.id] ?? null) : null))
-  const select = useAgentCanvasStore((s) => s.select)
+    s.selectedId ? (s.nodes.find((n) => n.id === s.selectedId) ?? null) : null,
+  );
+  const cost = useNodeCostStore((s) =>
+    node ? (s.byNodeId[node.id] ?? null) : null,
+  );
+  const select = useAgentCanvasStore((s) => s.select);
 
   useEffect(() => {
-    if (!node) return
+    if (!node) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') select(null)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [node, select])
+      if (e.key === "Escape") select(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [node, select]);
 
-  if (!node) return null
+  if (!node) return null;
 
   return (
     <div className={styles.modalBackdrop} onClick={() => select(null)}>
@@ -36,40 +38,44 @@ export function AgentModal() {
           <span className={styles.cardType}>{node.agentType}</span>
           <span
             className={
-              node.status === 'running'
+              node.status === "running"
                 ? styles.statusRunning
-                : node.status === 'idle'
+                : node.status === "idle"
                   ? styles.statusIdle
                   : styles.statusDone
             }
           >
             {node.status}
           </span>
-          {node.kind === 'teammate' ? (
+          {node.kind === "teammate" ? (
             <span className={styles.teammateMeta}>
-              {node.team} · {t('ws.turns', { count: node.turns })}
+              {node.team} · {t("ws.turns", { count: node.turns })}
             </span>
           ) : null}
           <span className={styles.modalId}>{node.id}</span>
-          <button type="button" className={styles.clearButton} onClick={() => select(null)}>
+          <button
+            type="button"
+            className={styles.clearButton}
+            onClick={() => select(null)}
+          >
             <X size={14} />
           </button>
         </header>
 
         {node.prompt ? (
           <div className={styles.modalSection}>
-            <div className={styles.modalSectionTitle}>{t('ws.task')}</div>
+            <div className={styles.modalSectionTitle}>{t("ws.task")}</div>
             <div className={styles.modalPrompt}>{node.prompt}</div>
           </div>
         ) : null}
 
         <div className={`${styles.modalSection} ${styles.modalFeedSection}`}>
           <div className={styles.modalSectionTitle}>
-            {t('ws.feedToolCalls', { count: node.feed.length })}
+            {t("ws.feedToolCalls", { count: node.feed.length })}
           </div>
           <div className={styles.modalFeed}>
             {node.feed.length === 0 ? (
-              <div className={styles.empty}>{t('ws.noToolCallYet')}</div>
+              <div className={styles.empty}>{t("ws.noToolCallYet")}</div>
             ) : (
               node.feed.map((ev) => (
                 <div key={ev.toolUseId} className={styles.feedRow}>
@@ -86,7 +92,7 @@ export function AgentModal() {
 
         {node.result ? (
           <div className={styles.modalSection}>
-            <div className={styles.modalSectionTitle}>{t('ws.result')}</div>
+            <div className={styles.modalSectionTitle}>{t("ws.result")}</div>
             <div className={styles.modalResult}>{node.result}</div>
           </div>
         ) : null}
@@ -94,23 +100,29 @@ export function AgentModal() {
         {cost && cost.by_model.length > 0 ? (
           <div className={styles.modalSection}>
             <div className={styles.modalSectionTitle}>
-              {t('ws.costBreakdown', {
-                usd: cost.cost_usd != null ? fmtUsd(cost.cost_usd) : '—',
+              {t("ws.costBreakdown", {
+                usd: cost.cost_usd != null ? fmtUsd(cost.cost_usd) : "—",
                 tokens: fmtTokens(cost.total_tokens),
               })}
             </div>
             <div className={styles.modalCostList}>
               {cost.by_model.map((m) => (
                 <div key={m.model} className={styles.modalCostRow}>
-                  <span className={styles.cardCostModel}>{shortModel(m.model) ?? m.model}</span>
+                  <span className={styles.cardCostModel}>
+                    {shortModel(m.model) ?? m.model}
+                  </span>
                   <span className={styles.feedSummary}>
                     {fmtTokens(
-                      m.input + m.output + m.cache_read + m.cache_write_5m + m.cache_write_1h,
-                    )}{' '}
-                    {t('ws.tokens')}
+                      m.input +
+                        m.output +
+                        m.cache_read +
+                        m.cache_write_5m +
+                        m.cache_write_1h,
+                    )}{" "}
+                    {t("ws.tokens")}
                   </span>
                   <span className={styles.cardCostUsd}>
-                    {m.cost_usd != null ? fmtUsd(m.cost_usd) : t('hud.noCost')}
+                    {m.cost_usd != null ? fmtUsd(m.cost_usd) : t("hud.noCost")}
                   </span>
                 </div>
               ))}
@@ -123,5 +135,5 @@ export function AgentModal() {
         ) : null}
       </div>
     </div>
-  )
+  );
 }

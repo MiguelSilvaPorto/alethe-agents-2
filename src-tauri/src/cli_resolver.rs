@@ -27,6 +27,22 @@ pub fn default_shell() -> String {
     }
 }
 
+#[cfg(not(windows))]
+fn resolve_unix_login_path() -> Option<String> {
+    let shell = env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string());
+    let output = std::process::Command::new(&shell)
+        .args(&["-l", "-c", "echo $PATH"])
+        .output()
+        .ok()?;
+    if output.status.success() {
+        let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        if !path_str.is_empty() {
+            return Some(path_str);
+        }
+    }
+    None
+}
+
 pub fn command_builder_for_terminal(
     initial_command: Option<&str>,
     resolved_launcher: Option<&str>,
@@ -103,6 +119,13 @@ pub fn command_builder_for_terminal(
             }
         }
         builder.env("Path", combined);
+    }
+    #[cfg(not(windows))]
+    {
+        static UNIX_LOGIN_PATH: OnceLock<Option<String>> = OnceLock::new();
+        if let Some(resolved_path) = UNIX_LOGIN_PATH.get_or_init(|| resolve_unix_login_path()) {
+            builder.env("PATH", resolved_path);
+        }
     }
     builder.env("TERM", "xterm-256color");
     scrub_editor_environment(&mut builder);
@@ -383,6 +406,7 @@ pub(crate) fn build_rebuilt_path() -> String {
         .join(";")
 }
 
+#[cfg(windows)]
 fn split_windows_path_expanded(path: &str) -> Vec<PathBuf> {
     path.split(';')
         .filter_map(|item| {
@@ -396,6 +420,7 @@ fn split_windows_path_expanded(path: &str) -> Vec<PathBuf> {
         .collect()
 }
 
+#[cfg(windows)]
 fn expand_windows_env_vars(input: &str) -> String {
     let mut output = input.to_string();
     for (key, value) in env::vars() {

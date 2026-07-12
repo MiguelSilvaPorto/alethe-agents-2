@@ -212,7 +212,9 @@
 
 .planeDropTarget {
   border-color: var(--accent-border);
-  box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-md);
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    var(--shadow-md);
 }
 
 /* ── usage / fallback codex ── */
@@ -908,7 +910,11 @@
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--agent-color, var(--fg-faint)) 5%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--agent-color, var(--fg-faint)) 5%,
+    transparent
+  );
 }
 
 .agentGroupHeader {
@@ -1098,11 +1104,11 @@
   white-space: nowrap;
 }
 
-.card[role='button'] {
+.card[role="button"] {
   cursor: pointer;
 }
 
-.card[role='button']:hover {
+.card[role="button"]:hover {
   background: var(--surface-card-default-strong);
 }
 
@@ -1160,7 +1166,11 @@
   color: var(--agent-color, var(--fg-muted));
   padding: 1px 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--agent-color, var(--fg-muted)) 14%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--agent-color, var(--fg-muted)) 14%,
+    transparent
+  );
 }
 
 .cardCostTokens {

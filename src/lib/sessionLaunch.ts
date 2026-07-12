@@ -1,38 +1,45 @@
-import type { AgentType } from './types'
+import type { AgentType } from "./types";
 
 export type AgentLaunch = {
-  args: string[]
-  sessionId?: string
-  createdSession: boolean
-}
+  args: string[];
+  sessionId?: string;
+  createdSession: boolean;
+};
 
-function stripFlagWithValue(args: string[], flags: ReadonlySet<string>): string[] {
-  const clean: string[] = []
+function stripFlagWithValue(
+  args: string[],
+  flags: ReadonlySet<string>,
+): string[] {
+  const clean: string[] = [];
   for (let index = 0; index < args.length; index++) {
     if (flags.has(args[index])) {
-      index++
-      continue
+      index++;
+      continue;
     }
-    clean.push(args[index])
+    clean.push(args[index]);
   }
-  return clean
+  return clean;
 }
 
 function stripClaudeSessionArgs(args: string[]): string[] {
-  return stripFlagWithValue(args, new Set(['--resume', '-r', '--session-id']))
-    .filter((arg) => arg !== '--continue' && arg !== '-c')
+  return stripFlagWithValue(
+    args,
+    new Set(["--resume", "-r", "--session-id"]),
+  ).filter((arg) => arg !== "--continue" && arg !== "-c");
 }
 
 function stripCodexSessionArgs(args: string[]): string[] {
-  if (args[0] !== 'resume') return [...args]
-  const rest = args.slice(1)
-  if (rest[0] === '--last' || (rest[0] && !rest[0].startsWith('-'))) rest.shift()
-  return rest
+  if (args[0] !== "resume") return [...args];
+  const rest = args.slice(1);
+  if (rest[0] === "--last" || (rest[0] && !rest[0].startsWith("-")))
+    rest.shift();
+  return rest;
 }
 
 function stripOpenCodeSessionArgs(args: string[]): string[] {
-  return stripFlagWithValue(args, new Set(['--session', '-s']))
-    .filter((arg) => arg !== '--continue' && arg !== '-c' && arg !== '--resume')
+  return stripFlagWithValue(args, new Set(["--session", "-s"])).filter(
+    (arg) => arg !== "--continue" && arg !== "-c" && arg !== "--resume",
+  );
 }
 
 /**
@@ -46,56 +53,56 @@ export function buildAgentLaunch(
   sessionId?: string,
   createUuid: () => string = () => crypto.randomUUID(),
 ): AgentLaunch {
-  if (agent === 'shell') {
-    return { args: [...baseArgs], sessionId: undefined, createdSession: false }
+  if (agent === "shell") {
+    return { args: [...baseArgs], sessionId: undefined, createdSession: false };
   }
 
-  if (agent === 'claude') {
-    const clean = stripClaudeSessionArgs([...baseArgs])
+  if (agent === "claude") {
+    const clean = stripClaudeSessionArgs([...baseArgs]);
     if (sessionId) {
       return {
-        args: ['--resume', sessionId, ...clean],
+        args: ["--resume", sessionId, ...clean],
         sessionId,
         createdSession: false,
-      }
+      };
     }
-    const createdId = createUuid()
+    const createdId = createUuid();
     return {
-      args: ['--session-id', createdId, ...clean],
+      args: ["--session-id", createdId, ...clean],
       sessionId: createdId,
       createdSession: true,
-    }
+    };
   }
 
-  if (agent === 'codex') {
-    const clean = stripCodexSessionArgs([...baseArgs])
+  if (agent === "codex") {
+    const clean = stripCodexSessionArgs([...baseArgs]);
     return {
-      args: sessionId ? ['resume', sessionId, ...clean] : clean,
+      args: sessionId ? ["resume", sessionId, ...clean] : clean,
       sessionId,
       createdSession: false,
-    }
+    };
   }
 
-  if (agent === 'opencode') {
-    const clean = stripOpenCodeSessionArgs([...baseArgs])
+  if (agent === "opencode") {
+    const clean = stripOpenCodeSessionArgs([...baseArgs]);
     // __continue__ é um sentinel: temos savedSession mas não o ID específico.
     // Usa --continue pra retomar a última sessão do OpenCode.
-    if (sessionId === '__continue__') {
+    if (sessionId === "__continue__") {
       return {
-        args: ['--continue', ...clean],
+        args: ["--continue", ...clean],
         sessionId: undefined,
         createdSession: false,
-      }
+      };
     }
     return {
-      args: sessionId ? ['--session', sessionId, ...clean] : clean,
+      args: sessionId ? ["--session", sessionId, ...clean] : clean,
       sessionId,
       createdSession: false,
-    }
+    };
   }
 
   // freebuff/mimo (e qualquer agente sem sintaxe própria de resume): só executa o
   // binário com os args base. freebuff não documenta flag de resume; o Mimo Code
   // retoma a sessão automaticamente via memória persistente, sem flag.
-  return { args: [...baseArgs], sessionId: undefined, createdSession: false }
+  return { args: [...baseArgs], sessionId: undefined, createdSession: false };
 }
