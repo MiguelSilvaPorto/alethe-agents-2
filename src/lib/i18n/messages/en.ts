@@ -17,6 +17,7 @@ export const en = {
   "common.remove": "Remove",
   "common.followUi": "Follow UI",
   "common.errorPrefix": "Error: {message}",
+  "common.undo": "Undo",
 
   /* ---- language ---- */
   "language.title": "Language",
@@ -510,6 +511,8 @@ export const en = {
   "ui.titlebar.menu": "Menu",
   "ui.titlebar.closeSidebar": "Close sidebar",
   "ui.titlebar.openSidebar": "Open sidebar",
+  "ui.titlebar.closeTaskPanel": "Close task panel",
+  "ui.titlebar.openTaskPanel": "Open task panel",
   "ui.titlebar.recentTabs": "Recent tabs",
   "ui.titlebar.back": "Back",
   "ui.titlebar.forward": "Forward",
@@ -976,10 +979,65 @@ export const en = {
   "workflow.steps": "Steps completed: {count}",
   "workflow.nothingToCommit": "No changes to commit",
   "workflow.history": "Commit history",
+  "workflow.git.checking": "Checking environment...",
+  "workflow.git.ok": "✅ Git repository detected",
+  "workflow.git.noRepo": "⚠️ Not a git repository — Local mode recommended",
+  "workflow.git.noGit": "❌ Git not found — use Local mode",
 
   /* ---- home view workflows section ---- */
   "home.activeWorkflows": "Active workflows",
   "home.viewAllWorkflows": "View all \u2192",
+
+  /* ---- task ---- */
+  "task.title": "Tasks",
+  "task.new": "New task",
+  "task.newTitle": "Task title",
+  "task.accept": "Accept",
+  "task.reject": "Reject",
+  "task.approve": "Approve",
+  "task.accepted": "Accepted",
+  "task.rejectTitle": "Reject Task",
+  "task.rejectPrompt": "What still needs to be adjusted?",
+  "task.rejectPlaceholder":
+    "Describe what needs to change for this task to be accepted...",
+  "task.rejectHistory": "Previous rejections:",
+  "task.rejectAndSend": "Send back for correction",
+  "task.rejecting": "Sending...",
+  "task.rejectedN": "Rejected {n}x",
+  "task.branch": "Branch",
+  "task.branchTitle": "Branch Task",
+  "task.branchCreate": "Create Branch",
+  "task.branchRepair": "Checkout & Repair",
+  "task.branchForce": "Force Checkout",
+  "task.branchFiles": "Changed files:",
+  "task.branchMode": "Branch mode",
+  "task.mode.safe": "Only create branch (safe)",
+  "task.mode.safeDesc":
+    "Creates a git pointer at the task's commit. Does not change your current files.",
+  "task.mode.repair": "Checkout + auto repair (recommended)",
+  "task.mode.repairDesc":
+    "Restores the task state and runs the repair agent to fix any breakage automatically.",
+  "task.mode.force": "Force checkout (dangerous)",
+  "task.mode.forceDesc":
+    "Restores raw task state. May break the app if files have changed since.",
+  "task.revert": "Revert",
+  "task.noFiles": "No changed files recorded.",
+  "task.status.implementing": "Implementing",
+  "task.status.review": "In Review",
+  "task.status.pending": "Pending",
+  "task.status.accepted": "Accepted",
+  "task.status.blocked": "Blocked",
+  "task.tab.implementing": "Implementing",
+  "task.tab.review": "Review",
+  "task.tab.pending": "Pending",
+  "task.tab.blocked": "Permissions",
+  "task.tab.history": "History",
+  "task.history.empty": "No completed tasks yet.",
+  "task.empty": 'No tasks in "{status}".',
+  "task.selectProject": "Select a project to see tasks.",
+  "task.selectProjectHint":
+    "Create or select a project from the sidebar to start managing tasks.",
+  "task.allProjects": "All projects",
 } as const;
 
 export type MessageKey = keyof typeof en;

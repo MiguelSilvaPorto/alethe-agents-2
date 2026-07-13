@@ -20,6 +20,7 @@ mod ghostty_bridge;
 #[cfg(all(target_os = "macos", ghostty_linked))]
 mod ghostty_ffi;
 mod git_control;
+mod worktree;
 mod github_sync;
 mod logging;
 mod opencode_sessions;
@@ -136,6 +137,12 @@ pub fn run() {
             git_control::git_list_branches,
             git_control::git_log,
             git_control::git_merge_branch,
+            git_control::git_diff,
+            git_control::git_rev_parse,
+            git_control::git_checkout_files,
+            worktree::worktree_create,
+            worktree::worktree_list,
+            worktree::worktree_delete,
             diagnostics::open_data_folder,
             diagnostics::open_spawn_log,
             diagnostics::open_in_file_explorer,

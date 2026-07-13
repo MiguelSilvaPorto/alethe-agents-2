@@ -1,0 +1,9 @@
+npm run lint -- --loglevel silent 2>/dev/null || {
+  echo "❌ Lint failed. Run 'npm run format' to fix."
+  exit 1
+}
+
+npx tsc --noEmit 2>/dev/null || {
+  echo "❌ TypeScript errors found. Fix them before committing."
+  exit 1
+}

@@ -119,6 +119,20 @@
   cursor: default;
 }
 
+.modeRecommended {
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.gitStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
 .spin {
   animation: spin 1s linear infinite;
 }

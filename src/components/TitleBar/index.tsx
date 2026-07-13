@@ -9,6 +9,8 @@ import {
   Minus,
   PanelLeftClose,
   PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Pencil,
   Pin,
   RefreshCw,
@@ -65,6 +67,8 @@ export function TitleBar() {
   const toggleMainMenu = useUiStore((s) => s.toggleMainMenu);
   const sidebarVisible = useUiStore((s) => s.sidebarVisible);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const taskPanelVisible = useUiStore((s) => s.taskPanelVisible);
+  const toggleTaskPanel = useUiStore((s) => s.toggleTaskPanel);
   const activeView = useUiStore((s) => s.activeView);
   const agentCanvasSession = useUiStore((s) => s.agentCanvasSession);
   const setAgentCanvasSession = useUiStore((s) => s.setAgentCanvasSession);
@@ -269,6 +273,28 @@ export function TitleBar() {
           <PanelLeftClose size={14} />
         ) : (
           <PanelLeftOpen size={14} />
+        )}
+      </button>
+      <button
+        type="button"
+        className={`${styles.iconBtn} ${taskPanelVisible ? styles.iconBtnActive : ""}`}
+        onClick={toggleTaskPanel}
+        title={
+          taskPanelVisible
+            ? t("ui.titlebar.closeTaskPanel")
+            : t("ui.titlebar.openTaskPanel")
+        }
+        aria-label={
+          taskPanelVisible
+            ? t("ui.titlebar.closeTaskPanel")
+            : t("ui.titlebar.openTaskPanel")
+        }
+        aria-pressed={taskPanelVisible}
+      >
+        {taskPanelVisible ? (
+          <PanelRightClose size={14} />
+        ) : (
+          <PanelRightOpen size={14} />
         )}
       </button>
       <span className={styles.title} data-tauri-drag-region>

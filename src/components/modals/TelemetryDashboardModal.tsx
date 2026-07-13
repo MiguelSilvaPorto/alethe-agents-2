@@ -35,6 +35,8 @@ export function TelemetryDashboardModal() {
   useEffect(() => {
     if (open) {
       void fetchData();
+      const interval = window.setInterval(() => void fetchData(), 30000);
+      return () => window.clearInterval(interval);
     }
   }, [open]);
 

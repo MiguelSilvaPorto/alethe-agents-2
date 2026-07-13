@@ -7,6 +7,20 @@ const MIN_RESPONSE_MS = 700;
 const ECHO_GRACE_MS = 350;
 const MIN_OUTPUT_CHARS_AFTER_ECHO = 12;
 
+const PERMISSION_PATTERNS = [
+  /Allow this command to be run\?/,
+  /Allow this tool to be used\?/,
+  /Allow this shell command/,
+  /\[Y\/n\]/,
+  /\(Y\/n\)/,
+  /\(y\/N\)/,
+  /\[y\/N\]/,
+  /dangerously-skip-permissions/,
+  /permission denied/i,
+  /requires.*approval/i,
+  /needs.*permission/i,
+];
+
 type MonitorState = "idle" | "armed" | "working";
 
 export type AgentCompletionMonitorOptions = {
@@ -16,6 +30,11 @@ export type AgentCompletionMonitorOptions = {
   cwd?: string | null;
   onStatusChange?: (status: "working" | "waiting") => void;
   onComplete?: () => void;
+  onBlocked?: (info: {
+    ptyId: string;
+    command: string;
+    promptText: string;
+  }) => void;
   /** O rastreador global reutiliza a heurística sem duplicar notificações da UI. */
   notifyOnComplete?: boolean;
 };
@@ -49,8 +68,28 @@ export class AgentCompletionMonitor {
   handleOutput(chunk: string): void {
     if (this.disposed || this.state === "idle") return;
 
-    const text = stripTerminalControls(chunk).trim();
+    const clean = stripTerminalControls(chunk);
+    const text = clean.trim();
     if (!text) return;
+
+    // Detecção de prompt de permissão
+    for (const pattern of PERMISSION_PATTERNS) {
+      if (pattern.test(text)) {
+        // Extrair comando: linhas após o prompt principal
+        const lines = text.split(/\n/);
+        const cmdLine = lines.find(
+          (l) => l.includes("→") || l.includes("`") || l.includes("$ "),
+        );
+        const command =
+          cmdLine?.replace(/[→`$]/g, "").trim() ?? text.slice(0, 120);
+        this.options.onBlocked?.({
+          ptyId: this.options.ptyId,
+          command,
+          promptText: text.slice(0, 300),
+        });
+        return;
+      }
+    }
 
     if (this.isLikelyImmediateEcho(text)) return;
 

@@ -6,7 +6,13 @@ import { Terminal } from "@xterm/xterm";
 import type { ILink } from "@xterm/xterm";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { Copy, ExternalLink, FolderOpen, LayoutGrid, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import "@xterm/xterm/css/xterm.css";
 
 import { pickFile } from "../../lib/dialog";
@@ -493,7 +499,7 @@ export function XTermView({
     currentLineRef.current = entry;
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 

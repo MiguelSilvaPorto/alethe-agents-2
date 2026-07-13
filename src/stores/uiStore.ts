@@ -32,6 +32,8 @@ type ModalKind =
   | "workflow"
   | "workflowDetail"
   | "context"
+  | "taskReject"
+  | "taskBranch"
   | null;
 
 export type ActiveView = "home" | "workspace" | "agentCanvas";
@@ -47,6 +49,11 @@ export type InAppToast = {
   createdAt: number;
   /** Agente que originou a notificação — define ícone/cor do toast. */
   agent?: AgentType;
+  /** Ação opcional no toast (ex: "Desfazer"). */
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 };
 
 const MAX_MEMORY_HISTORY = 720;
@@ -58,6 +65,7 @@ type UiState = {
   modalContext: Record<string, unknown> | null;
   showMainMenu: boolean;
   sidebarVisible: boolean;
+  taskPanelVisible: boolean;
   ramMb: number | null;
   memoryStats: MemoryStats | null;
   memoryHistory: MemorySample[];
@@ -88,6 +96,7 @@ type UiState = {
   closeModal: () => void;
   toggleMainMenu: () => void;
   toggleSidebar: () => void;
+  toggleTaskPanel: () => void;
   setRamMb: (value: number | null) => void;
   addMemorySample: (value: MemoryStats) => void;
   clearMemoryHistory: () => void;
@@ -108,6 +117,11 @@ type UiState = {
     agent?: AgentType;
     /** Só registra no histórico (Home), sem mostrar o banner efêmero. */
     silent?: boolean;
+    /** Ação opcional no toast (ex: "Desfazer"). */
+    action?: {
+      label: string;
+      onClick: () => void;
+    };
   }) => void;
   dismissToast: (id: string) => void;
   clearNotifications: () => void;
@@ -119,6 +133,7 @@ export const useUiStore = create<UiState>((set) => ({
   modalContext: null,
   showMainMenu: false,
   sidebarVisible: true,
+  taskPanelVisible: true,
   ramMb: null,
   memoryStats: null,
   memoryHistory: [],
@@ -139,6 +154,8 @@ export const useUiStore = create<UiState>((set) => ({
   closeModal: () => set({ openModal: null, modalContext: null }),
   toggleMainMenu: () => set((s) => ({ showMainMenu: !s.showMainMenu })),
   toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
+  toggleTaskPanel: () =>
+    set((s) => ({ taskPanelVisible: !s.taskPanelVisible })),
   setRamMb: (value) => set({ ramMb: value }),
   addMemorySample: (value) =>
     set((s) => ({
@@ -164,7 +181,7 @@ export const useUiStore = create<UiState>((set) => ({
     })),
   setAgentCanvasSession: (session) => set({ agentCanvasSession: session }),
   setAgentCanvasBudget: (usd) => set({ agentCanvasBudgetUsd: usd }),
-  pushToast: ({ title, body, agent, silent }) =>
+  pushToast: ({ title, body, agent, silent, action }) =>
     set((s) => {
       const entry: InAppToast = {
         id: `${Date.now()}:${Math.random().toString(36).slice(2)}`,
@@ -172,6 +189,7 @@ export const useUiStore = create<UiState>((set) => ({
         body,
         createdAt: Date.now(),
         agent,
+        action,
       };
       return {
         toasts: silent ? s.toasts : [entry, ...s.toasts].slice(0, MAX_TOASTS),

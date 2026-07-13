@@ -315,6 +315,13 @@ pub fn start_proxy(app: AppHandle) {
 
                         // Se encontrou dados de telemetria válidos, salvar no DB
                         if prompt_tokens > 0 || completion_tokens > 0 {
+                            let cost = crate::agent_cost::compute_cost_usd(
+                                &model_name,
+                                prompt_tokens,
+                                completion_tokens,
+                                cache_read_tokens,
+                                cache_write_tokens,
+                            );
                             let _ = crate::telemetry_db::upsert_ledger_entry(
                                 &app,
                                 &session_id,
@@ -325,7 +332,7 @@ pub fn start_proxy(app: AppHandle) {
                                 completion_tokens,
                                 cache_read_tokens,
                                 cache_write_tokens,
-                                0.0,
+                                cost,
                             );
                         }
                     });
@@ -390,6 +397,13 @@ pub fn start_proxy(app: AppHandle) {
                         }
 
                         if prompt_tokens > 0 || completion_tokens > 0 {
+                            let cost = crate::agent_cost::compute_cost_usd(
+                                &model_name,
+                                prompt_tokens,
+                                completion_tokens,
+                                cache_read_tokens,
+                                cache_write_tokens,
+                            );
                             let _ = crate::telemetry_db::upsert_ledger_entry(
                                 &app,
                                 &session_id,
@@ -400,7 +414,7 @@ pub fn start_proxy(app: AppHandle) {
                                 completion_tokens,
                                 cache_read_tokens,
                                 cache_write_tokens,
-                                0.0,
+                                cost,
                             );
                         }
                     }

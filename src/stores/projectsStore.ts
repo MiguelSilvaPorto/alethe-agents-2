@@ -14,6 +14,9 @@ import {
   type Project,
   type ProjectsFile,
   type SubTab,
+  type Task,
+  type TaskGitSnapshot,
+  type TaskStatus,
   type Terminal,
   type Theme,
   type WorkspaceContainer,
@@ -225,6 +228,30 @@ type ProjectsState = ProjectsFile & {
   setOnboardingDone: (done: boolean) => void;
   setPreferences: (patch: Partial<Preferences>) => void;
   setCliPath: (agent: AgentType, path: string | null) => void;
+
+  // tasks
+  createTask: (
+    projectId: string,
+    args: {
+      title: string;
+      description?: string;
+      assignedTo?: string | null;
+      agentType?: AgentType | null;
+    },
+  ) => Task;
+  moveTask: (taskId: string, status: TaskStatus) => void;
+  acceptTask: (taskId: string) => void;
+  undoAcceptTask: (taskId: string) => void;
+  rejectTask: (taskId: string, feedback: string) => void;
+  blockTask: (
+    taskId: string,
+    blockedCommand: string,
+    blockedPrompt?: string,
+  ) => void;
+  unblockTask: (taskId: string, approved: boolean) => void;
+  completeTaskReview: (taskId: string) => void;
+  updateTaskGit: (taskId: string, git: TaskGitSnapshot) => void;
+  deleteTask: (taskId: string) => void;
 };
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -240,7 +267,7 @@ function scheduleSave(getState: () => ProjectsState) {
     pendingSave = false;
     const state = getState();
     const payload: ProjectsFile = {
-      version: 4,
+      version: 5,
       groups: state.groups,
       ungroupedOrder: state.ungroupedOrder,
       projects: state.projects,
@@ -618,8 +645,9 @@ function migrateWorkspaceNavigation(base: {
 
 /** Migra arquivos antigos e normaliza snapshots restauráveis. */
 function migrate(parsed: any): ProjectsFile {
-  if (parsed.version === 2 || parsed.version === 3 || parsed.version === 4) {
-    // backfill parentGroupId (v2.1) — grupos antigos viram raiz.
+  // v4 → v5: adicionar tasks: [] em projetos
+  if (parsed.version === 5) return parsed as ProjectsFile;
+  if (parsed.version === 4) {
     const groups = (parsed.groups ?? []).map((g: any) => ({
       ...g,
       parentGroupId: g.parentGroupId ?? null,
@@ -628,10 +656,14 @@ function migrate(parsed: any): ProjectsFile {
     const base = {
       ...EMPTY_PROJECTS_FILE,
       ...parsed,
-      version: 4 as const,
+      version: 5 as const,
       preferences,
       groups,
       ungroupedOrder: parsed.ungroupedOrder ?? [],
+      projects: (parsed.projects ?? []).map((p: any) => ({
+        ...p,
+        tasks: p.tasks ?? [],
+      })),
     };
     return {
       ...base,
@@ -645,7 +677,37 @@ function migrate(parsed: any): ProjectsFile {
     };
   }
 
-  // v1 → v2
+  if (parsed.version === 2 || parsed.version === 3) {
+    const groups = (parsed.groups ?? []).map((g: any) => ({
+      ...g,
+      parentGroupId: g.parentGroupId ?? null,
+    }));
+    const preferences = normalizePreferences(parsed.preferences);
+    const base = {
+      ...EMPTY_PROJECTS_FILE,
+      ...parsed,
+      version: 5 as const,
+      preferences,
+      groups,
+      ungroupedOrder: parsed.ungroupedOrder ?? [],
+      projects: (parsed.projects ?? []).map((p: any) => ({
+        ...p,
+        tasks: p.tasks ?? [],
+      })),
+    };
+    return {
+      ...base,
+      workspace: migrateWorkspaceNavigation({
+        workspace: parsed.workspace,
+        projects: base.projects,
+        groups,
+        activeProjectId: base.activeProjectId,
+        preferences,
+      }),
+    };
+  }
+
+  // v1 → v5
   const oldProjects: any[] = parsed.projects ?? [];
   const projects: Project[] = oldProjects.map((p) => ({
     id: p.id,
@@ -653,6 +715,7 @@ function migrate(parsed: any): ProjectsFile {
     color: p.color,
     groupId: null, // tudo vira Solto na migração
     terminals: p.terminals ?? [],
+    tasks: [],
     layoutMode: p.layoutMode ?? "auto",
     collapsed: p.collapsed ?? false,
     createdAt: p.createdAt ?? Date.now(),
@@ -672,7 +735,7 @@ function migrate(parsed: any): ProjectsFile {
     }));
 
   return {
-    version: 4,
+    version: 5,
     groups: [],
     ungroupedOrder: projects.map((p) => p.id),
     projects,
@@ -832,6 +895,29 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
       ...p,
       terminals: p.terminals.map((t) => (t.id === terminalId ? fn(t) : t)),
     }));
+
+  const findTaskProject = (
+    taskId: string,
+    state: ProjectsState,
+  ): string | null => {
+    for (const p of state.projects) {
+      if (p.tasks.some((t) => t.id === taskId)) return p.id;
+    }
+    return null;
+  };
+
+  const updateStateByTask = (taskId: string, fn: (t: Task) => Task) =>
+    update((state) => {
+      const projectId = findTaskProject(taskId, state);
+      if (!projectId) return {};
+      return {
+        projects: state.projects.map((p) =>
+          p.id === projectId
+            ? { ...p, tasks: p.tasks.map((t) => (t.id === taskId ? fn(t) : t)) }
+            : p,
+        ),
+      };
+    });
 
   const updateSubTab = (
     projectId: string,
@@ -1416,6 +1502,7 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
         iconUrl,
         groupId,
         terminals: [],
+        tasks: [],
         layoutMode: "auto",
         collapsed: false,
         createdAt: Date.now(),
@@ -2888,6 +2975,105 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
         else cliPaths[agent] = path;
         return { cliPaths };
       }),
+
+    // tasks
+    createTask: (projectId, { title, description, assignedTo, agentType }) => {
+      const now = Date.now();
+      const task: Task = {
+        id: nanoid(),
+        projectId,
+        title,
+        description: description ?? "",
+        status: "implementing",
+        assignedTo: assignedTo ?? null,
+        agentType: agentType ?? null,
+        createdAt: now,
+        updatedAt: now,
+        rejectionCycle: 0,
+        rejections: [],
+      };
+      updateProject(projectId, (p) => ({
+        ...p,
+        tasks: [...p.tasks, task],
+      }));
+      return task;
+    },
+
+    moveTask: (taskId, status) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        status,
+        updatedAt: Date.now(),
+      })),
+
+    acceptTask: (taskId) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        status: "accepted" as TaskStatus,
+        acceptedAt: Date.now(),
+        updatedAt: Date.now(),
+      })),
+
+    undoAcceptTask: (taskId) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        status: "pending" as TaskStatus,
+        acceptedAt: undefined,
+        updatedAt: Date.now(),
+      })),
+
+    rejectTask: (taskId, feedback) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        status: "implementing" as TaskStatus,
+        rejectionCycle: t.rejectionCycle + 1,
+        rejections: [...t.rejections, { feedback, rejectedAt: Date.now() }],
+        updatedAt: Date.now(),
+      })),
+
+    blockTask: (taskId, blockedCommand, blockedPrompt) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        status: "blocked" as TaskStatus,
+        blockedCommand,
+        blockedPrompt,
+        updatedAt: Date.now(),
+      })),
+
+    unblockTask: (taskId, _approved) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        status: "implementing" as TaskStatus,
+        blockedCommand: undefined,
+        blockedPrompt: undefined,
+        updatedAt: Date.now(),
+      })),
+
+    completeTaskReview: (taskId) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        status: "pending" as TaskStatus,
+        updatedAt: Date.now(),
+      })),
+
+    updateTaskGit: (taskId, git) =>
+      updateStateByTask(taskId, (t) => ({
+        ...t,
+        git,
+        updatedAt: Date.now(),
+      })),
+
+    deleteTask: (taskId) => {
+      update((state) => {
+        const projects = state.projects.map((p) => {
+          if (p.tasks.some((t) => t.id === taskId)) {
+            return { ...p, tasks: p.tasks.filter((t) => t.id !== taskId) };
+          }
+          return p;
+        });
+        return { projects };
+      });
+    },
   };
 });
 
@@ -2932,6 +3118,21 @@ export type RecentTerminalEntry = {
  * Retorna os N terminais mais recentemente usados (cross-projeto), ordenados
  * por lastUsedAt descendente. Terminais sem lastUsedAt caem pro final.
  */
+export function selectProjectTasks(state: ProjectsState): Task[] {
+  if (!state.activeProjectId) return [];
+  const project = state.projects.find((p) => p.id === state.activeProjectId);
+  return project?.tasks ?? [];
+}
+
+export function selectTasksByStatus(
+  state: ProjectsState,
+  status: TaskStatus,
+): Task[] {
+  if (!state.activeProjectId) return [];
+  const project = state.projects.find((p) => p.id === state.activeProjectId);
+  return project?.tasks.filter((t) => t.status === status) ?? [];
+}
+
 export function selectRecentTerminals(n: number) {
   return (state: ProjectsState): RecentTerminalEntry[] => {
     const entries: RecentTerminalEntry[] = [];

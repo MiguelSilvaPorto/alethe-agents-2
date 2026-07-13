@@ -450,7 +450,42 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
       return;
     }
 
-    // PostToolUse: por ora só observabilidade no log do Rust — nada no store.
+    // PostToolUse: registra resultado da ferramenta no feed do nó.
+    if (event === "PostToolUse") {
+      const r = raw as any;
+      const agentId = r.agent_id;
+      if (!agentId) return;
+
+      const toolName = r.tool_name ?? "unknown";
+      const result = r.tool_result ?? {};
+      const error = result.is_error ? result.error : null;
+      const summary = summarizeTool(r.tool_name ?? "", r.tool_input ?? {});
+      const status = error ? "error" : "success";
+
+      set((s) => {
+        const idx = s.nodes.findIndex((n) => (n as any).agent_id === agentId || n.id === agentId);
+        if (idx === -1) {
+          console.warn(`[agentCanvasStore] PostToolUse órfão: agent=${agentId}`);
+          return s;
+        }
+        const nodes = [...s.nodes];
+        const node = nodes[idx] as any;
+        const feed = [...(node.feed ?? [])];
+        feed.push({
+          ts: Date.now(),
+          kind: "tool_result",
+          toolName,
+          summary: `${summary} → ${status}${error ? `: ${error}` : ""}`,
+          error,
+        });
+        if (feed.length > 300) feed.splice(0, feed.length - 300);
+        node.feed = feed;
+        node.lastEventAt = Date.now();
+        nodes[idx] = node;
+        return { nodes };
+      });
+      return;
+    }
   },
 
   select: (id) => {

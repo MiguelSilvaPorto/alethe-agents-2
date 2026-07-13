@@ -443,6 +443,139 @@ pub fn git_merge_branch(repo_root: String, branch: String, delete: bool) -> Resu
     Ok(msg)
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitDiffFile {
+    pub path: String,
+    pub added_lines: u32,
+    pub removed_lines: u32,
+    pub diff: String,
+    pub status: String,
+    pub conflict_with_head: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitDiffResult {
+    pub files: Vec<GitDiffFile>,
+    pub total_added: u32,
+    pub total_removed: u32,
+}
+
+/// Retorna diff estruturado entre dois refs (commits, branches, tags).
+/// Útil para pré-visualizar mudanças de uma task no histórico.
+#[tauri::command]
+pub fn git_diff(
+    repo_root: String,
+    ref_a: String,
+    ref_b: String,
+) -> Result<GitDiffResult, String> {
+    let root = validated_root(&repo_root)?;
+
+    // Nomes dos arquivos + status (M/A/D)
+    let name_status = checked_output(&root, &[
+        "diff", &ref_a, &ref_b, "--name-status",
+    ]).map_err(|e| format!("git_diff_name_status:{e}"))?;
+    let name_lines = String::from_utf8_lossy(&name_status.stdout);
+
+    // Diff stat (compacto, legível)
+    let stat_out = checked_output(&root, &[
+        "diff", &ref_a, &ref_b, "--stat",
+    ]).map_err(|e| format!("git_diff_stat:{e}"))?;
+    let _stat_text = String::from_utf8_lossy(&stat_out.stdout).trim().to_string();
+
+    // HEAD atual para detectar conflitos
+    let head = checked_output(&root, &["rev-parse", "HEAD"])
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap_or_default();
+    let ref_b_is_head = head == ref_b || ref_b == "HEAD";
+
+    let mut files = Vec::new();
+    let mut total_added = 0u32;
+    let mut total_removed = 0u32;
+
+    for line in name_lines.lines() {
+        let line = line.trim();
+        if line.is_empty() { continue; }
+        let parts: Vec<&str> = line.splitn(2, '\t').collect();
+        if parts.len() < 2 { continue; }
+        let status = parts[0].to_string();
+        let path = parts[1].to_string();
+
+        // diff unificado para este arquivo
+        let file_diff = checked_output(&root, &[
+            "diff", &ref_a, &ref_b, "--", &path,
+        ]).map(|o| String::from_utf8_lossy(&o.stdout).to_string()).unwrap_or_default();
+
+        // contar +/- linhas
+        let mut added = 0u32;
+        let mut removed = 0u32;
+        for dline in file_diff.lines() {
+            if dline.starts_with("+") && !dline.starts_with("+++") {
+                added += 1;
+            } else if dline.starts_with("-") && !dline.starts_with("---") {
+                removed += 1;
+            }
+        }
+        total_added += added;
+        total_removed += removed;
+
+        // Verificar se arquivo mudou novamente após ref_b (conflito com HEAD)
+        let conflict_with_head = if !ref_b_is_head && !head.is_empty() {
+            checked_output(&root, &["diff", &ref_b, "HEAD", "--quiet", "--", &path])
+                .map(|_| false) // exit 0 = sem diferenças
+                .unwrap_or(true)  // exit != 0 ou erro = tem diferença
+        } else {
+            false
+        };
+
+        files.push(GitDiffFile {
+            path,
+            added_lines: added,
+            removed_lines: removed,
+            diff: file_diff,
+            status,
+            conflict_with_head,
+        });
+    }
+
+    Ok(GitDiffResult {
+        files,
+        total_added,
+        total_removed,
+    })
+}
+
+/// Retorna o hash curto do HEAD do repositório.
+#[tauri::command]
+pub fn git_rev_parse(repo_root: String) -> Result<String, String> {
+    let root = validated_root(&repo_root)?;
+    let output = checked_output(&root, &["rev-parse", "--short", "HEAD"])
+        .map_err(|e| format!("git_rev_parse:{e}"))?;
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+/// Desfaz alterações em arquivos específicos, restaurando o estado de um ref.
+/// Equivalente a: `git checkout {ref} -- {files...}`.
+/// Se ref for vazio, usa HEAD.
+#[tauri::command]
+pub fn git_checkout_files(
+    repo_root: String,
+    files: Vec<String>,
+    reference: Option<String>,
+) -> Result<String, String> {
+    let root = validated_root(&repo_root)?;
+    validate_paths(&files)?;
+
+    let ref_val = reference.as_deref().unwrap_or("HEAD");
+    let mut args = vec!["checkout", ref_val, "--"];
+    for f in &files {
+        args.push(f.as_str());
+    }
+    checked_output(&root, &args)?;
+    Ok(format!("{} file(s) restored from {}", files.len(), ref_val))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

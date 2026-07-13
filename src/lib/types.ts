@@ -86,6 +86,42 @@ export type Terminal = {
   filePath?: string;
 };
 
+export type TaskStatus =
+  "implementing" | "review" | "pending" | "accepted" | "blocked";
+
+export type TaskRejection = {
+  feedback: string;
+  rejectedAt: number;
+};
+
+export type TaskGitSnapshot = {
+  beforeCommit: string;
+  afterCommit: string;
+  beforeCommitShort: string;
+  afterCommitShort: string;
+  changedFiles: string[];
+  diffStat: string;
+  branchName?: string;
+};
+
+export type Task = {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  assignedTo: string | null;
+  agentType: AgentType | null;
+  createdAt: number;
+  updatedAt: number;
+  rejectionCycle: number;
+  rejections: TaskRejection[];
+  acceptedAt?: number;
+  blockedCommand?: string;
+  blockedPrompt?: string;
+  git?: TaskGitSnapshot;
+};
+
 export type Project = {
   id: string;
   name: string;
@@ -95,6 +131,7 @@ export type Project = {
   /** ID do grupo. null = solto (sem grupo). v2. */
   groupId: string | null;
   terminals: Terminal[];
+  tasks: Task[];
   layoutMode: LayoutMode;
   /** Definição do grid quando layoutMode === 'grid'. Persistida pra restaurar. */
   gridLayout?: GridLayout;
@@ -227,7 +264,7 @@ export type Preferences = {
 };
 
 export type ProjectsFile = {
-  version: 4;
+  version: 5;
   groups: Group[];
   /** Ordem manual dos projetos sem grupo (Solto). */
   ungroupedOrder: string[];
@@ -287,7 +324,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 };
 
 export const EMPTY_PROJECTS_FILE: ProjectsFile = {
-  version: 4,
+  version: 5,
   groups: [],
   ungroupedOrder: [],
   projects: [],

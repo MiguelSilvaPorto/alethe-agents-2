@@ -14,7 +14,7 @@ use std::path::PathBuf;
 /// Preço por 1M de tokens (USD). Cache write 5m = 1.25× input, 1h = 2× input,
 /// cache read = 0.1× input — multiplicadores padrão do prompt caching da
 /// Anthropic. Validado via skill claude-api (tabela de modelos atual).
-struct Pricing {
+pub struct Pricing {
     input: f64,
     output: f64,
     cache_write_5m: f64,
@@ -36,7 +36,7 @@ fn opencode_db_path() -> Option<PathBuf> {
 /// Resolve o preço por prefixo do model id (ex.: "claude-opus-4-8",
 /// "claude-sonnet-4-6", "claude-haiku-4-5"). Codex usa modelos GPT, sem preço
 /// público estável aqui — retorna None (tokens ainda somam, custo fica null).
-fn pricing_for(model: &str) -> Option<Pricing> {
+pub fn pricing_for(model: &str) -> Option<Pricing> {
     let m = model.to_ascii_lowercase();
 
     // Suporte aos modelos de precificação conhecidos do OpenCode
@@ -90,24 +90,58 @@ fn pricing_for(model: &str) -> Option<Pricing> {
         });
     }
 
-    // input, output → derivados: 5m=1.25x, 1h=2x, read=0.1x
-    let base = if m.contains("opus") {
-        (5.0, 25.0)
-    } else if m.contains("sonnet") {
-        (3.0, 15.0)
-    } else if m.contains("haiku") {
-        (1.0, 5.0)
+    // OpenAI / GPT models (Codex CLI)
+    if m.contains("gpt-4o") || m.contains("gpt-4-0") {
+        Some(Pricing { input: 2.50, output: 10.00, cache_write_5m: 0.0, cache_write_1h: 0.0, cache_read: 1.25 })
+    } else if m.contains("gpt-4o-mini") || m.contains("gpt-4-mini") {
+        Some(Pricing { input: 0.15, output: 0.60, cache_write_5m: 0.0, cache_write_1h: 0.0, cache_read: 0.075 })
+    } else if m.contains("gpt-5") || m.contains("gpt-5-") {
+        Some(Pricing { input: 1.25, output: 10.00, cache_write_5m: 0.0, cache_write_1h: 0.0, cache_read: 0.625 })
+    } else if m.contains("o3") || m.contains("o4") {
+        Some(Pricing { input: 10.00, output: 40.00, cache_write_5m: 0.0, cache_write_1h: 0.0, cache_read: 0.0 })
+    } else if m.contains("codex") || m.contains("gpt") {
+        // Fallback genérico para GPT
+        Some(Pricing { input: 2.50, output: 10.00, cache_write_5m: 0.0, cache_write_1h: 0.0, cache_read: 0.0 })
     } else {
-        return None;
-    };
-    let (input, output) = base;
-    Some(Pricing {
-        input,
-        output,
-        cache_write_5m: input * 1.25,
-        cache_write_1h: input * 2.0,
-        cache_read: input * 0.1,
-    })
+        // Anthropic fallback
+        let base = if m.contains("opus") {
+            (5.0, 25.0)
+        } else if m.contains("sonnet") {
+            (3.0, 15.0)
+        } else if m.contains("haiku") {
+            (1.0, 5.0)
+        } else {
+            return None;
+        };
+        let (input, output) = base;
+        Some(Pricing {
+            input,
+            output,
+            cache_write_5m: input * 1.25,
+            cache_write_1h: input * 2.0,
+            cache_read: input * 0.1,
+        })
+    }
+}
+
+/// Calcula o custo em USD a partir de tokens brutos e ID do modelo.
+/// Usada pelo proxy e pelo frontend para cálculo em tempo real.
+pub fn compute_cost_usd(
+    model: &str,
+    prompt_tokens: u64,
+    completion_tokens: u64,
+    cache_read_tokens: u64,
+    cache_write_tokens: u64,
+) -> f64 {
+    match pricing_for(model) {
+        Some(p) => {
+            prompt_tokens as f64 / 1_000_000.0 * p.input
+                + completion_tokens as f64 / 1_000_000.0 * p.output
+                + cache_read_tokens as f64 / 1_000_000.0 * p.cache_read
+                + cache_write_tokens as f64 / 1_000_000.0 * p.cache_write_5m
+        }
+        None => 0.0,
+    }
 }
 
 #[derive(Serialize, Default, Clone)]

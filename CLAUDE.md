@@ -1,7 +1,7 @@
 # Alethe — guia de trabalho (IA)
 
 > Conteúdo idêntico ao [`AGENTS.md`](AGENTS.md) deste diretório. Mantenha os dois em sincronia.
-> Status: **v1.2.0**, MVP funcional em polish. Identifier: `com.kc1t.alethe`.
+> Status: **v1.2.3**, MVP funcional em polish. Identifier: `com.kc1t.alethe`.
 
 ## 1. O que é
 
@@ -30,5 +30,5 @@ npm test         # vitest run
 
 Consulte as regras locais específicas para o desenvolvimento de cada domínio:
 
-- Frontend (React / TypeScript / Zustand / CSS): [`src/.claude.rules.md`](file:///media/miguelsilvaporto/16a390df-c228-4540-a9b5-b4eeda5b6324/Github/alethe-agents/src/.claude.rules.md)
-- Backend (Rust / Tauri / PTY / System): [`src-tauri/.claude.rules.md`](file:///media/miguelsilvaporto/16a390df-c228-4540-a9b5-b4eeda5b6324/Github/alethe-agents/src-tauri/.claude.rules.md)
+- Frontend (React / TypeScript / Zustand / CSS): [`src/.claude.rules.md`](src/.claude.rules.md)
+- Backend (Rust / Tauri / PTY / System): [`src-tauri/.claude.rules.md`](src-tauri/.claude.rules.md)

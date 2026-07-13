@@ -5,6 +5,7 @@
   min-width: 0;
   min-height: 0;
   position: relative;
+  isolation: isolate;
   /* bg vem inline (cor do tema do xterm) pra a área de padding casar
      com o fundo do terminal — sem isso o padding mostraria o chrome. */
   background: var(--bg-sunken);

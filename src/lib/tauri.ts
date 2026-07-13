@@ -886,3 +886,68 @@ export async function gitMergeBranch(
     delete: deleteBranch,
   });
 }
+
+// Git diff / checkout / rev-parse for task history
+
+export type GitDiffFile = {
+  path: string;
+  addedLines: number;
+  removedLines: number;
+  diff: string;
+  status: string;
+  conflictWithHead: boolean;
+};
+
+export type GitDiffResult = {
+  files: GitDiffFile[];
+  totalAdded: number;
+  totalRemoved: number;
+};
+
+export async function gitDiff(
+  repoRoot: string,
+  refA: string,
+  refB: string,
+): Promise<GitDiffResult> {
+  return invoke<GitDiffResult>("git_diff", { repoRoot, refA, refB });
+}
+
+export async function gitRevParse(repoRoot: string): Promise<string> {
+  return invoke<string>("git_rev_parse", { repoRoot });
+}
+
+export async function gitCheckoutFiles(
+  repoRoot: string,
+  files: string[],
+  reference?: string,
+): Promise<string> {
+  return invoke<string>("git_checkout_files", { repoRoot, files, reference });
+}
+
+// Git worktree management
+
+export type WorktreeInfo = {
+  path: string;
+  branch: string;
+  isMain: boolean;
+};
+
+export async function worktreeCreate(
+  repoRoot: string,
+  branch: string,
+  name: string,
+  baseRef?: string,
+): Promise<string> {
+  return invoke<string>("worktree_create", { repoRoot, branch, name, baseRef });
+}
+
+export async function worktreeList(repoRoot: string): Promise<WorktreeInfo[]> {
+  return invoke<WorktreeInfo[]>("worktree_list", { repoRoot });
+}
+
+export async function worktreeDelete(
+  repoRoot: string,
+  name: string,
+): Promise<string> {
+  return invoke<string>("worktree_delete", { repoRoot, name });
+}

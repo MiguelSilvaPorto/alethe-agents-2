@@ -64,7 +64,6 @@ export const useAgentCostStore = create<AgentCostState>((set) => ({
 
   refresh: async () => {
     const live = liveAgentSessions();
-    const liveIds = new Set(live.map((s) => s.ptyId));
 
     const results = await Promise.all(
       live.map(async (s) => {
@@ -93,8 +92,6 @@ export const useAgentCostStore = create<AgentCostState>((set) => ({
             updatedAt: 0,
           };
       }
-      // Poda PTYs que morreram.
-      void liveIds;
       return { byPtyId: next };
     });
   },

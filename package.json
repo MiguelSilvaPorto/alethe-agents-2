@@ -20,7 +20,8 @@
     "format": "prettier --write .",
     "lint": "prettier --check .",
     "release": "node scripts/release.mjs",
-    "release:publish": "node scripts/release-publish.mjs"
+    "release:publish": "node scripts/release-publish.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
@@ -52,8 +53,10 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
     "prettier": "^3.3.3",
+    "rollup-plugin-visualizer": "^7.0.1",
     "terser": "^5.48.0",
     "typescript": "^5.6.3",
     "vite": "^6.4.3",

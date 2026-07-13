@@ -16,6 +16,7 @@ export const ptBR: Record<MessageKey, string> = {
   "common.create": "Criar",
   "common.remove": "Remover",
   "common.followUi": "Seguir UI",
+  "common.undo": "Desfazer",
   "common.errorPrefix": "Erro: {message}",
 
   /* ---- language ---- */
@@ -512,6 +513,8 @@ export const ptBR: Record<MessageKey, string> = {
   "ui.titlebar.menu": "Menu",
   "ui.titlebar.closeSidebar": "Fechar sidebar",
   "ui.titlebar.openSidebar": "Abrir sidebar",
+  "ui.titlebar.closeTaskPanel": "Fechar painel de tarefas",
+  "ui.titlebar.openTaskPanel": "Abrir painel de tarefas",
   "ui.titlebar.recentTabs": "Tabs recentes",
   "ui.titlebar.back": "Voltar",
   "ui.titlebar.forward": "Avançar",
@@ -984,8 +987,64 @@ export const ptBR: Record<MessageKey, string> = {
   "workflow.steps": "Passos conclu\u00eddos: {count}",
   "workflow.nothingToCommit": "Nada a commitar",
   "workflow.history": "Hist\u00f3rico de commits",
+  "workflow.git.checking": "Verificando ambiente...",
+  "workflow.git.ok": "✅ Reposit\u00f3rio git detectado",
+  "workflow.git.noRepo":
+    "⚠️ N\u00e3o \u00e9 um reposit\u00f3rio git — modo Local recomendado",
+  "workflow.git.noGit": "❌ Git n\u00e3o encontrado — use o modo Local",
 
   /* ---- home view workflows section ---- */
   "home.activeWorkflows": "Workflows ativos",
   "home.viewAllWorkflows": "Ver todos \u2192",
+
+  /* ---- task ---- */
+  "task.title": "Tarefas",
+  "task.new": "Nova tarefa",
+  "task.newTitle": "Título da tarefa",
+  "task.accept": "Aceitar",
+  "task.reject": "Rejeitar",
+  "task.approve": "Aprovar",
+  "task.accepted": "Aceita",
+  "task.rejectTitle": "Rejeitar Tarefa",
+  "task.rejectPrompt": "O que ainda precisa ser ajustado?",
+  "task.rejectPlaceholder":
+    "Descreva o que precisa mudar para esta tarefa ser aceita...",
+  "task.rejectHistory": "Rejeições anteriores:",
+  "task.rejectAndSend": "Enviar para correção",
+  "task.rejecting": "Enviando...",
+  "task.rejectedN": "Rejeitada {n}x",
+  "task.branch": "Bifurcar",
+  "task.branchTitle": "Bifurcar Tarefa",
+  "task.branchCreate": "Criar Branch",
+  "task.branchRepair": "Checkout & Reparo",
+  "task.branchForce": "Checkout Forçado",
+  "task.branchFiles": "Arquivos alterados:",
+  "task.branchMode": "Modo de bifurcação",
+  "task.mode.safe": "Apenas criar branch (seguro)",
+  "task.mode.safeDesc":
+    "Cria um ponteiro git no commit da tarefa. Não altera seus arquivos atuais.",
+  "task.mode.repair": "Checkout + reparo automático (recomendado)",
+  "task.mode.repairDesc":
+    "Restaura o estado da tarefa e dispara o agente de reparo para corrigir quebras automaticamente.",
+  "task.mode.force": "Checkout forçado (perigoso)",
+  "task.mode.forceDesc":
+    "Restaura o estado bruto da tarefa. Pode quebrar o app se arquivos mudaram desde então.",
+  "task.revert": "Reverter",
+  "task.noFiles": "Nenhum arquivo alterado registrado.",
+  "task.status.implementing": "Implementando",
+  "task.status.review": "Em Revisão",
+  "task.status.pending": "Aguardando",
+  "task.status.accepted": "Aceita",
+  "task.status.blocked": "Bloqueada",
+  "task.tab.implementing": "Implementação",
+  "task.tab.review": "Revisão",
+  "task.tab.pending": "Aguardando",
+  "task.tab.blocked": "Permissões",
+  "task.tab.history": "Histórico",
+  "task.history.empty": "Nenhuma tarefa concluída ainda.",
+  "task.empty": 'Nenhuma tarefa em "{status}".',
+  "task.selectProject": "Selecione um projeto para ver as tarefas.",
+  "task.selectProjectHint":
+    "Crie ou selecione um projeto na sidebar para começar a gerenciar tarefas.",
+  "task.allProjects": "Todos os projetos",
 };

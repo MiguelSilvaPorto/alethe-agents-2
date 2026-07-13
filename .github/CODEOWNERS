@@ -1,0 +1,14 @@
+# Code Owners — Alethe Project
+# Revisão obrigatória para alterações críticas de agentes de IA
+
+# Backend Rust (Tauri core)
+/src-tauri/ @MiguelSilvaPorto
+
+# Fluxos de CI e segurança
+/.github/ @MiguelSilvaPorto
+/.claude/ @MiguelSilvaPorto
+
+# Configuração do projeto
+/CLAUDE.md @MiguelSilvaPorto
+/AGENTS.md @MiguelSilvaPorto
+/.env* @MiguelSilvaPorto

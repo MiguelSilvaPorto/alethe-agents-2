@@ -9,28 +9,9 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { FocusOverlay } from "./components/FocusOverlay";
 import { MainMenu } from "./components/MainMenu";
 import { ProjectSidebar } from "./components/ProjectSidebar";
+import { TaskPanel } from "./components/TaskPanel";
 import { TitleBar } from "./components/TitleBar";
 import { TokenHud } from "./components/TokenHud";
-import { WorkspaceView } from "./components/WorkspaceView";
-import { FindJumpModal } from "./components/modals/FindJumpModal";
-import { EditGroupModal } from "./components/modals/EditGroupModal";
-import { EditProjectModal } from "./components/modals/EditProjectModal";
-import { NewGroupModal } from "./components/modals/NewGroupModal";
-import { NewProjectModal } from "./components/modals/NewProjectModal";
-import { NewSubTabModal } from "./components/modals/NewSubTabModal";
-import { NewTerminalModal } from "./components/modals/NewTerminalModal";
-import { OnboardingModal } from "./components/modals/OnboardingModal";
-import { ProfilesModal } from "./components/modals/ProfilesModal";
-import { PreferencesModal } from "./components/modals/PreferencesModal";
-import { SyncModal } from "./components/modals/SyncModal";
-import { SuspendGroupModal } from "./components/modals/SuspendGroupModal";
-import { ContextModal } from "./components/modals/ContextModal";
-import { WorkflowModal } from "./components/modals/WorkflowModal";
-import { WorkflowDetailModal } from "./components/modals/WorkflowDetailModal";
-import { ThemePickerModal } from "./components/modals/ThemePickerModal";
-import { TopbarSettingsModal } from "./components/modals/TopbarSettingsModal";
-import { UpdateModal } from "./components/modals/UpdateModal";
-import { WelcomeModal } from "./components/modals/WelcomeModal";
 import { useKeybindings } from "./hooks/useKeybindings";
 import { useDiscordPresence } from "./hooks/useDiscordPresence";
 import { startActivityTracker } from "./lib/activityTracker";
@@ -68,6 +49,137 @@ const TelemetryDashboardModal = lazy(() =>
     default: module.TelemetryDashboardModal,
   })),
 );
+
+const WorkspaceView = lazy(() =>
+  import("./components/WorkspaceView").then((module) => ({
+    default: module.WorkspaceView,
+  })),
+);
+
+const FindJumpModal = lazy(() =>
+  import("./components/modals/FindJumpModal").then((module) => ({
+    default: module.FindJumpModal,
+  })),
+);
+
+const EditGroupModal = lazy(() =>
+  import("./components/modals/EditGroupModal").then((module) => ({
+    default: module.EditGroupModal,
+  })),
+);
+
+const EditProjectModal = lazy(() =>
+  import("./components/modals/EditProjectModal").then((module) => ({
+    default: module.EditProjectModal,
+  })),
+);
+
+const NewGroupModal = lazy(() =>
+  import("./components/modals/NewGroupModal").then((module) => ({
+    default: module.NewGroupModal,
+  })),
+);
+
+const NewProjectModal = lazy(() =>
+  import("./components/modals/NewProjectModal").then((module) => ({
+    default: module.NewProjectModal,
+  })),
+);
+
+const NewSubTabModal = lazy(() =>
+  import("./components/modals/NewSubTabModal").then((module) => ({
+    default: module.NewSubTabModal,
+  })),
+);
+
+const NewTerminalModal = lazy(() =>
+  import("./components/modals/NewTerminalModal").then((module) => ({
+    default: module.NewTerminalModal,
+  })),
+);
+
+const OnboardingModal = lazy(() =>
+  import("./components/modals/OnboardingModal").then((module) => ({
+    default: module.OnboardingModal,
+  })),
+);
+
+const ProfilesModal = lazy(() =>
+  import("./components/modals/ProfilesModal").then((module) => ({
+    default: module.ProfilesModal,
+  })),
+);
+
+const PreferencesModal = lazy(() =>
+  import("./components/modals/PreferencesModal").then((module) => ({
+    default: module.PreferencesModal,
+  })),
+);
+
+const SyncModal = lazy(() =>
+  import("./components/modals/SyncModal").then((module) => ({
+    default: module.SyncModal,
+  })),
+);
+
+const SuspendGroupModal = lazy(() =>
+  import("./components/modals/SuspendGroupModal").then((module) => ({
+    default: module.SuspendGroupModal,
+  })),
+);
+
+const ContextModal = lazy(() =>
+  import("./components/modals/ContextModal").then((module) => ({
+    default: module.ContextModal,
+  })),
+);
+
+const WorkflowModal = lazy(() =>
+  import("./components/modals/WorkflowModal").then((module) => ({
+    default: module.WorkflowModal,
+  })),
+);
+
+const WorkflowDetailModal = lazy(() =>
+  import("./components/modals/WorkflowDetailModal").then((module) => ({
+    default: module.WorkflowDetailModal,
+  })),
+);
+
+const ThemePickerModal = lazy(() =>
+  import("./components/modals/ThemePickerModal").then((module) => ({
+    default: module.ThemePickerModal,
+  })),
+);
+
+const TopbarSettingsModal = lazy(() =>
+  import("./components/modals/TopbarSettingsModal").then((module) => ({
+    default: module.TopbarSettingsModal,
+  })),
+);
+
+const UpdateModal = lazy(() =>
+  import("./components/modals/UpdateModal").then((module) => ({
+    default: module.UpdateModal,
+  })),
+);
+
+const WelcomeModal = lazy(() =>
+  import("./components/modals/WelcomeModal").then((module) => ({
+    default: module.WelcomeModal,
+  })),
+);
+
+const RejectDialog = lazy(() =>
+  import("./components/TaskPanel/RejectDialog").then((module) => ({
+    default: module.RejectDialog,
+  })),
+);
+
+const TaskBranchModal = lazy(() =>
+  import("./components/TaskPanel/TaskBranchModal").then((module) => ({
+    default: module.TaskBranchModal,
+  })));
 
 function LoadingScreen() {
   return (
@@ -267,18 +379,31 @@ export default function App() {
           {sidebarVisible ? <ProjectSidebar /> : null}
           <ErrorBoundary label="view">
             <div
-              style={{ display: "flex", flex: 1, minHeight: 0, width: "100%" }}
+              style={{
+                display: "flex",
+                flex: 1,
+                minHeight: 0,
+                width: "100%",
+                overflow: "hidden",
+              }}
             >
-              {/* WorkspaceView sempre montado — escondido com display:none quando outra view está ativa */}
-              <div
-                style={{
-                  display: activeView === "workspace" ? "flex" : "none",
-                  flex: 1,
-                  minHeight: 0,
-                }}
-              >
-                <WorkspaceView />
-              </div>
+              {/* WorkspaceView — montado só quando workspace está ativo */}
+              <Suspense fallback={<LoadingScreen />}>
+                {activeView === "workspace" ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flex: 1,
+                      minHeight: 0,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <WorkspaceView />
+                  </div>
+                ) : null}
+              </Suspense>
+              {/* TaskPanel — sempre renderizado, visibilidade controlada por CSS */}
+              {activeView === "workspace" ? <TaskPanel /> : null}
               {/* HomeView e AgentCanvasPOC — lazy, montados apenas quando ativos */}
               <Suspense fallback={<LoadingScreen />}>
                 {activeView === "home" ? (
@@ -298,40 +423,32 @@ export default function App() {
       <FocusOverlay />
       <MainMenu />
       <ErrorBoundary label="modals">
-        <NewProjectModal />
-        <NewGroupModal />
-        <EditGroupModal />
-        <EditProjectModal />
-        <NewTerminalModal />
-        <NewSubTabModal />
-        <PreferencesModal />
-        <ProfilesModal />
-        <SyncModal />
-        <FindJumpModal />
-        <OnboardingModal />
-        <WelcomeModal />
-        {openModal === "layoutDesigner" ? (
-          <Suspense fallback={null}>
-            <LayoutDesignerModal />
-          </Suspense>
-        ) : null}
-        <SuspendGroupModal />
-        <WorkflowModal />
-        <WorkflowDetailModal />
-        <ContextModal />
-        {openModal === "memoryAnalytics" ? (
-          <Suspense fallback={null}>
-            <MemoryAnalyticsModal />
-          </Suspense>
-        ) : null}
-        {openModal === "telemetryDashboard" ? (
-          <Suspense fallback={null}>
-            <TelemetryDashboardModal />
-          </Suspense>
-        ) : null}
-        <ThemePickerModal />
-        <TopbarSettingsModal />
-        <UpdateModal />
+        <Suspense fallback={null}>
+          <NewProjectModal />
+          <NewGroupModal />
+          <EditGroupModal />
+          <EditProjectModal />
+          <NewTerminalModal />
+          <NewSubTabModal />
+          <PreferencesModal />
+          <ProfilesModal />
+          <SyncModal />
+          <FindJumpModal />
+          <OnboardingModal />
+          <WelcomeModal />
+          <SuspendGroupModal />
+          <WorkflowModal />
+          <WorkflowDetailModal />
+          <ContextModal />
+          <RejectDialog />
+          <TaskBranchModal />
+          <ThemePickerModal />
+          <TopbarSettingsModal />
+          <UpdateModal />
+          {openModal === "layoutDesigner" ? <LayoutDesignerModal /> : null}
+          {openModal === "memoryAnalytics" ? <MemoryAnalyticsModal /> : null}
+          {openModal === "telemetryDashboard" ? <TelemetryDashboardModal /> : null}
+        </Suspense>
       </ErrorBoundary>
       <InAppNotifications />
       {activeView === "agentCanvas" ? <TokenHud /> : null}
