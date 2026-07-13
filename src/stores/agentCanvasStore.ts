@@ -463,9 +463,13 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
       const status = error ? "error" : "success";
 
       set((s) => {
-        const idx = s.nodes.findIndex((n) => (n as any).agent_id === agentId || n.id === agentId);
+        const idx = s.nodes.findIndex(
+          (n) => (n as any).agent_id === agentId || n.id === agentId,
+        );
         if (idx === -1) {
-          console.warn(`[agentCanvasStore] PostToolUse órfão: agent=${agentId}`);
+          console.warn(
+            `[agentCanvasStore] PostToolUse órfão: agent=${agentId}`,
+          );
           return s;
         }
         const nodes = [...s.nodes];

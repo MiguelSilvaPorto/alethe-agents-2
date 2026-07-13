@@ -1,4 +1,4 @@
-# [build]
+[build]
 # Shared compilation cache para builds concorrentes de Rust
 # entre multiplos agentes de IA / git worktrees.
 # Para ativar: instalar sccache (scoop install sccache) e descomentar abaixo.

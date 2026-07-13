@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Instant;
+use std::time::{Instant, Duration};
 use tauri::{AppHandle, Emitter, State};
 
 use crate::cli_resolver::{command_builder_for_terminal, find_windows_cli_launcher};
@@ -50,7 +50,7 @@ fn valid_utf8_prefix_len(buf: &[u8]) -> usize {
 }
 
 pub struct PtySession {
-    pub master: Box<dyn MasterPty + Send>,
+    pub master: Arc<Mutex<Box<dyn MasterPty + Send>>>,
     // writer fica em Arc<Mutex> pra write_pty poder soltar o lock global de
     // sessions antes de escrever. Sem isso, escritas longas de um PTY bloqueiam
     // qualquer outra operacao (resize, attach, kill) em todos os outros PTYs.
@@ -210,12 +210,29 @@ pub fn spawn_pty(
     let thread_sessions = Arc::clone(sessions.inner());
     let initial_warning = cwd_warning.clone();
 
-    thread::spawn(move || {
-        // 32 KiB: menos syscalls e menos eventos IPC sob saída pesada (builds,
-        // cat de arquivo grande) sem custo de latência pra outputs pequenos.
-        let mut buffer = [0_u8; 32 * 1024];
-        // Cauda de um caractere UTF-8 multibyte partido entre duas leituras.
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<Vec<u8>>(1024);
+
+    // 1. Spawna a máquina de estados assíncrona inteira dentro do Runtime do Tauri (Tokio Reactor ativo)
+    let tx_clone = tx.clone();
+    tauri::async_runtime::spawn(async move {
+        // Roda o worker de leitura síncrona na thread pool bloqueante do Tokio
+        tokio::task::spawn_blocking(move || {
+            let mut buffer = [0_u8; 32 * 1024];
+            loop {
+                match reader.read(&mut buffer) {
+                    Ok(0) => break,
+                    Ok(count) => {
+                        if tx_clone.blocking_send(buffer[..count].to_vec()).is_err() {
+                            break;
+                        }
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+
         let mut carry: Vec<u8> = Vec::new();
+        let mut batch_buffer: Vec<u8> = Vec::new();
 
         if let Some(warning) = initial_warning {
             let _ = event_app.emit(&event_name, &warning);
@@ -228,65 +245,77 @@ pub fn spawn_pty(
         }
 
         loop {
-            match reader.read(&mut buffer) {
-                Ok(0) => break,
-                Ok(count) => {
-                    // Scrollback recebe os bytes crus desta leitura (sempre
-                    // corretos — só o emit precisa de fronteira de caractere).
-                    let _ = push_scrollback(
-                        &scrollback_app,
-                        &scrollback_id,
-                        &thread_scrollback,
-                        &buffer[..count],
-                    );
+            let start_wait = Instant::now();
 
-                    // Emit PRIMEIRO o que é UTF-8 completo — user vê o echo na
-                    // hora, sem disk I/O no caminho da tecla. Caractere partido
-                    // no limite do read fica em `carry` pro próximo ciclo.
-                    if carry.is_empty() {
-                        // Caminho rápido (caso comum): nada pendente, zero alloc.
-                        let valid = valid_utf8_prefix_len(&buffer[..count]);
-                        if valid > 0 {
-                            // SAFETY: buffer[..valid] é UTF-8 válido por construção.
-                            let text = unsafe { std::str::from_utf8_unchecked(&buffer[..valid]) };
-                            let _ = event_app.emit(&event_name, text);
-                        }
-                        if valid < count {
-                            carry.extend_from_slice(&buffer[valid..count]);
-                        }
-                    } else {
-                        carry.extend_from_slice(&buffer[..count]);
-                        let valid = valid_utf8_prefix_len(&carry);
-                        if valid > 0 {
-                            // SAFETY: carry[..valid] é UTF-8 válido por construção.
-                            let text = unsafe { std::str::from_utf8_unchecked(&carry[..valid]) };
-                            let _ = event_app.emit(&event_name, text);
-                            carry.drain(..valid);
-                        }
+            // Loteia leituras por até 16ms (60 FPS) ou até encher 64KB
+            while start_wait.elapsed().as_millis() < 16 && batch_buffer.len() < 64 * 1024 {
+                let remaining = Duration::from_millis(16).saturating_sub(start_wait.elapsed());
+                match tokio::time::timeout(remaining, rx.recv()).await {
+                    Ok(Some(chunk)) => {
+                        batch_buffer.extend_from_slice(&chunk);
                     }
+                    Ok(None) => break, // Fim do canal
+                    Err(_) => break,   // Timeout (16ms se passaram)
+                }
+                if rx.is_closed() {
+                    break;
+                }
+            }
 
-                    // `carry` só deve guardar a cauda de UM caractere (≤3 bytes).
-                    // Se passar disso, são bytes inválidos que nunca completam:
-                    // emite lossy (mostra �) e zera pra não vazar nem travar.
-                    if carry.len() > 3 {
-                        let lossy = String::from_utf8_lossy(&carry).into_owned();
-                        let _ = event_app.emit(&event_name, lossy.as_str());
-                        carry.clear();
+            if batch_buffer.is_empty() && rx.is_closed() {
+                break;
+            }
+
+            if !batch_buffer.is_empty() {
+                let count = batch_buffer.len();
+                let _ = push_scrollback(
+                    &scrollback_app,
+                    &scrollback_id,
+                    &thread_scrollback,
+                    &batch_buffer,
+                );
+
+                if carry.is_empty() {
+                    let valid = valid_utf8_prefix_len(&batch_buffer);
+                    if valid > 0 {
+                        let text = unsafe { std::str::from_utf8_unchecked(&batch_buffer[..valid]) };
+                        let _ = event_app.emit(&event_name, text);
+                    }
+                    if valid < count {
+                        carry.extend_from_slice(&batch_buffer[valid..]);
+                    }
+                } else {
+                    carry.extend_from_slice(&batch_buffer);
+                    let valid = valid_utf8_prefix_len(&carry);
+                    if valid > 0 {
+                        let text = unsafe { std::str::from_utf8_unchecked(&carry[..valid]) };
+                        let _ = event_app.emit(&event_name, text);
+                        carry.drain(..valid);
                     }
                 }
-                Err(_) => break,
+
+                if carry.len() > 3 {
+                    let lossy = String::from_utf8_lossy(&carry).into_owned();
+                    let _ = event_app.emit(&event_name, lossy.as_str());
+                    carry.clear();
+                }
+
+                batch_buffer.clear();
+
+                // Backpressure: pausa leve no loop assíncrono para dar vazão à fila IPC
+                tokio::time::sleep(Duration::from_millis(2)).await;
+            }
+
+            if rx.is_closed() {
+                break;
             }
         }
 
-        // Flush de qualquer cauda restante no fim do stream.
         if !carry.is_empty() {
             let lossy = String::from_utf8_lossy(&carry).into_owned();
             let _ = event_app.emit(&event_name, lossy.as_str());
         }
 
-        // PTY morreu: garante o scrollback no disco e LIBERA o buffer em RAM (até
-        // 4 MiB). A sessão fica no HashMap; attach_pty recarrega do disco se preciso.
-        // Só libera se o flush deu certo, pra nunca perder dados não persistidos.
         if flush_scrollback(&scrollback_app, &scrollback_id, &thread_scrollback).is_ok() {
             if let Ok(mut buffer) = thread_scrollback.lock() {
                 buffer.data = VecDeque::new();
@@ -326,7 +355,7 @@ pub fn spawn_pty(
     );
 
     let session = PtySession {
-        master: pair.master,
+        master: Arc::new(Mutex::new(pair.master)),
         writer,
         child,
         scrollback,
@@ -466,22 +495,40 @@ pub fn resize_pty(
     cols: u16,
     rows: u16,
 ) -> Result<(), String> {
-    let sessions = sessions
-        .lock()
-        .map_err(|_| "PTY sessions lock poisoned".to_string())?;
-    let session = sessions
-        .get(&id)
-        .ok_or_else(|| format!("PTY not found: {id}"))?;
+    let (master, writer) = {
+        let sessions = sessions
+            .lock()
+            .map_err(|_| "PTY sessions lock poisoned".to_string())?;
+        let session = sessions
+            .get(&id)
+            .ok_or_else(|| format!("PTY not found: {id}"))?;
+        (Arc::clone(&session.master), Arc::clone(&session.writer))
+    };
 
-    session
-        .master
+    let master_guard = master
+        .lock()
+        .map_err(|_| "PTY master lock poisoned".to_string())?;
+
+    let res = master_guard
         .resize(PtySize {
             rows: rows.max(1),
             cols: cols.max(1),
             pixel_width: 0,
             pixel_height: 0,
         })
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string());
+
+    #[cfg(windows)]
+    if res.is_ok() {
+        if let Ok(mut writer_guard) = writer.lock() {
+            // Envia o caractere de controle Ctrl+L (Form Feed, byte 12) para forçar
+            // o redesenho síncrono da tela do agente de IA após redimensionar no Windows.
+            let _ = writer_guard.write_all(&[12]);
+            let _ = writer_guard.flush();
+        }
+    }
+
+    res
 }
 
 #[tauri::command]

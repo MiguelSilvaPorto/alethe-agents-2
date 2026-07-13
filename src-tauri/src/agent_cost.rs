@@ -111,7 +111,7 @@ pub fn pricing_for(model: &str) -> Option<Pricing> {
         } else if m.contains("haiku") {
             (1.0, 5.0)
         } else {
-            return None;
+            (0.80, 2.40)
         };
         let (input, output) = base;
         Some(Pricing {

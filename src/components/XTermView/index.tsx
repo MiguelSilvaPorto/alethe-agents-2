@@ -2,6 +2,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { CanvasAddon } from "@xterm/addon-canvas";
+import { Unicode11Addon } from "@xterm/addon-unicode11";
 import { Terminal } from "@xterm/xterm";
 import type { ILink } from "@xterm/xterm";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -512,7 +513,6 @@ export function XTermView({
     let pendingWrite = "";
     let lastCols = 0;
     let lastRows = 0;
-    let lastResizePtyAt = 0;
     let resizeRaf: number | null = null;
     let forceNextResize = false;
     let completionMonitor: AgentCompletionMonitor | null = null;
@@ -525,6 +525,7 @@ export function XTermView({
       allowProposedApi: true,
       scrollback: getTerminalScrollbackRows(),
       scrollOnUserInput: false,
+      windowsMode: true,
       windowsPty: { backend: "conpty", buildNumber: 22000 },
       fontFamily: 'Cascadia Mono, Consolas, "Courier New", monospace',
       fontSize: 14,
@@ -536,8 +537,15 @@ export function XTermView({
     });
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
+    const unicode11Addon = new Unicode11Addon();
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(searchAddon);
+    terminal.loadAddon(unicode11Addon);
+    try {
+      terminal.unicode.activeVersion = "11";
+    } catch (e) {
+      console.warn("[XTermView] Não foi possível ativar Unicode 11:", e);
+    }
     terminal.open(container);
     terminalRef.current = terminal;
     linkProviderDisposable = terminal.registerLinkProvider({
@@ -805,6 +813,7 @@ export function XTermView({
       resizeTimer = null;
       resizeRaf = null;
       const id = ptyIdRef.current;
+
       if (!id) return;
       const rect = container.getBoundingClientRect();
       if (rect.width < 50 || rect.height < 30) return;
@@ -813,24 +822,43 @@ export function XTermView({
       } catch {
         return;
       }
-      const colsChanged =
-        terminal.cols !== lastCols || terminal.rows !== lastRows;
-      if (colsChanged) {
-        try {
-          terminal.refresh(0, Math.max(0, terminal.rows - 1));
-        } catch {}
-      }
+      try {
+        terminal.refresh(0, Math.max(0, terminal.rows - 1));
+        window.setTimeout(() => {
+          try {
+            terminal.scrollLines(-1);
+            terminal.scrollLines(1);
+          } catch {}
+        }, 50);
+        window.setTimeout(() => {
+          try {
+            terminal.scrollLines(-1);
+            terminal.scrollLines(1);
+          } catch {}
+        }, 180);
+      } catch {}
       const force = forceNextResize;
       forceNextResize = false;
+      const colsChanged =
+        terminal.cols !== lastCols || terminal.rows !== lastRows;
       if (!force && !colsChanged) return;
       lastCols = terminal.cols;
       lastRows = terminal.rows;
-      if (command === "opencode") {
-        const now = Date.now();
-        if (now - lastResizePtyAt < 250) return;
-        lastResizePtyAt = now;
-      }
-      void resizePty(id, terminal.cols, terminal.rows);
+
+      const attemptResize = (retryCount = 0) => {
+        const currentId = ptyIdRef.current;
+        if (!currentId || currentId !== id) return;
+        resizePty(currentId, terminal.cols, terminal.rows).catch((err) => {
+          console.warn(
+            `[XTermView] Falha no resize_pty (tentativa ${retryCount + 1}):`,
+            err,
+          );
+          if (retryCount < 4) {
+            window.setTimeout(() => attemptResize(retryCount + 1), 120);
+          }
+        });
+      };
+      attemptResize();
     };
     const scheduleResize = (force = false) => {
       forceNextResize ||= force;
@@ -855,13 +883,20 @@ export function XTermView({
     };
     const ro = new ResizeObserver(scheduleObservedResize);
     ro.observe(container);
+
+    const onWindowResize = () => {
+      scheduleResize(true);
+      window.setTimeout(() => scheduleResize(true), 150);
+      window.setTimeout(() => scheduleResize(true), 400);
+    };
+    window.addEventListener("resize", onWindowResize);
     window.addEventListener("alethe:zoom-changed", scheduleObservedResize);
     window.addEventListener("alethe:terminal-resize-request", onResizeRequest);
 
-    // Fit adicional com delay pra garantir que o layout estabilizou
-    const initialFitTimer = window.setTimeout(() => {
-      scheduleResize();
-    }, 150);
+    // Fits sucessivos pós-mount para estabilizar após transições visuais (ex: Focus Mode de 240ms)
+    window.setTimeout(() => scheduleResize(true), 80);
+    window.setTimeout(() => scheduleResize(true), 280);
+    window.setTimeout(() => scheduleResize(true), 550);
 
     terminal.onData((data) => {
       const id = ptyIdRef.current;
@@ -1176,6 +1211,7 @@ export function XTermView({
       container.removeEventListener("wheel", onWheel, true);
       container.removeEventListener("click", focusTerminal);
       container.removeEventListener("paste", onPaste);
+      window.removeEventListener("resize", onWindowResize);
       window.removeEventListener("alethe:zoom-changed", scheduleObservedResize);
       window.removeEventListener(
         "alethe:terminal-resize-request",
@@ -1185,7 +1221,7 @@ export function XTermView({
       if (resizeTimer !== null) window.clearTimeout(resizeTimer);
       if (writeFrame !== null) window.cancelAnimationFrame(writeFrame);
       pendingWrite = "";
-      window.clearTimeout(initialFitTimer);
+
       unlistenData?.();
       unlistenExit?.();
       unlistenDragDrop?.();

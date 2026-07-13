@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { nanoid } from "nanoid";
+import { notifyAgentDone } from "../lib/notifications";
 
 import {
   DEFAULT_PREFERENCES,
@@ -910,10 +911,35 @@ export const useProjectsStore = create<ProjectsState>((set, get) => {
     update((state) => {
       const projectId = findTaskProject(taskId, state);
       if (!projectId) return {};
+
       return {
         projects: state.projects.map((p) =>
           p.id === projectId
-            ? { ...p, tasks: p.tasks.map((t) => (t.id === taskId ? fn(t) : t)) }
+            ? {
+                ...p,
+                tasks: p.tasks.map((t) => {
+                  if (t.id === taskId) {
+                    const updated = fn(t);
+                    if (
+                      t.status !== "pending" &&
+                      updated.status === "pending"
+                    ) {
+                      const isPt = state.preferences.language === "pt-BR";
+                      const title = isPt
+                        ? "Tarefa Concluída"
+                        : "Task Completed";
+                      const body = isPt
+                        ? `A tarefa "${t.title}" está aguardando revisão.`
+                        : `Task "${t.title}" is waiting for review.`;
+                      void notifyAgentDone(title, body, {
+                        agent: t.agentType || undefined,
+                      });
+                    }
+                    return updated;
+                  }
+                  return t;
+                }),
+              }
             : p,
         ),
       };

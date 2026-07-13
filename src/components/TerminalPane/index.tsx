@@ -63,6 +63,7 @@ export const TerminalPane = memo(function TerminalPane({
   const [expanded, setExpanded] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const focusedTerminalId = useUiStore((s) => s.focusedTerminalId);
+  const proxyPort = useUiStore((s) => s.proxyPort);
   const isFocusMode = inFocusOverlay || focusedTerminalId === terminal.id;
   // Drag-and-drop pra reordenar entre panes (igual canvas-agents focus mode).
   // Skip dentro do focus overlay — não faz sentido reordenar quando só tem 1.
@@ -511,15 +512,15 @@ export const TerminalPane = memo(function TerminalPane({
                     const tabId = activeTab.id;
                     if (activeTab.type === "claude") {
                       extraEnv["ANTHROPIC_API_BASE"] =
-                        `http://127.0.0.1:4096/anthropic/${tabId}`;
+                        `http://127.0.0.1:${proxyPort}/anthropic/${tabId}`;
                     } else if (activeTab.type === "codex") {
                       extraEnv["OPENAI_BASE_URL"] =
-                        `http://127.0.0.1:4096/openai/${tabId}`;
+                        `http://127.0.0.1:${proxyPort}/openai/${tabId}`;
                       extraEnv["OPENAI_API_BASE"] =
-                        `http://127.0.0.1:4096/openai/${tabId}/v1`;
+                        `http://127.0.0.1:${proxyPort}/openai/${tabId}/v1`;
                     } else if (activeTab.type === "opencode") {
                       extraEnv["OPENAI_API_BASE"] =
-                        `http://127.0.0.1:4096/openai/${tabId}/v1`;
+                        `http://127.0.0.1:${proxyPort}/openai/${tabId}/v1`;
                     }
                     return extraEnv;
                   })()}

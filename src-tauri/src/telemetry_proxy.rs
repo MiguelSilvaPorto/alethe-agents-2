@@ -2,23 +2,41 @@ use std::io::Read;
 use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
+use std::sync::atomic::{AtomicU16, Ordering};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use serde_json::Value;
 use tauri::AppHandle;
 use tiny_http::{Header, Response, Server};
 
+pub static PROXY_PORT: AtomicU16 = AtomicU16::new(4096);
+
+#[tauri::command]
+pub fn get_proxy_port() -> u16 {
+    PROXY_PORT.load(Ordering::Relaxed)
+}
+
 /// Inicia o proxy HTTP reverso em uma thread dedicada.
 pub fn start_proxy(app: AppHandle) {
     thread::spawn(move || {
-        let addr = "127.0.0.1:4096";
-        let server = match Server::http(addr) {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("[telemetry_proxy] falha ao iniciar servidor HTTP na porta 4096: {e}");
-                return;
+        let mut port = 4096;
+        let server = loop {
+            let addr = format!("127.0.0.1:{port}");
+            match Server::http(&addr) {
+                Ok(s) => {
+                    eprintln!("[telemetry_proxy] ouvindo em http://{}", addr);
+                    PROXY_PORT.store(port, Ordering::Relaxed);
+                    break s;
+                }
+                Err(e) => {
+                    eprintln!("[telemetry_proxy] porta {port} ocupada: {e}");
+                    port += 1;
+                    if port > 4110 {
+                        eprintln!("[telemetry_proxy] falha ao alocar qualquer porta no intervalo 4096-4110. Abortando.");
+                        return;
+                    }
+                }
             }
         };
-        eprintln!("[telemetry_proxy] ouvindo em http://{}", addr);
 
         let client = reqwest::blocking::Client::builder()
             .timeout(Duration::from_secs(120))
@@ -97,8 +115,8 @@ pub fn start_proxy(app: AppHandle) {
             let app = app.clone();
             let provider = provider.to_string();
 
-            // Executa em outra thread para não congelar o loop principal de requisições
-            thread::spawn(move || {
+            // Executa no blocking thread pool do Tokio para gerenciar threads de forma escalável
+            tokio::task::spawn_blocking(move || {
                 let req_method = match reqwest::Method::from_str(&method) {
                     Ok(m) => m,
                     Err(_) => {

@@ -128,6 +128,9 @@ export function cellStyle(cell: GridCell): CSSProperties {
     gridRow: `${cell.row} / span ${cell.rowSpan}`,
     minWidth: 0,
     minHeight: 0,
+    overflow: "hidden",
+    width: "100%",
+    height: "100%",
   };
 }
 
@@ -140,5 +143,9 @@ export function gridContainerStyle(layout: GridLayout): CSSProperties {
     gap: 4,
     width: "100%",
     height: "100%",
+    minWidth: 0,
+    minHeight: 0,
+    overflow: "hidden",
+    boxSizing: "border-box",
   };
 }

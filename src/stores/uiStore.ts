@@ -126,6 +126,8 @@ type UiState = {
   dismissToast: (id: string) => void;
   clearNotifications: () => void;
   setUpdateInfo: (info: UpdateInfo | null) => void;
+  proxyPort: number;
+  setProxyPort: (port: number) => void;
 };
 
 export const useUiStore = create<UiState>((set) => ({
@@ -133,6 +135,8 @@ export const useUiStore = create<UiState>((set) => ({
   modalContext: null,
   showMainMenu: false,
   sidebarVisible: true,
+  proxyPort: 4096,
+  setProxyPort: (port) => set({ proxyPort: port }),
   taskPanelVisible: true,
   ramMb: null,
   memoryStats: null,

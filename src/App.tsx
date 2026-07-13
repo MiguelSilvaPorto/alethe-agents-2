@@ -17,7 +17,7 @@ import { useDiscordPresence } from "./hooks/useDiscordPresence";
 import { startActivityTracker } from "./lib/activityTracker";
 import { intlLocale, translate } from "./lib/i18n";
 import { setMaxConcurrentSpawns } from "./lib/spawnQueue";
-import { getLastCrashReport } from "./lib/tauri";
+import { getLastCrashReport, getProxyPort } from "./lib/tauri";
 import { checkForUpdate } from "./lib/updater";
 import { useProjectsStore } from "./stores/projectsStore";
 import { type InAppToast, useUiStore } from "./stores/uiStore";
@@ -179,7 +179,8 @@ const RejectDialog = lazy(() =>
 const TaskBranchModal = lazy(() =>
   import("./components/TaskPanel/TaskBranchModal").then((module) => ({
     default: module.TaskBranchModal,
-  })));
+  })),
+);
 
 function LoadingScreen() {
   return (
@@ -323,6 +324,17 @@ export default function App() {
     return startActivityTracker();
   }, [hydrated]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    void getProxyPort()
+      .then((port) => {
+        useUiStore.getState().setProxyPort(port);
+      })
+      .catch((err) => {
+        console.error("Falha ao inicializar proxy de telemetria:", err);
+      });
+  }, [hydrated]);
+
   // Checa atualização em silêncio no boot. Se houver, o chip discreto na sidebar
   // aparece (SidebarUpdate); nada de popup. Erros (dev sem assinatura, offline,
   // endpoint fora) são engolidos — updater indisponível = "sem update".
@@ -447,7 +459,9 @@ export default function App() {
           <UpdateModal />
           {openModal === "layoutDesigner" ? <LayoutDesignerModal /> : null}
           {openModal === "memoryAnalytics" ? <MemoryAnalyticsModal /> : null}
-          {openModal === "telemetryDashboard" ? <TelemetryDashboardModal /> : null}
+          {openModal === "telemetryDashboard" ? (
+            <TelemetryDashboardModal />
+          ) : null}
         </Suspense>
       </ErrorBoundary>
       <InAppNotifications />

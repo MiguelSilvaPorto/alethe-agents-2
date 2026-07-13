@@ -173,6 +173,7 @@ pub fn run() {
             agent_cost::get_model_pricing,
             telemetry_db::get_telemetry_summary,
             telemetry_db::clear_telemetry_stats,
+            telemetry_proxy::get_proxy_port,
             crash_watch::get_last_crash_report,
             context_objectives::context_get_state,
             context_objectives::context_set_objective,

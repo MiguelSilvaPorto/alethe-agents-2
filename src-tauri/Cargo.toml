@@ -73,5 +73,5 @@ codegen-units = 1
 debug = false
 incremental = false
 lto = true
-opt-level = "s"
+opt-level = 2
 strip = true

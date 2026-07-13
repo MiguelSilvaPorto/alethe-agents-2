@@ -316,6 +316,10 @@ export async function getLastCrashReport(): Promise<CrashReport | null> {
   return invoke<CrashReport | null>("get_last_crash_report");
 }
 
+export async function getProxyPort(): Promise<number> {
+  return invoke<number>("get_proxy_port");
+}
+
 export async function openDataFolder(): Promise<void> {
   await invoke("open_data_folder");
 }
