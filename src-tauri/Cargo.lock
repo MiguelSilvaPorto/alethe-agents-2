@@ -42,7 +42,7 @@ dependencies = [
 
 [[package]]
 name = "alethe"
-version = "1.2.3"
+version = "1.2.5"
 dependencies = [
  "ascii",
  "base64 0.22.1",
