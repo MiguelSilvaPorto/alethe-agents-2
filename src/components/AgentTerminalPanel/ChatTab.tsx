@@ -7,9 +7,13 @@ import {
   Mic,
   CheckSquare,
   ChevronDown,
+  ChevronRight,
   Settings,
   X,
   Search,
+  Edit2,
+  Trash2,
+  Play,
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useProjectsStore } from '../../stores/projectsStore';
@@ -18,7 +22,6 @@ import {
   IconText,
   IconImage,
   IconContext,
-  IconFree,
   IconCode,
 } from '../icons/ModelIcons';
 import styles from './ChatTab.module.css';
@@ -50,6 +53,14 @@ interface ChatSession {
   activeModel: string;
   activeMode: 'plan' | 'build';
   timeAgo: string;
+}
+
+interface PendingMessage {
+  id: string;
+  text: string;
+  filesReferenced?: string[];
+  mode: 'plan' | 'build';
+  queuedAt: number;
 }
 
 export function ChatTab() {
@@ -133,6 +144,10 @@ export function ChatTab() {
   ]);
 
   const [activeSessionId, setActiveSessionId] = useState<string>('session-1');
+
+  const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
+  const isProcessingRef = useRef(false);
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const models = useUiStore.getState().opencodeModels;
@@ -235,16 +250,91 @@ export function ChatTab() {
 
   const [showModelDropdown, setShowModelDropdown] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const [expandedProviders, setExpandedProviders] = useState<
+    Record<string, boolean>
+  >({});
+
+  // Lista curada de modelos recomendados para codar — só esses aparecem por padrão
+  const RECOMMENDED_MODELS = useMemo(
+    () =>
+      new Set([
+        'claude-3-5-sonnet',
+        'claude-3-5-haiku',
+        'claude-3-opus',
+        'claude-sonnet-4',
+        'claude-sonnet-4-5',
+        'claude-sonnet-4-6',
+        'claude-sonnet-5',
+        'claude-opus-4',
+        'claude-opus-4-1',
+        'claude-opus-4-5',
+        'claude-opus-4-6',
+        'claude-opus-4-7',
+        'claude-opus-4-8',
+        'claude-haiku-4-5',
+        'gpt-4o',
+        'gpt-4o-mini',
+        'gpt-5',
+        'gpt-5-codex',
+        'gpt-5-nano',
+        'gpt-5-1',
+        'gpt-5-1-codex',
+        'gpt-5-2',
+        'gpt-5-2-codex',
+        'gpt-5-3-codex',
+        'gpt-5-4',
+        'gpt-5-4-mini',
+        'gpt-5-4-pro',
+        'gpt-5-5',
+        'gpt-5-5-pro',
+        'gpt-5-6-sol',
+        'gpt-5-6-terra',
+        'gpt-5-6-luna',
+        'o1-mini',
+        'o1-preview',
+        'o3-mini',
+        'gemini-1-5-pro',
+        'gemini-1-5-flash',
+        'gemini-2-0-flash',
+        'gemini-2-0-pro',
+        'gemini-3-flash',
+        'gemini-3-1-pro',
+        'deepseek-v3',
+        'deepseek-r1',
+        'deepseek-v4-flash',
+        'deepseek-v4-pro',
+        'kimi-k2-7-code',
+        'kimi-k2-6',
+        'claude-fable-5',
+        'claude-opus-4-5',
+        'claude-opus-4-7',
+        'claude-sonnet-latest',
+      ]),
+    [],
+  );
 
   const filteredModels = useMemo(() => {
     const query = modelSearchQuery.toLowerCase();
-    if (!query) return AVAILABLE_MODELS;
+    if (!query) {
+      // Modo padrão: só recomendados + explicitamente ativados + free
+      return AVAILABLE_MODELS.filter(
+        (m) =>
+          RECOMMENDED_MODELS.has(m.id ?? '') ||
+          m.isFree ||
+          preferences.enabledModels?.[m.id ?? ''] === true,
+      );
+    }
     return AVAILABLE_MODELS.filter(
       (m) =>
         m.name.toLowerCase().includes(query) ||
         m.provider.toLowerCase().includes(query),
     );
-  }, [AVAILABLE_MODELS, modelSearchQuery]);
+  }, [
+    AVAILABLE_MODELS,
+    modelSearchQuery,
+    RECOMMENDED_MODELS,
+    preferences.enabledModels,
+  ]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -259,6 +349,13 @@ export function ChatTab() {
     document.addEventListener('mousedown', onMouseDown);
     return () => document.removeEventListener('mousedown', onMouseDown);
   }, [showModelDropdown]);
+
+  // Cleanup do timer ao desmontar
+  useEffect(() => {
+    return () => {
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+    };
+  }, []);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const listEndRef = useRef<HTMLDivElement>(null);
@@ -367,46 +464,41 @@ export function ChatTab() {
     setReferencedFiles((prev) => prev.filter((f) => f !== filePath));
   };
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
-
+  const sendMessageToAgent = (
+    text: string,
+    files?: string[],
+    mode?: 'plan' | 'build',
+  ) => {
     const userMsg: Message = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       sender: 'user',
-      text: inputValue.trim(),
+      text,
       timestamp: Date.now(),
-      filesReferenced: [...referencedFiles],
-      mode: selectedMode,
+      filesReferenced: files,
+      mode,
     };
 
-    // Resposta simulada para demonstrar o checklist e To-dos
     const updatedMessages = [...currentSession.messages, userMsg];
 
     setSessions((prev) =>
       prev.map((s) => {
         if (s.id === activeSessionId) {
-          // Atualiza título com a primeira mensagem do usuário se for "New Chat"
           const title =
             s.title === 'New Chat'
               ? userMsg.text.slice(0, 24) + '...'
               : s.title;
-          return {
-            ...s,
-            title,
-            messages: updatedMessages,
-          };
+          return { ...s, title, messages: updatedMessages };
         }
         return s;
       }),
     );
 
-    setInputValue('');
-    setReferencedFiles([]);
+    isProcessingRef.current = true;
 
-    // Simula a IA gerando os To-dos ou planejando o progresso
-    setTimeout(() => {
+    // Simula o processamento do agent
+    queueTimerRef.current = setTimeout(() => {
       const aiResponse: Message = {
-        id: `ai-${Date.now()}`,
+        id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         sender: 'ai',
         text: 'Certo, analisei o pedido e criei as etapas para execução dos To-dos.',
         timestamp: Date.now(),
@@ -422,15 +514,72 @@ export function ChatTab() {
       setSessions((prev) =>
         prev.map((s) => {
           if (s.id === activeSessionId) {
-            return {
-              ...s,
-              messages: [...s.messages, aiResponse],
-            };
+            return { ...s, messages: [...s.messages, aiResponse] };
           }
           return s;
         }),
       );
+
+      isProcessingRef.current = false;
+
+      // Processa próxima mensagem da fila
+      setPendingMessages((prev) => {
+        if (prev.length === 0) return prev;
+        const next = prev[0];
+        const rest = prev.slice(1);
+        sendMessageToAgent(next.text, next.filesReferenced, next.mode);
+        return rest;
+      });
     }, 1000);
+  };
+
+  const handleSend = () => {
+    if (!inputValue.trim()) return;
+
+    const text = inputValue.trim();
+    const files = [...referencedFiles];
+    const mode = selectedMode;
+
+    setInputValue('');
+    setReferencedFiles([]);
+
+    if (isProcessingRef.current) {
+      // Agent ocupado — vai pra fila
+      const pending: PendingMessage = {
+        id: `pending-${Date.now()}`,
+        text,
+        filesReferenced: files,
+        mode,
+        queuedAt: Date.now(),
+      };
+      setPendingMessages((prev) => [...prev, pending]);
+    } else {
+      // Agent livre — envia direto
+      sendMessageToAgent(text, files, mode);
+    }
+  };
+
+  const handleEditPending = (pending: PendingMessage) => {
+    setInputValue(pending.text);
+    if (pending.filesReferenced) setReferencedFiles(pending.filesReferenced);
+    setPendingMessages((prev) => prev.filter((p) => p.id !== pending.id));
+    textareaRef.current?.focus();
+  };
+
+  const handleDeletePending = (id: string) => {
+    setPendingMessages((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleSendNow = (pending: PendingMessage) => {
+    setPendingMessages((prev) => prev.filter((p) => p.id !== pending.id));
+    if (isProcessingRef.current) {
+      // Se tiver processando, espera o timer limpar e depois envia
+      if (queueTimerRef.current) clearTimeout(queueTimerRef.current);
+      isProcessingRef.current = false;
+      sendMessageToAgent(pending.text, pending.filesReferenced, pending.mode);
+    } else {
+      sendMessageToAgent(pending.text, pending.filesReferenced, pending.mode);
+    }
   };
 
   return (
@@ -575,25 +724,82 @@ export function ChatTab() {
         </div>
       )}
 
-      {/* Histórico Inferior (Past Chats) */}
-      <div className={styles.pastChatsBlock}>
-        <div className={styles.pastChatsHeader}>
-          <Clock size={12} />
-          <span>Past Chats</span>
+      {/* Mensagens Pendentes — substitui Past Chats */}
+      {pendingMessages.length > 0 && (
+        <div className={styles.pastChatsBlock}>
+          <div className={styles.pastChatsHeader}>
+            <Clock size={12} />
+            <span>
+              Pending ({pendingMessages.length})
+              {isProcessingRef.current && ' · Processing...'}
+            </span>
+          </div>
+          <div className={styles.pastChatsList}>
+            {pendingMessages.map((pending) => (
+              <div key={pending.id} className={styles.pendingCard}>
+                <div className={styles.pendingCardContent}>
+                  <span className={styles.pendingText}>
+                    {pending.text.slice(0, 60)}
+                    {pending.text.length > 60 ? '...' : ''}
+                  </span>
+                  {pending.filesReferenced &&
+                    pending.filesReferenced.length > 0 && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 4,
+                          flexWrap: 'wrap',
+                          marginTop: 2,
+                        }}
+                      >
+                        {pending.filesReferenced.map((f) => (
+                          <span
+                            key={f}
+                            className={styles.fileBadge}
+                            style={{ fontSize: 9 }}
+                          >
+                            📄 {f.split('/').pop()}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  <span className={styles.pastChatTime}>
+                    {Math.floor((Date.now() - pending.queuedAt) / 60000)}m ago
+                  </span>
+                </div>
+                <div className={styles.pendingActions}>
+                  <button
+                    type="button"
+                    className={styles.pendingActionBtn}
+                    onClick={() => handleEditPending(pending)}
+                    title="Editar"
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.pendingActionBtn}
+                    onClick={() => handleDeletePending(pending.id)}
+                    title="Excluir"
+                    style={{ color: '#ef4444' }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.pendingActionBtn}
+                    onClick={() => handleSendNow(pending)}
+                    title="Enviar agora"
+                    style={{ color: '#22c55e' }}
+                  >
+                    <Play size={12} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className={styles.pastChatsList}>
-          {sessions.map((s) => (
-            <div
-              key={s.id}
-              className={`${styles.pastChatItem} ${s.id === activeSessionId ? styles.pastChatActive : ''}`}
-              onClick={() => setActiveSessionId(s.id)}
-            >
-              <span className={styles.pastChatTitle}>{s.title}</span>
-              <span className={styles.pastChatTime}>{s.timeAgo}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Rodapé e Área de Input */}
       <div className={styles.inputArea}>
@@ -685,9 +891,8 @@ export function ChatTab() {
                   position: 'absolute',
                   bottom: 'calc(100% + 8px)',
                   right: 0,
-                  width: 'max-content',
-                  minWidth: '220px',
-                  maxWidth: 'min(360px, calc(100vw - 48px))',
+                  width: 'max(260px, calc(100% + 20px))',
+                  maxWidth: 'min(380px, calc(100vw - 48px))',
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)',
@@ -748,15 +953,12 @@ export function ChatTab() {
                   </button>
                 </div>
 
-                {/* Lista de Modelos */}
+                {/* Lista de Modelos por Provedor */}
                 <div
                   style={{
                     flex: 1,
                     overflowY: 'auto',
-                    padding: '6px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
+                    padding: '4px',
                   }}
                 >
                   {filteredModels.length === 0 ? (
@@ -771,152 +973,204 @@ export function ChatTab() {
                       Nenhum modelo encontrado.
                     </div>
                   ) : (
-                    filteredModels.map((m) => {
-                      const isActive = model === m.name;
-                      const isFree = m.isFree || m.id?.includes('free');
-                      const hasVision =
-                        m.id?.includes('vision') ||
-                        m.id?.includes('vl') ||
-                        m.provider === 'Anthropic' ||
-                        m.provider === 'OpenAI' ||
-                        m.provider === 'Google';
-                      const hasCodex =
-                        m.id?.includes('codex') || m.id?.includes('coder');
-                      const ctxHint =
-                        m.id?.includes('deepseek') || m.id?.includes('kimi')
-                          ? '1M ctx'
-                          : '200K ctx';
-
-                      return (
-                        <button
-                          key={m.id || m.name}
-                          type="button"
-                          onClick={() => {
-                            setModel(m.name);
-                            setShowModelDropdown(false);
-                          }}
-                          style={{
-                            textAlign: 'left',
-                            padding: '8px 10px',
-                            borderRadius: '6px',
-                            background: isActive
-                              ? 'var(--accent-faint)'
-                              : 'transparent',
-                            border: isActive
-                              ? '1px solid var(--accent-ring)'
-                              : '1px solid transparent',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '3px',
-                            transition: 'background 0.1s',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isActive)
-                              e.currentTarget.style.background =
-                                'var(--panel-hover)';
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isActive)
-                              e.currentTarget.style.background = 'transparent';
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                            }}
-                          >
-                            <span
+                    (() => {
+                      const providers = [
+                        ...new Set(filteredModels.map((m) => m.provider)),
+                      ];
+                      return providers.map((provider) => {
+                        const providerModels = filteredModels.filter(
+                          (m) => m.provider === provider,
+                        );
+                        return (
+                          <div key={provider} style={{ marginBottom: '2px' }}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedProviders((prev) => ({
+                                  ...prev,
+                                  [provider]: prev[provider] !== true,
+                                }))
+                              }
                               style={{
-                                fontSize: '12px',
-                                fontWeight: isActive ? 600 : 500,
-                                color: isActive ? 'var(--accent)' : 'var(--fg)',
-                              }}
-                            >
-                              {m.name}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: '9px',
-                                color: 'var(--fg-faint)',
-                                textTransform: 'uppercase',
-                                background: 'var(--bg-sunken)',
-                                padding: '1px 5px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                width: '100%',
+                                padding: '6px 8px',
+                                background: 'transparent',
+                                border: 'none',
                                 borderRadius: '4px',
+                                color: 'var(--fg-muted)',
+                                cursor: 'pointer',
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.3px',
                               }}
                             >
-                              {m.provider}
-                            </span>
-                          </div>
+                              {expandedProviders[provider] === true ? (
+                                <ChevronDown size={11} />
+                              ) : (
+                                <ChevronRight size={11} />
+                              )}
+                              <span style={{ flex: 1, textAlign: 'left' }}>
+                                {provider}
+                              </span>
+                              <span
+                                style={{
+                                  fontSize: '9px',
+                                  color: 'var(--fg-faint)',
+                                  background: 'var(--border)',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                }}
+                              >
+                                {providerModels.length}
+                              </span>
+                            </button>
+                            {expandedProviders[provider] === true && (
+                              <div>
+                                {providerModels.map((m) => {
+                                  const isActive = model === m.name;
+                                  const isFree =
+                                    m.isFree || m.id?.includes('free');
+                                  const hasVision =
+                                    m.id?.includes('vision') ||
+                                    m.id?.includes('vl') ||
+                                    m.provider === 'Anthropic' ||
+                                    m.provider === 'OpenAI' ||
+                                    m.provider === 'Google';
+                                  const hasCodex =
+                                    m.id?.includes('codex') ||
+                                    m.id?.includes('coder');
+                                  const ctxHint =
+                                    m.id?.includes('deepseek') ||
+                                    m.id?.includes('kimi')
+                                      ? '1M ctx'
+                                      : '200K ctx';
 
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px',
-                              fontSize: '10px',
-                              color: 'var(--fg-muted)',
-                            }}
-                          >
-                            <span
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '3px',
-                              }}
-                            >
-                              <IconText size={11} /> Texto
-                            </span>
-                            {hasVision && (
-                              <span
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                }}
-                              >
-                                <IconImage size={11} /> Imagem
-                              </span>
-                            )}
-                            <span
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '3px',
-                              }}
-                            >
-                              <IconContext size={11} /> {ctxHint}
-                            </span>
-                            {hasCodex && (
-                              <span
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                }}
-                              >
-                                <IconCode size={11} /> Codex
-                              </span>
-                            )}
-                            {isFree && (
-                              <span
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  color: '#16a34a',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                <IconFree size={11} /> Free
-                              </span>
+                                  return (
+                                    <button
+                                      key={m.id || m.name}
+                                      type="button"
+                                      onClick={() => {
+                                        setModel(m.name);
+                                        setShowModelDropdown(false);
+                                      }}
+                                      style={{
+                                        textAlign: 'left',
+                                        padding: '6px 8px 6px 16px',
+                                        borderRadius: '4px',
+                                        width: '100%',
+                                        background: isActive
+                                          ? 'var(--accent-faint)'
+                                          : 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '2px',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (!isActive)
+                                          e.currentTarget.style.background =
+                                            'var(--panel-hover)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (!isActive)
+                                          e.currentTarget.style.background =
+                                            'transparent';
+                                      }}
+                                    >
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'space-between',
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            fontSize: '12px',
+                                            fontWeight: isActive ? 600 : 500,
+                                            color: isActive
+                                              ? 'var(--accent)'
+                                              : 'var(--fg)',
+                                          }}
+                                        >
+                                          {m.name}
+                                        </span>
+                                      </div>
+                                      <div
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '6px',
+                                          fontSize: '10px',
+                                          color: 'var(--fg-muted)',
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '2px',
+                                          }}
+                                        >
+                                          <IconText size={10} /> Tx
+                                        </span>
+                                        {hasVision && (
+                                          <span
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '2px',
+                                            }}
+                                          >
+                                            <IconImage size={10} /> Img
+                                          </span>
+                                        )}
+                                        <span
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '2px',
+                                          }}
+                                        >
+                                          <IconContext size={10} /> {ctxHint}
+                                        </span>
+                                        {hasCodex && (
+                                          <span
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '2px',
+                                            }}
+                                          >
+                                            <IconCode size={10} /> Codex
+                                          </span>
+                                        )}
+                                        {isFree && (
+                                          <span
+                                            style={{
+                                              color: '#16a34a',
+                                              fontWeight: 600,
+                                              fontSize: '9px',
+                                            }}
+                                          >
+                                            · Free
+                                          </span>
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
                             )}
                           </div>
-                        </button>
-                      );
-                    })
+                        );
+                      });
+                    })()
                   )}
                 </div>
               </div>
