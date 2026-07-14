@@ -583,11 +583,15 @@ function ModelsAndKeysSettingsView() {
       const hostname = preferences.opencodeHostname || '127.0.0.1';
       const port = preferences.opencodePort || 4096;
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      const response = await fetch(`http://${hostname}:${port}/provider`, {
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      let response: Response;
+      try {
+        response = await fetch(`http://${hostname}:${port}/provider`, {
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (response.ok) {
         const data = await response.json();
         const connectedProviders = data.connected || [];
