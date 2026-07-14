@@ -8,7 +8,7 @@ const MONACO_OPTIONS = {
   minimap: { enabled: false },
   fontSize: 12,
   lineNumbers: 'on' as const,
-  renderWhitespace: 'selection' as const,
+  renderWhitespace: 'none' as const,
   tabSize: 2,
   scrollBeyondLastLine: false,
   wordWrap: 'on' as const,
@@ -35,22 +35,9 @@ export function EditorPane() {
   const isMonacoReady = useRef(false);
 
   const handleEditorDidMount: OnMount = useCallback(
-    (editor, monaco) => {
+    (editor) => {
       editorRef.current = editor;
       isMonacoReady.current = true;
-
-      monaco.editor.defineTheme('alethe-dark', {
-        base: 'vs-dark',
-        inherit: true,
-        rules: [],
-        colors: {
-          'editor.background': '#181818',
-          'editor.selectionBackground': '#264f78',
-          'editor.inactiveSelectionBackground': '#3a3a3a',
-          'editor.selectionHighlightBackground': '#add6ff26',
-        },
-      });
-      monaco.editor.setTheme('alethe-dark');
 
       editor.onDidChangeCursorPosition((e) => {
         const tab = useEditorStore
@@ -132,7 +119,7 @@ export function EditorPane() {
           onChange={handleChange}
           onMount={handleEditorDidMount}
           options={MONACO_OPTIONS}
-          theme="alethe-dark"
+          theme="vs-dark"
         />
       )}
       <div className={styles.statusBar}>
