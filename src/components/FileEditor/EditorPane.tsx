@@ -1,6 +1,7 @@
 import { useRef, useCallback, useEffect } from 'react';
 import Editor, { type OnMount, type OnChange } from '@monaco-editor/react';
 import { useEditorStore } from '../../stores/editorStore';
+import { SettingsPanel } from '../ProjectSidebar/SettingsPanel';
 import styles from './EditorPane.module.css';
 
 const MONACO_OPTIONS = {
@@ -92,7 +93,15 @@ export function EditorPane() {
     return unsubscribe;
   }, [activeTabId]);
 
-  if (!activeTab || !activeFileState) {
+  if (!activeTab) {
+    return null;
+  }
+
+  if (activeTab.filePath === 'virtual://settings') {
+    return <SettingsPanel />;
+  }
+
+  if (!activeFileState) {
     return null;
   }
 

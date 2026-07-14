@@ -53,6 +53,39 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
   openFile: async (filePath, options = {}) => {
     const state = get();
+
+    if (filePath === 'virtual://settings') {
+      const id = 'virtual-settings';
+      const existingSettings = state.tabs.find((t) => t.id === id);
+      if (existingSettings) {
+        set({ activeTabId: id });
+        return;
+      }
+      const tab: EditorTab = {
+        id,
+        filePath,
+        name: 'Configurações',
+        language: 'json',
+        isDirty: false,
+        isPinned: true,
+        isPreview: false,
+      };
+      set((s) => ({
+        tabs: [...s.tabs, tab],
+        fileStates: {
+          ...s.fileStates,
+          [id]: {
+            content: '{}',
+            savedContent: '{}',
+            cursorPosition: { line: 1, column: 1 },
+            scrollPosition: 0,
+          },
+        },
+        activeTabId: id,
+      }));
+      return;
+    }
+
     const existing = state.tabs.find((t) => t.filePath === filePath);
 
     if (existing) {

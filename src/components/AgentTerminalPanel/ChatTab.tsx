@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useProjectsStore } from '../../stores/projectsStore';
+import { useEditorStore } from '../../stores/editorStore';
 import styles from './ChatTab.module.css';
 
 interface Message {
@@ -46,7 +47,6 @@ interface ChatSession {
 export function ChatTab() {
   const activeProjectId = useProjectsStore((s) => s.activeProjectId);
   const projects = useProjectsStore((s) => s.projects);
-  const openModal = useUiStore((s) => s.openModal_);
   const activeProject = useMemo(
     () => projects.find((p) => p.id === activeProjectId),
     [projects, activeProjectId],
@@ -732,7 +732,11 @@ export function ChatTab() {
                     <button
                       type="button"
                       onClick={() => {
-                        openModal('preferences');
+                        useEditorStore
+                          .getState()
+                          .openFile('virtual://settings');
+                        useUiStore.getState().setActiveView('workspace');
+                        useUiStore.getState().setSidebarTab('files');
                         setShowModelDropdown(false);
                       }}
                       style={{

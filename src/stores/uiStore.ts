@@ -88,9 +88,11 @@ type UiState = {
   notifications: InAppToast[];
   /** Update disponível (checado em silêncio no boot). null = atualizado/sem info. */
   updateInfo: UpdateInfo | null;
-  /** Aba ativa da sidebar (projetos/arquivos/git/workflows). */
-  sidebarTab: 'files' | 'git' | 'projects' | 'workflows';
-  setSidebarTab: (tab: 'files' | 'git' | 'projects' | 'workflows') => void;
+  /** Aba ativa da sidebar (projetos/arquivos/git/workflows/settings). */
+  sidebarTab: 'files' | 'git' | 'projects' | 'workflows' | 'settings';
+  setSidebarTab: (
+    tab: 'files' | 'git' | 'projects' | 'workflows' | 'settings',
+  ) => void;
 
   openModal_: (
     kind: Exclude<ModalKind, null>,

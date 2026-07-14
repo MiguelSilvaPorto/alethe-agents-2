@@ -265,6 +265,11 @@ export type Preferences = {
   reviewerEnabled: boolean;
   reviewerSystemPrompt: string;
   reviewerProjectRoadmap: string;
+  /** Chaves de API para Provedores */
+  anthropicApiKey?: string;
+  openaiApiKey?: string;
+  googleApiKey?: string;
+  deepseekApiKey?: string;
 };
 
 export type ProjectsFile = {
@@ -329,6 +334,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   reviewerSystemPrompt:
     'Você é um arquiteto e revisor de código sênior. Compare o que foi pedido com o que foi entregue. Analise o contexto e verifique se o rumo correto do projeto foi tomado. Se houver desvios ou erros, aponte-os claramente.',
   reviewerProjectRoadmap: '',
+  anthropicApiKey: '',
+  openaiApiKey: '',
+  googleApiKey: '',
+  deepseekApiKey: '',
 };
 
 export const EMPTY_PROJECTS_FILE: ProjectsFile = {

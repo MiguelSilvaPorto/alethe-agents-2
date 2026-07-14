@@ -35,6 +35,7 @@ import {
   useProjectsStore,
 } from '../../stores/projectsStore';
 import { useUiStore } from '../../stores/uiStore';
+import { useEditorStore } from '../../stores/editorStore';
 import { useT } from '../../lib/i18n';
 import type {
   AgentType,
@@ -72,6 +73,7 @@ export function ProjectSidebar() {
   const containers = useProjectsStore((s) => s.workspace.containers);
   const activeProjectId = useProjectsStore((s) => s.activeProjectId);
   const showGitControl = useProjectsStore((s) => s.preferences.showGitControl);
+  const openFile = useEditorStore((s) => s.openFile);
 
   // --- action selectors (stable refs, grouped for readability) ---
   const actions = useProjectsStore(
@@ -810,6 +812,7 @@ export function ProjectSidebar() {
                 cwd={selectedSubTab.cwd || selectedTerminal.cwd}
                 ptyId={selectedSubTab.ptyId}
                 terminalName={selectedTerminal.name}
+                onFileClick={openFile}
               />
             ) : (
               <div className={styles.explorerEmpty}>
