@@ -578,9 +578,9 @@ function ModelsAndKeysSettingsView() {
   const handleSyncOpenCodeProviders = async () => {
     setSyncingOpenCode(true);
     try {
-      const response = await fetch(
-        `http://${preferences.opencodeHostname}:${preferences.opencodePort}/provider`,
-      );
+      const hostname = preferences.opencodeHostname || '127.0.0.1';
+      const port = preferences.opencodePort || 4096;
+      const response = await fetch(`http://${hostname}:${port}/provider`);
       if (response.ok) {
         const data = await response.json();
         const connectedProviders = data.connected || [];
@@ -1672,7 +1672,7 @@ function ModelsAndKeysSettingsView() {
                   </span>
                   <input
                     type="number"
-                    value={preferences.opencodePort}
+                    value={preferences.opencodePort ?? 4096}
                     onChange={(e) =>
                       setPreferences({
                         opencodePort: parseInt(e.target.value) || 4096,
@@ -1703,7 +1703,7 @@ function ModelsAndKeysSettingsView() {
                   </span>
                   <input
                     type="text"
-                    value={preferences.opencodeHostname}
+                    value={preferences.opencodeHostname || '127.0.0.1'}
                     onChange={(e) =>
                       setPreferences({ opencodeHostname: e.target.value })
                     }
