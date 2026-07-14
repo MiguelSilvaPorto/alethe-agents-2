@@ -1,13 +1,13 @@
-import { useProjectsStore } from "../../stores/projectsStore";
-import { en, type MessageKey } from "./messages/en";
-import { ptBR } from "./messages/pt-BR";
+import { useProjectsStore } from '../../stores/projectsStore';
+import { en, type MessageKey } from './messages/en';
+import { ptBR } from './messages/pt-BR';
 
 export type { MessageKey };
 
 /** Idiomas suportados. `en` é o default e a fonte-de-verdade das chaves. */
-export type Locale = "en" | "pt-BR";
+export type Locale = 'en' | 'pt-BR';
 
-export const DEFAULT_LOCALE: Locale = "en";
+export const DEFAULT_LOCALE: Locale = 'en';
 
 export type LocaleMeta = {
   id: Locale;
@@ -18,17 +18,17 @@ export type LocaleMeta = {
 };
 
 export const LOCALES: LocaleMeta[] = [
-  { id: "en", nativeName: "English", intl: "en-US" },
-  { id: "pt-BR", nativeName: "Português", intl: "pt-BR" },
+  { id: 'en', nativeName: 'English', intl: 'en-US' },
+  { id: 'pt-BR', nativeName: 'Português', intl: 'pt-BR' },
 ];
 
 const DICTIONARIES: Record<Locale, Record<string, string>> = {
   en,
-  "pt-BR": ptBR,
+  'pt-BR': ptBR,
 };
 
 export function intlLocale(locale: Locale): string {
-  return LOCALES.find((l) => l.id === locale)?.intl ?? "en-US";
+  return LOCALES.find((l) => l.id === locale)?.intl ?? 'en-US';
 }
 
 type Params = Record<string, string | number>;

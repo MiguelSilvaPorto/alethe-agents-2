@@ -1,4 +1,4 @@
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import {
   ChevronLeft,
   Eye,
@@ -14,35 +14,35 @@ import {
   Power,
   RefreshCw,
   X,
-} from "lucide-react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+} from 'lucide-react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useGridResize } from "../../hooks/useGridResize";
-import { useT } from "../../lib/i18n";
-import { buildAgentLaunch } from "../../lib/sessionLaunch";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useTerminalsStore } from "../../stores/terminalsStore";
-import { useUiStore } from "../../stores/uiStore";
+import { useGridResize } from '../../hooks/useGridResize';
+import { useT } from '../../lib/i18n';
+import { buildAgentLaunch } from '../../lib/sessionLaunch';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useTerminalsStore } from '../../stores/terminalsStore';
+import { useUiStore } from '../../stores/uiStore';
 import type {
   Terminal as TerminalEntry,
   SubTab,
   Theme,
   AgentType,
-} from "../../lib/types";
+} from '../../lib/types';
 import {
   getPtyCwd,
   openInFileExplorer,
   openInVscode,
   restartPty,
-} from "../../lib/tauri";
-import { AgentIcon, VSCodeIcon } from "../icons/AgentIcons";
-import { ClaudeHistoryModal } from "../modals/ClaudeHistoryModal";
-import { SubTabsLane } from "../SubTabsLane";
-import { XTermView } from "../XTermView";
-import { GhosttySurface } from "../GhosttySurface";
-import { shouldUseNativeBackend } from "../../lib/platform";
-import { buildGhosttyCommand } from "../../lib/ghosttyCommand";
-import styles from "./TerminalPane.module.css";
+} from '../../lib/tauri';
+import { AgentIcon, VSCodeIcon } from '../icons/AgentIcons';
+import { ClaudeHistoryModal } from '../modals/ClaudeHistoryModal';
+import { SubTabsLane } from '../SubTabsLane';
+import { XTermView } from '../XTermView';
+import { GhosttySurface } from '../GhosttySurface';
+import { shouldUseNativeBackend } from '../../lib/platform';
+import { buildGhosttyCommand } from '../../lib/ghosttyCommand';
+import styles from './TerminalPane.module.css';
 
 export type TerminalPaneProps = {
   projectId: string;
@@ -90,12 +90,12 @@ export const TerminalPane = memo(function TerminalPane({
     const node = paneRef.current;
     if (!node) return;
     node.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "nearest",
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
     });
     const ta = node.querySelector<HTMLTextAreaElement>(
-      ".xterm-helper-textarea",
+      '.xterm-helper-textarea',
     );
     ta?.focus();
   }, [focusReq, terminal.id]);
@@ -128,7 +128,7 @@ export const TerminalPane = memo(function TerminalPane({
   // Resize de span no grid do PROJETO (quando project.layoutMode === 'grid').
   const projectGrid = useProjectsStore((s) => {
     const p = s.projects.find((p) => p.id === projectId);
-    if (!p || p.layoutMode !== "grid" || !p.gridLayout) return null;
+    if (!p || p.layoutMode !== 'grid' || !p.gridLayout) return null;
     return p.gridLayout;
   });
   const showGridResize =
@@ -150,7 +150,7 @@ export const TerminalPane = memo(function TerminalPane({
   const ptyRuntime = useTerminalsStore((s) =>
     activeTab?.ptyId ? (s.byPtyId[activeTab.ptyId] ?? null) : null,
   );
-  const status = ptyRuntime?.status ?? "waiting";
+  const status = ptyRuntime?.status ?? 'waiting';
   const ptyExited = ptyRuntime !== null && !ptyRuntime.alive;
 
   const onToggleLane = () => {
@@ -192,17 +192,17 @@ export const TerminalPane = memo(function TerminalPane({
         id: ptyId,
         cols,
         rows,
-        command: activeTab.type === "shell" ? undefined : activeTab.type,
+        command: activeTab.type === 'shell' ? undefined : activeTab.type,
         cwd: activeTab.cwd || undefined,
         extraArgs: launch.args,
       });
       window.dispatchEvent(
-        new CustomEvent("alethe:terminal-resize-request", {
+        new CustomEvent('alethe:terminal-resize-request', {
           detail: { ptyId },
         }),
       );
     } catch (err) {
-      console.error("restart pty falhou", err);
+      console.error('restart pty falhou', err);
     }
   };
 
@@ -217,9 +217,9 @@ export const TerminalPane = memo(function TerminalPane({
     if (isFocusMode) setFocusedTerminal(null);
   };
 
-  const cwd = activeTab?.cwd?.trim() || terminal.cwd?.trim() || "";
+  const cwd = activeTab?.cwd?.trim() || terminal.cwd?.trim() || '';
   const isAgentWithHistory =
-    activeTab && (activeTab.type === "claude" || activeTab.type === "codex");
+    activeTab && (activeTab.type === 'claude' || activeTab.type === 'codex');
 
   /** Resolve cwd: usa o configurado; senão pergunta ao backend o cwd vivo do PTY. */
   const resolveCwd = async (): Promise<string | null> => {
@@ -241,13 +241,13 @@ export const TerminalPane = memo(function TerminalPane({
   ) => {
     const path = await resolveCwd();
     if (!path) {
-      window.alert(t("ui.terminal.noCwdAvailable", { label }));
+      window.alert(t('ui.terminal.noCwdAvailable', { label }));
       return;
     }
     try {
       await action(path);
     } catch (err) {
-      window.alert(t("ui.terminal.openFailed", { label, error: String(err) }));
+      window.alert(t('ui.terminal.openFailed', { label, error: String(err) }));
     }
   };
 
@@ -267,7 +267,7 @@ export const TerminalPane = memo(function TerminalPane({
         markTerminalUsed(projectId, terminal.id);
         setActiveTerminal(projectId, terminal.id);
       }}
-      className={`${styles.pane} ${isFocusMode ? styles.paneFocus : ""} ${terminal.disabled ? styles.disabled : ""} ${dragging ? styles.dragging : ""} ${dropTarget ? styles.dropTarget : ""}`}
+      className={`${styles.pane} ${isFocusMode ? styles.paneFocus : ''} ${terminal.disabled ? styles.disabled : ''} ${dragging ? styles.dragging : ''} ${dropTarget ? styles.dropTarget : ''}`}
     >
       <header className={styles.header}>
         <div className={styles.headLeft}>
@@ -277,8 +277,8 @@ export const TerminalPane = memo(function TerminalPane({
               className={`${styles.action} ${styles.gripBtn}`}
               {...draggable.attributes}
               {...draggable.listeners}
-              title={t("ui.terminal.dragToReorder")}
-              aria-label={t("ui.terminal.dragToReorder")}
+              title={t('ui.terminal.dragToReorder')}
+              aria-label={t('ui.terminal.dragToReorder')}
             >
               <GripVertical size={12} />
             </button>
@@ -307,7 +307,7 @@ export const TerminalPane = memo(function TerminalPane({
         {!preview ? (
           <div className={styles.headRight}>
             <span
-              className={`${styles.statusPill} ${styles[`status_${status}`] ?? ""}`}
+              className={`${styles.statusPill} ${styles[`status_${status}`] ?? ''}`}
               title={status}
             />
             <div className={styles.actions}>
@@ -320,10 +320,10 @@ export const TerminalPane = memo(function TerminalPane({
                     onClick={onToggleLane}
                     title={
                       effectiveLaneVisible
-                        ? t("ui.terminal.hideTabsLane")
-                        : t("ui.terminal.showTabsLane")
+                        ? t('ui.terminal.hideTabsLane')
+                        : t('ui.terminal.showTabsLane')
                     }
-                    aria-label={t("ui.terminal.toggleLane")}
+                    aria-label={t('ui.terminal.toggleLane')}
                     disabled={terminal.tabs.length > 1}
                   >
                     {effectiveLaneVisible ? (
@@ -337,8 +337,8 @@ export const TerminalPane = memo(function TerminalPane({
                       type="button"
                       className={styles.action}
                       onClick={onShowHistory}
-                      title={t("ui.terminal.sessionHistory")}
-                      aria-label={t("ui.terminal.history")}
+                      title={t('ui.terminal.sessionHistory')}
+                      aria-label={t('ui.terminal.history')}
                     >
                       <History size={12} />
                     </button>
@@ -359,10 +359,10 @@ export const TerminalPane = memo(function TerminalPane({
                     onClick={onDisable}
                     title={
                       terminal.disabled
-                        ? t("ui.sidebar.reactivate")
-                        : t("ui.terminal.disableFreesRam")
+                        ? t('ui.sidebar.reactivate')
+                        : t('ui.terminal.disableFreesRam')
                     }
-                    aria-label={t("ui.terminal.disable")}
+                    aria-label={t('ui.terminal.disable')}
                   >
                     {terminal.disabled ? (
                       <Eye size={12} />
@@ -374,8 +374,8 @@ export const TerminalPane = memo(function TerminalPane({
                     type="button"
                     className={`${styles.action} ${styles.danger}`}
                     onClick={onKill}
-                    title={t("ui.terminal.killKeepsShortcut")}
-                    aria-label={t("ui.terminal.kill")}
+                    title={t('ui.terminal.killKeepsShortcut')}
+                    aria-label={t('ui.terminal.kill')}
                   >
                     <Power size={12} />
                   </button>
@@ -387,26 +387,26 @@ export const TerminalPane = memo(function TerminalPane({
               <button
                 type="button"
                 className={styles.action}
-                onClick={() => void openWithCwd(openInFileExplorer, "Explorer")}
+                onClick={() => void openWithCwd(openInFileExplorer, 'Explorer')}
                 title={
                   cwd
-                    ? t("ui.terminal.openInExplorerCwd", { cwd })
-                    : t("ui.terminal.openLiveCwdInExplorer")
+                    ? t('ui.terminal.openInExplorerCwd', { cwd })
+                    : t('ui.terminal.openLiveCwdInExplorer')
                 }
-                aria-label={t("ui.terminal.openInExplorer")}
+                aria-label={t('ui.terminal.openInExplorer')}
               >
                 <FolderOpen size={12} />
               </button>
               <button
                 type="button"
                 className={`${styles.action} ${styles.vscode}`}
-                onClick={() => void openWithCwd(openInVscode, "VS Code")}
+                onClick={() => void openWithCwd(openInVscode, 'VS Code')}
                 title={
                   cwd
-                    ? t("ui.terminal.openInVscodeCwd", { cwd })
-                    : t("ui.terminal.openLiveCwdInVscode")
+                    ? t('ui.terminal.openInVscodeCwd', { cwd })
+                    : t('ui.terminal.openLiveCwdInVscode')
                 }
-                aria-label={t("ui.terminal.openInVscode")}
+                aria-label={t('ui.terminal.openInVscode')}
               >
                 <VSCodeIcon size={14} />
               </button>
@@ -415,8 +415,8 @@ export const TerminalPane = memo(function TerminalPane({
                   type="button"
                   className={styles.action}
                   onClick={() => setFocusedTerminal(null)}
-                  title={t("ui.terminal.exitFocusModeEsc")}
-                  aria-label={t("ui.terminal.exitFocusMode")}
+                  title={t('ui.terminal.exitFocusModeEsc')}
+                  aria-label={t('ui.terminal.exitFocusMode')}
                 >
                   <Minimize2 size={12} />
                 </button>
@@ -425,8 +425,8 @@ export const TerminalPane = memo(function TerminalPane({
                   type="button"
                   className={styles.action}
                   onClick={() => setFocusedTerminal(terminal.id)}
-                  title={t("ui.terminal.focusModeFullscreen")}
-                  aria-label={t("ui.terminal.focusMode")}
+                  title={t('ui.terminal.focusModeFullscreen')}
+                  aria-label={t('ui.terminal.focusMode')}
                 >
                   <Maximize2 size={12} />
                 </button>
@@ -435,14 +435,14 @@ export const TerminalPane = memo(function TerminalPane({
               {/* Toggle expandir/recolher */}
               <button
                 type="button"
-                className={`${styles.action} ${expanded ? styles.actionActive : ""}`}
+                className={`${styles.action} ${expanded ? styles.actionActive : ''}`}
                 onClick={() => setExpanded((v) => !v)}
                 title={
                   expanded
-                    ? t("ui.terminal.showLess")
-                    : t("ui.terminal.showMoreActions")
+                    ? t('ui.terminal.showLess')
+                    : t('ui.terminal.showMoreActions')
                 }
-                aria-label={t("ui.terminal.moreActions")}
+                aria-label={t('ui.terminal.moreActions')}
                 aria-expanded={expanded}
               >
                 {expanded ? (
@@ -464,7 +464,7 @@ export const TerminalPane = memo(function TerminalPane({
             onActivate={(id) => setActiveTab(projectId, terminal.id, id)}
             onClose={(id) => closeSubTab(projectId, terminal.id, id)}
             onAdd={() =>
-              openModal("newSubTab", { projectId, terminalId: terminal.id })
+              openModal('newSubTab', { projectId, terminalId: terminal.id })
             }
           />
         ) : null}
@@ -474,7 +474,7 @@ export const TerminalPane = memo(function TerminalPane({
             <DisabledOverlay
               terminalName={terminal.name}
               cwd={cwd}
-              agentType={activeTab?.type ?? "shell"}
+              agentType={activeTab?.type ?? 'shell'}
               terminalTheme={terminalTheme}
               onReactivate={onDisable}
             />
@@ -502,7 +502,7 @@ export const TerminalPane = memo(function TerminalPane({
                   key={activeTab.id}
                   projectId={projectId}
                   ptyId={activeTab.ptyId ?? activeTab.id}
-                  command={activeTab.type === "shell" ? null : activeTab.type}
+                  command={activeTab.type === 'shell' ? null : activeTab.type}
                   cwd={activeTab.cwd || null}
                   extraArgs={activeTab.extraArgs}
                   sessionId={activeTab.sessionId}
@@ -510,16 +510,16 @@ export const TerminalPane = memo(function TerminalPane({
                   env={(() => {
                     const extraEnv: Record<string, string> = {};
                     const tabId = activeTab.id;
-                    if (activeTab.type === "claude") {
-                      extraEnv["ANTHROPIC_API_BASE"] =
+                    if (activeTab.type === 'claude') {
+                      extraEnv['ANTHROPIC_API_BASE'] =
                         `http://127.0.0.1:${proxyPort}/anthropic/${tabId}`;
-                    } else if (activeTab.type === "codex") {
-                      extraEnv["OPENAI_BASE_URL"] =
+                    } else if (activeTab.type === 'codex') {
+                      extraEnv['OPENAI_BASE_URL'] =
                         `http://127.0.0.1:${proxyPort}/openai/${tabId}`;
-                      extraEnv["OPENAI_API_BASE"] =
+                      extraEnv['OPENAI_API_BASE'] =
                         `http://127.0.0.1:${proxyPort}/openai/${tabId}/v1`;
-                    } else if (activeTab.type === "opencode") {
-                      extraEnv["OPENAI_API_BASE"] =
+                    } else if (activeTab.type === 'opencode') {
+                      extraEnv['OPENAI_API_BASE'] =
                         `http://127.0.0.1:${proxyPort}/openai/${tabId}/v1`;
                     }
                     return extraEnv;
@@ -553,14 +553,14 @@ export const TerminalPane = memo(function TerminalPane({
                 <div className={styles.exitedOverlay}>
                   <RefreshCw size={24} style={{ opacity: 0.5 }} />
                   <span className={styles.exitedLabel}>
-                    {t("ui.terminal.processEnded")}
+                    {t('ui.terminal.processEnded')}
                   </span>
                   <button
                     type="button"
                     className={styles.restartBtn}
                     onClick={() => void onRestart()}
                   >
-                    {t("ui.terminal.restart")}
+                    {t('ui.terminal.restart')}
                   </button>
                 </div>
               ) : null}
@@ -568,7 +568,7 @@ export const TerminalPane = memo(function TerminalPane({
           ) : (
             <div className={styles.empty}>
               <X size={20} />
-              <span>{t("ui.terminal.noTab")}</span>
+              <span>{t('ui.terminal.noTab')}</span>
             </div>
           )}
         </div>
@@ -578,7 +578,7 @@ export const TerminalPane = memo(function TerminalPane({
         <div
           className={styles.gridResize}
           onPointerDown={startGridResize}
-          title={t("ui.terminal.dragToResizeSpan")}
+          title={t('ui.terminal.dragToResizeSpan')}
         />
       ) : null}
 
@@ -625,14 +625,14 @@ function DisabledOverlay({
         className={styles.reactivateBtn}
         onClick={onReactivate}
       >
-        {t("ui.sidebar.reactivate")}
+        {t('ui.sidebar.reactivate')}
       </button>
     </div>
   );
 }
 
 function shortCwd(path: string): string {
-  const cleaned = path.replace(/[\\/]+$/, "");
+  const cleaned = path.replace(/[\\/]+$/, '');
   const parts = cleaned.split(/[\\/]/).filter(Boolean);
   if (parts.length <= 2) return cleaned;
   return `…/${parts[parts.length - 2]}/${parts[parts.length - 1]}`;

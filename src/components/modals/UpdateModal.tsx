@@ -1,28 +1,28 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-import { useUiStore } from "../../stores/uiStore";
-import { useT } from "../../lib/i18n";
-import { installPendingUpdate } from "../../lib/updater";
-import { Modal } from "./Modal";
-import controls from "./controls.module.css";
-import styles from "./UpdateModal.module.css";
+import { useUiStore } from '../../stores/uiStore';
+import { useT } from '../../lib/i18n';
+import { installPendingUpdate } from '../../lib/updater';
+import { Modal } from './Modal';
+import controls from './controls.module.css';
+import styles from './UpdateModal.module.css';
 
 export function UpdateModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "updateAvailable");
+  const open = useUiStore((s) => s.openModal === 'updateAvailable');
   const info = useUiStore((s) => s.updateInfo);
   const closeModal = useUiStore((s) => s.closeModal);
-  const [phase, setPhase] = useState<"idle" | "installing" | "error">("idle");
+  const [phase, setPhase] = useState<'idle' | 'installing' | 'error'>('idle');
   const [percent, setPercent] = useState(0);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   if (!open || !info) return null;
 
-  const installing = phase === "installing";
+  const installing = phase === 'installing';
 
   const onInstall = async () => {
-    setPhase("installing");
-    setError("");
+    setPhase('installing');
+    setError('');
     try {
       await installPendingUpdate(({ downloaded, total }) => {
         setPercent(
@@ -31,7 +31,7 @@ export function UpdateModal() {
       });
       // relaunch() acontece dentro de installPendingUpdate; se voltar aqui, não reiniciou.
     } catch (err) {
-      setPhase("error");
+      setPhase('error');
       setError(String(err));
     }
   };
@@ -41,7 +41,7 @@ export function UpdateModal() {
       open={open}
       // Trava o fechar-por-fora enquanto instala pra não interromper o download.
       onClose={installing ? () => {} : closeModal}
-      title={t("update.availableTitle", { version: info.version })}
+      title={t('update.availableTitle', { version: info.version })}
       footer={
         <>
           <button
@@ -50,7 +50,7 @@ export function UpdateModal() {
             onClick={closeModal}
             disabled={installing}
           >
-            {t("update.later")}
+            {t('update.later')}
           </button>
           <button
             type="button"
@@ -59,14 +59,14 @@ export function UpdateModal() {
             disabled={installing}
           >
             {installing
-              ? t("update.installing", { percent })
-              : t("update.installNow")}
+              ? t('update.installing', { percent })
+              : t('update.installNow')}
           </button>
         </>
       }
     >
       <p className={styles.summary}>
-        {t("update.body", {
+        {t('update.body', {
           current: info.currentVersion,
           version: info.version,
         })}
@@ -80,8 +80,8 @@ export function UpdateModal() {
           />
         </div>
       ) : null}
-      {phase === "error" ? (
-        <p className={styles.error}>{t("update.error", { error })}</p>
+      {phase === 'error' ? (
+        <p className={styles.error}>{t('update.error', { error })}</p>
       ) : null}
     </Modal>
   );

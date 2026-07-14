@@ -1,4 +1,4 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,38 +18,38 @@ import {
   Workflow,
   X,
   DollarSign,
-} from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-import { ContextMenu, type MenuItem } from "../ProjectSidebar/ContextMenu";
-import { ClaudeIcon, CodexIcon } from "../icons/AgentIcons";
+import { ContextMenu, type MenuItem } from '../ProjectSidebar/ContextMenu';
+import { ClaudeIcon, CodexIcon } from '../icons/AgentIcons';
 
-import { getCachedClaudeUsage } from "../../lib/claudeUsageCache";
-import { getCachedCodexUsage } from "../../lib/codexUsageCache";
+import { getCachedClaudeUsage } from '../../lib/claudeUsageCache';
+import { getCachedCodexUsage } from '../../lib/codexUsageCache';
 import {
   observeClaudeReset,
   observeCodexReset,
-} from "../../lib/limitResetWatch";
-import { useT } from "../../lib/i18n";
-import { getMemoryStats, killPty } from "../../lib/tauri";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import styles from "./TitleBar.module.css";
+} from '../../lib/limitResetWatch';
+import { useT } from '../../lib/i18n';
+import { getMemoryStats, killPty } from '../../lib/tauri';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import styles from './TitleBar.module.css';
 
 const RAM_POLL_INTERVAL_MS = 15000;
 const CLAUDE_POLL_INTERVAL_MS = 5 * 60_000;
-const APP_TITLE = import.meta.env.DEV ? "(DEV) Alethe" : "Alethe";
+const APP_TITLE = import.meta.env.DEV ? '(DEV) Alethe' : 'Alethe';
 
 function usagePillColor(utilization: number): string {
-  if (utilization >= 80) return "var(--status-offline)";
-  if (utilization >= 50) return "var(--status-waiting)";
-  return "var(--status-working)";
+  if (utilization >= 80) return 'var(--status-offline)';
+  if (utilization >= 50) return 'var(--status-waiting)';
+  return 'var(--status-working)';
 }
 
 function formatResetTime(resetsAt: string): string {
   try {
     const diff = new Date(resetsAt).getTime() - Date.now();
-    if (diff <= 0) return "resetting...";
+    if (diff <= 0) return 'resetting...';
     const h = Math.floor(diff / 3_600_000);
     const m = Math.floor((diff % 3_600_000) / 60_000);
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
@@ -110,8 +110,8 @@ export function TitleBar() {
 
   const closeAgentPlanning = () => {
     if (!agentCanvasSession) return;
-    if (activeView === "agentCanvas") {
-      window.dispatchEvent(new CustomEvent("alethe:agent-canvas-exit"));
+    if (activeView === 'agentCanvas') {
+      window.dispatchEvent(new CustomEvent('alethe:agent-canvas-exit'));
       return;
     }
     void killPty(agentCanvasSession.ptyId).catch(() => {
@@ -220,11 +220,11 @@ export function TitleBar() {
   // Rastreia foco/visibilidade da janela pra pausar o polling em background.
   useEffect(() => {
     const update = (focused: boolean) => {
-      activeRef.current = focused && document.visibilityState === "visible";
+      activeRef.current = focused && document.visibilityState === 'visible';
     };
     update(document.hasFocus());
     const onVisibility = () => update(document.hasFocus());
-    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener('visibilitychange', onVisibility);
     let unlisten: (() => void) | undefined;
     void win
       .onFocusChanged(({ payload }) => update(payload))
@@ -232,7 +232,7 @@ export function TitleBar() {
         unlisten = fn;
       });
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener('visibilitychange', onVisibility);
       unlisten?.();
     };
   }, [win]);
@@ -248,24 +248,24 @@ export function TitleBar() {
         type="button"
         className={styles.iconBtn}
         onClick={toggleMainMenu}
-        title={t("ui.titlebar.menu")}
-        aria-label={t("ui.titlebar.menu")}
+        title={t('ui.titlebar.menu')}
+        aria-label={t('ui.titlebar.menu')}
       >
         <Menu size={14} />
       </button>
       <button
         type="button"
-        className={`${styles.iconBtn} ${sidebarVisible ? styles.iconBtnActive : ""}`}
+        className={`${styles.iconBtn} ${sidebarVisible ? styles.iconBtnActive : ''}`}
         onClick={toggleSidebar}
         title={
           sidebarVisible
-            ? t("ui.titlebar.closeSidebar")
-            : t("ui.titlebar.openSidebar")
+            ? t('ui.titlebar.closeSidebar')
+            : t('ui.titlebar.openSidebar')
         }
         aria-label={
           sidebarVisible
-            ? t("ui.titlebar.closeSidebar")
-            : t("ui.titlebar.openSidebar")
+            ? t('ui.titlebar.closeSidebar')
+            : t('ui.titlebar.openSidebar')
         }
         aria-pressed={sidebarVisible}
       >
@@ -277,17 +277,17 @@ export function TitleBar() {
       </button>
       <button
         type="button"
-        className={`${styles.iconBtn} ${taskPanelVisible ? styles.iconBtnActive : ""}`}
+        className={`${styles.iconBtn} ${taskPanelVisible ? styles.iconBtnActive : ''}`}
         onClick={toggleTaskPanel}
         title={
           taskPanelVisible
-            ? t("ui.titlebar.closeTaskPanel")
-            : t("ui.titlebar.openTaskPanel")
+            ? t('ui.titlebar.closeTaskPanel')
+            : t('ui.titlebar.openTaskPanel')
         }
         aria-label={
           taskPanelVisible
-            ? t("ui.titlebar.closeTaskPanel")
-            : t("ui.titlebar.openTaskPanel")
+            ? t('ui.titlebar.closeTaskPanel')
+            : t('ui.titlebar.openTaskPanel')
         }
         aria-pressed={taskPanelVisible}
       >
@@ -304,7 +304,7 @@ export function TitleBar() {
         <div
           className={styles.groupTabs}
           role="tablist"
-          aria-label={t("ui.titlebar.recentTabs")}
+          aria-label={t('ui.titlebar.recentTabs')}
           data-tauri-drag-region
         >
           <div className={styles.historyControls}>
@@ -314,10 +314,10 @@ export function TitleBar() {
               disabled={historyIndex <= 0}
               onClick={() => {
                 navigateWorkspaceHistory(-1);
-                setActiveView("workspace");
+                setActiveView('workspace');
               }}
-              title={t("ui.titlebar.back")}
-              aria-label={t("ui.titlebar.back")}
+              title={t('ui.titlebar.back')}
+              aria-label={t('ui.titlebar.back')}
             >
               <ArrowLeft size={13} />
             </button>
@@ -327,10 +327,10 @@ export function TitleBar() {
               disabled={historyIndex < 0 || historyIndex >= historyLength - 1}
               onClick={() => {
                 navigateWorkspaceHistory(1);
-                setActiveView("workspace");
+                setActiveView('workspace');
               }}
-              title={t("ui.titlebar.forward")}
-              aria-label={t("ui.titlebar.forward")}
+              title={t('ui.titlebar.forward')}
+              aria-label={t('ui.titlebar.forward')}
             >
               <ArrowRight size={13} />
             </button>
@@ -344,7 +344,7 @@ export function TitleBar() {
             return (
               <div
                 key={tab.id}
-                className={`${styles.groupTab} ${active ? styles.groupTabActive : ""} ${tab.pinned ? styles.groupTabPinned : ""}`}
+                className={`${styles.groupTab} ${active ? styles.groupTabActive : ''} ${tab.pinned ? styles.groupTabPinned : ''}`}
                 onContextMenu={(event) => {
                   event.preventDefault();
                   setTabMenu({
@@ -352,33 +352,33 @@ export function TitleBar() {
                     y: event.clientY,
                     items: [
                       {
-                        kind: "item",
-                        label: t("ui.workspace.openIndividually"),
+                        kind: 'item',
+                        label: t('ui.workspace.openIndividually'),
                         onClick: () => {
                           activateWorkspaceTab(tab.id);
-                          setActiveView("workspace");
+                          setActiveView('workspace');
                         },
                       },
                       {
-                        kind: "item",
-                        label: t("ui.workspace.addToCurrent"),
+                        kind: 'item',
+                        label: t('ui.workspace.addToCurrent'),
                         onClick: () => {
                           addWorkspaceTabToCurrent(tab.id);
-                          setActiveView("workspace");
+                          setActiveView('workspace');
                         },
                       },
-                      { kind: "separator" },
+                      { kind: 'separator' },
                       {
-                        kind: "item",
+                        kind: 'item',
                         label: tab.pinned
-                          ? t("ui.titlebar.unpinTab")
-                          : t("ui.titlebar.pinTab"),
+                          ? t('ui.titlebar.unpinTab')
+                          : t('ui.titlebar.pinTab'),
                         onClick: () => toggleWorkspaceTabPinned(tab.id),
                       },
-                      { kind: "separator" },
+                      { kind: 'separator' },
                       {
-                        kind: "item",
-                        label: t("ui.titlebar.removeFromTopbar"),
+                        kind: 'item',
+                        label: t('ui.titlebar.removeFromTopbar'),
                         danger: true,
                         onClick: () => closeSavedWorkspaceTab(tab.id),
                       },
@@ -393,7 +393,7 @@ export function TitleBar() {
                   className={styles.groupTabMain}
                   onClick={() => {
                     activateWorkspaceTab(tab.id);
-                    setActiveView("workspace");
+                    setActiveView('workspace');
                   }}
                   title={tab.label}
                 >
@@ -406,12 +406,12 @@ export function TitleBar() {
                       alt=""
                       className={styles.groupTabIcon}
                     />
-                  ) : tab.kind === "composition" ? (
+                  ) : tab.kind === 'composition' ? (
                     <Workflow size={14} className={styles.groupTabIconSvg} />
                   ) : (
                     <span
                       className={styles.groupTabDot}
-                      style={{ background: tab.color ?? "#6ea8ff" }}
+                      style={{ background: tab.color ?? '#6ea8ff' }}
                     />
                   )}
                   <span className={styles.groupTabName}>{tab.label}</span>
@@ -424,8 +424,8 @@ export function TitleBar() {
                     event.stopPropagation();
                     closeSavedWorkspaceTab(tab.id);
                   }}
-                  title={t("ui.titlebar.removeFromTopbar")}
-                  aria-label={t("ui.titlebar.removeNameFromTopbar", {
+                  title={t('ui.titlebar.removeFromTopbar')}
+                  aria-label={t('ui.titlebar.removeNameFromTopbar', {
                     name: tab.label,
                   })}
                 >
@@ -436,15 +436,15 @@ export function TitleBar() {
           })}
           {agentCanvasSession ? (
             <div
-              className={`${styles.groupTab} ${activeView === "agentCanvas" ? styles.groupTabActive : ""}`}
+              className={`${styles.groupTab} ${activeView === 'agentCanvas' ? styles.groupTabActive : ''}`}
               title={agentCanvasSession.folder}
             >
               <button
                 type="button"
                 role="tab"
-                aria-selected={activeView === "agentCanvas"}
+                aria-selected={activeView === 'agentCanvas'}
                 className={styles.groupTabMain}
-                onClick={() => setActiveView("agentCanvas")}
+                onClick={() => setActiveView('agentCanvas')}
                 title={agentCanvasSession.folder}
               >
                 <Workflow size={14} className={styles.groupTabIconSvg} />
@@ -457,8 +457,8 @@ export function TitleBar() {
                   event.stopPropagation();
                   closeAgentPlanning();
                 }}
-                title={t("ui.titlebar.closeAgentPlanning")}
-                aria-label={t("ui.titlebar.closeAgentPlanning")}
+                title={t('ui.titlebar.closeAgentPlanning')}
+                aria-label={t('ui.titlebar.closeAgentPlanning')}
               >
                 <X size={11} />
               </button>
@@ -472,9 +472,9 @@ export function TitleBar() {
           <button
             type="button"
             className={styles.syncPill}
-            title={t("sync.title")}
-            aria-label={t("sync.title")}
-            onClick={() => openModal("sync")}
+            title={t('sync.title')}
+            aria-label={t('sync.title')}
+            onClick={() => openModal('sync')}
           >
             <RefreshCw size={12} />
           </button>
@@ -483,12 +483,12 @@ export function TitleBar() {
           <button
             type="button"
             className={styles.profilePill}
-            title={t("profile.manageAccounts")}
-            onClick={() => openModal("profiles")}
+            title={t('profile.manageAccounts')}
+            onClick={() => openModal('profiles')}
           >
             <Users size={12} />
             <span className={styles.profilePillLabel}>
-              {activeProfile?.name ?? t("profile.localAccount")}
+              {activeProfile?.name ?? t('profile.localAccount')}
             </span>
           </button>
         ) : null}
@@ -498,7 +498,7 @@ export function TitleBar() {
               className={`${styles.usagePill} ${styles.claudeUsage}`}
               style={
                 {
-                  "--pill-color": usagePillColor(
+                  '--pill-color': usagePillColor(
                     claudeUsage.five_hour.utilization,
                   ),
                 } as React.CSSProperties
@@ -510,27 +510,27 @@ export function TitleBar() {
             <div
               className={styles.usagePopover}
               role="tooltip"
-              aria-label={t("ui.titlebar.itemClaude")}
+              aria-label={t('ui.titlebar.itemClaude')}
             >
               <div className={styles.usagePopoverTitle}>
-                {t("ui.titlebar.itemClaude")}
+                {t('ui.titlebar.itemClaude')}
               </div>
               <div className={styles.usagePopoverMain}>
-                <span>{t("widget.usage5h")}</span>
+                <span>{t('widget.usage5h')}</span>
                 <strong>{formatPct(claudeUsage.five_hour.utilization)}</strong>
               </div>
               <div className={styles.usagePopoverLine}>
-                <span>{t("widget.week")}</span>
+                <span>{t('widget.week')}</span>
                 <strong>{formatPct(claudeUsage.seven_day.utilization)}</strong>
               </div>
               <div className={styles.usagePopoverLine}>
-                <span>{t("ws.usageOpusLabel")}</span>
+                <span>{t('ws.usageOpusLabel')}</span>
                 <strong>
                   {formatPct(claudeUsage.seven_day_opus.utilization)}
                 </strong>
               </div>
               <div className={styles.usagePopoverFooter}>
-                {t("widget.resetLabel", { w: "5h" })} ·{" "}
+                {t('widget.resetLabel', { w: '5h' })} ·{' '}
                 {formatResetTime(claudeUsage.five_hour.resets_at)}
               </div>
             </div>
@@ -542,7 +542,7 @@ export function TitleBar() {
               className={`${styles.usagePill} ${styles.codexUsage}`}
               style={
                 {
-                  "--pill-color": usagePillColor(
+                  '--pill-color': usagePillColor(
                     codexUsage.primary.used_percent,
                   ),
                 } as React.CSSProperties
@@ -554,29 +554,29 @@ export function TitleBar() {
             <div
               className={styles.usagePopover}
               role="tooltip"
-              aria-label={t("ui.titlebar.itemCodex")}
+              aria-label={t('ui.titlebar.itemCodex')}
             >
               <div className={styles.usagePopoverTitle}>
-                {t("ui.titlebar.itemCodex")}
+                {t('ui.titlebar.itemCodex')}
               </div>
               <div className={styles.usagePopoverMain}>
-                <span>{t("widget.usage5h")}</span>
+                <span>{t('widget.usage5h')}</span>
                 <strong>{formatPct(codexUsage.primary.used_percent)}</strong>
               </div>
               <div className={styles.usagePopoverLine}>
-                <span>{t("widget.week")}</span>
+                <span>{t('widget.week')}</span>
                 <strong>{formatPct(codexUsage.secondary.used_percent)}</strong>
               </div>
               <div className={styles.usagePopoverLine}>
-                <span>{t("widget.statusLabel")}</span>
+                <span>{t('widget.statusLabel')}</span>
                 <strong>
                   {codexUsage.rate_limited
-                    ? t("widget.statusLimited")
-                    : t("widget.statusOk")}
+                    ? t('widget.statusLimited')
+                    : t('widget.statusOk')}
                 </strong>
               </div>
               <div className={styles.usagePopoverFooter}>
-                {t("widget.creditsLabel")} · {codexUsage.reset_credits}
+                {t('widget.creditsLabel')} · {codexUsage.reset_credits}
               </div>
             </div>
           </div>
@@ -584,24 +584,24 @@ export function TitleBar() {
         <button
           type="button"
           className={styles.syncPill}
-          title={t("workflow.title")}
-          onClick={() => openModal("workflow")}
+          title={t('workflow.title')}
+          onClick={() => openModal('workflow')}
         >
           <Layers size={12} />
         </button>
         <button
           type="button"
           className={styles.syncPill}
-          title={t("context.title")}
-          onClick={() => openModal("context")}
+          title={t('context.title')}
+          onClick={() => openModal('context')}
         >
           <FileText size={12} />
         </button>
         <button
           type="button"
           className={styles.syncPill}
-          title={t("ui.titlebar.openTelemetry")}
-          onClick={() => openModal("telemetryDashboard")}
+          title={t('ui.titlebar.openTelemetry')}
+          onClick={() => openModal('telemetryDashboard')}
         >
           <DollarSign size={12} />
         </button>
@@ -609,8 +609,8 @@ export function TitleBar() {
           <button
             type="button"
             className={styles.ramPill}
-            title={t("ui.titlebar.openMemoryAnalytics")}
-            onClick={() => openModal("memoryAnalytics")}
+            title={t('ui.titlebar.openMemoryAnalytics')}
+            onClick={() => openModal('memoryAnalytics')}
           >
             {ramMb.toFixed(0)} MB
           </button>
@@ -618,9 +618,9 @@ export function TitleBar() {
         <button
           type="button"
           className={styles.editWidgets}
-          title={t("ui.titlebar.customize")}
-          aria-label={t("ui.titlebar.customize")}
-          onClick={() => openModal("topbarSettings")}
+          title={t('ui.titlebar.customize')}
+          aria-label={t('ui.titlebar.customize')}
+          onClick={() => openModal('topbarSettings')}
         >
           <Pencil size={12} />
         </button>
@@ -629,8 +629,8 @@ export function TitleBar() {
         type="button"
         className={styles.windowBtn}
         onClick={() => void win.minimize()}
-        title={t("ui.titlebar.minimize")}
-        aria-label={t("ui.titlebar.minimize")}
+        title={t('ui.titlebar.minimize')}
+        aria-label={t('ui.titlebar.minimize')}
       >
         <Minus size={14} />
       </button>
@@ -638,8 +638,8 @@ export function TitleBar() {
         type="button"
         className={styles.windowBtn}
         onClick={() => void win.toggleMaximize()}
-        title={t("ui.titlebar.maximize")}
-        aria-label={t("ui.titlebar.maximize")}
+        title={t('ui.titlebar.maximize')}
+        aria-label={t('ui.titlebar.maximize')}
       >
         <Maximize2 size={12} />
       </button>
@@ -647,8 +647,8 @@ export function TitleBar() {
         type="button"
         className={`${styles.windowBtn} ${styles.close}`}
         onClick={() => void win.close()}
-        title={t("ui.titlebar.close")}
-        aria-label={t("ui.titlebar.close")}
+        title={t('ui.titlebar.close')}
+        aria-label={t('ui.titlebar.close')}
       >
         <X size={14} />
       </button>

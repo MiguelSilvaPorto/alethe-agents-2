@@ -1,27 +1,27 @@
-import { Clock, GitBranch, RotateCcw } from "lucide-react";
-import { useT } from "../../lib/i18n";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import { gitDiff, gitRevParse } from "../../lib/tauri";
-import type { Task } from "../../lib/types";
-import styles from "./TaskCard.module.css";
+import { Clock, GitBranch, RotateCcw } from 'lucide-react';
+import { useT } from '../../lib/i18n';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import { gitDiff, gitRevParse } from '../../lib/tauri';
+import type { Task } from '../../lib/types';
+import styles from './TaskCard.module.css';
 
 type TaskCardProps = {
   task: Task;
-  variant?: "normal" | "history";
+  variant?: 'normal' | 'history';
 };
 
-export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
+export function TaskCard({ task, variant = 'normal' }: TaskCardProps) {
   const t = useT();
   const acceptTask = useProjectsStore((s) => s.acceptTask);
   const openModal = useUiStore((s) => s.openModal_);
 
   const statusLabel = {
-    implementing: t("task.status.implementing"),
-    review: t("task.status.review"),
-    pending: t("task.status.pending"),
-    accepted: t("task.status.accepted"),
-    blocked: t("task.status.blocked"),
+    implementing: t('task.status.implementing'),
+    review: t('task.status.review'),
+    pending: t('task.status.pending'),
+    accepted: t('task.status.accepted'),
+    blocked: t('task.status.blocked'),
   }[task.status];
 
   const badgeClass = {
@@ -38,7 +38,7 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
       ? `${Math.floor(age / 60000)}m`
       : `${Math.floor(age / 3600000)}h`;
 
-  if (task.status === "blocked") {
+  if (task.status === 'blocked') {
     return (
       <div className={styles.card}>
         <div className={styles.cardHeader}>
@@ -62,10 +62,10 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
             onClick={() => {
               const store = useProjectsStore.getState();
               store.unblockTask(task.id, true);
-              store.moveTask(task.id, "implementing");
+              store.moveTask(task.id, 'implementing');
             }}
           >
-            {t("task.approve")}
+            {t('task.approve')}
           </button>
           <button
             type="button"
@@ -73,31 +73,31 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
             onClick={() => {
               const store = useProjectsStore.getState();
               store.unblockTask(task.id, false);
-              store.moveTask(task.id, "implementing");
+              store.moveTask(task.id, 'implementing');
             }}
           >
-            {t("task.reject")}
+            {t('task.reject')}
           </button>
         </div>
       </div>
     );
   }
 
-  if (variant === "history") {
+  if (variant === 'history') {
     return (
       <div
-        className={`${styles.card} ${task.status === "accepted" ? "" : styles.rejected}`}
+        className={`${styles.card} ${task.status === 'accepted' ? '' : styles.rejected}`}
       >
         <div className={styles.cardHeader}>
           <span className={`${styles.badge} ${badgeClass}`}>{statusLabel}</span>
           <span className={styles.agentLabel}>
-            {task.assignedTo ?? task.agentType ?? "—"}
+            {task.assignedTo ?? task.agentType ?? '—'}
           </span>
         </div>
         <div className={styles.title}>{task.title}</div>
         {task.rejectionCycle > 0 && (
           <div className={styles.rejectionInfo}>
-            {t("task.rejectedN", { n: String(task.rejectionCycle) })}
+            {t('task.rejectedN', { n: String(task.rejectionCycle) })}
           </div>
         )}
         {task.git?.diffStat ? (
@@ -107,26 +107,26 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
           <button
             type="button"
             className={styles.histBtn}
-            title={t("task.branch")}
-            onClick={() => openModal("taskBranch", { taskId: task.id })}
+            title={t('task.branch')}
+            onClick={() => openModal('taskBranch', { taskId: task.id })}
           >
             <GitBranch size={12} />
-            {t("task.branch")}
+            {t('task.branch')}
           </button>
           <button
             type="button"
             className={styles.histBtn}
-            title={t("task.revert")}
+            title={t('task.revert')}
             onClick={() => {
               // Revert via git checkout do estado antes da task
               if (task.git?.beforeCommit && task.git?.changedFiles) {
                 const store = useProjectsStore.getState();
-                store.moveTask(task.id, "implementing");
+                store.moveTask(task.id, 'implementing');
               }
             }}
           >
             <RotateCcw size={12} />
-            {t("task.revert")}
+            {t('task.revert')}
           </button>
         </div>
       </div>
@@ -138,7 +138,7 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
       <div className={styles.cardHeader}>
         <span className={`${styles.badge} ${badgeClass}`}>{statusLabel}</span>
         <span className={styles.agentLabel}>
-          {task.assignedTo ?? task.agentType ?? "—"}
+          {task.assignedTo ?? task.agentType ?? '—'}
         </span>
       </div>
       <div className={styles.title}>{task.title}</div>
@@ -147,14 +147,14 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
       ) : null}
       {task.rejectionCycle > 0 && (
         <div className={styles.rejectionInfo}>
-          {t("task.rejectedN", { n: String(task.rejectionCycle) })}
+          {t('task.rejectedN', { n: String(task.rejectionCycle) })}
         </div>
       )}
       <div className={styles.meta}>
         <span>{ageLabel}</span>
         {task.agentType ? <span>{task.agentType}</span> : null}
       </div>
-      {task.status === "pending" && (
+      {task.status === 'pending' && (
         <div className={styles.actions}>
           <button
             type="button"
@@ -169,7 +169,7 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
                 const repoRoot = project?.terminals?.[0]?.cwd;
                 if (repoRoot) {
                   const afterCommit = await gitRevParse(repoRoot);
-                  const beforeCommit = task.git?.beforeCommit || "";
+                  const beforeCommit = task.git?.beforeCommit || '';
                   if (beforeCommit && beforeCommit !== afterCommit) {
                     const diff = await gitDiff(
                       repoRoot,
@@ -194,7 +194,7 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
                       ),
                       afterCommitShort: afterCommit.slice(0, 7),
                       changedFiles: [],
-                      diffStat: "",
+                      diffStat: '',
                     });
                   }
                 }
@@ -205,10 +205,10 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
               acceptTask(task.id);
               // Show undo toast
               useUiStore.getState().pushToast({
-                title: t("task.accepted"),
+                title: t('task.accepted'),
                 body: task.title,
                 action: {
-                  label: t("common.undo"),
+                  label: t('common.undo'),
                   onClick: () =>
                     useProjectsStore.getState().undoAcceptTask(task.id),
                 },
@@ -221,21 +221,21 @@ export function TaskCard({ task, variant = "normal" }: TaskCardProps) {
                 );
                 if (p) {
                   const tsk = p.tasks.find((t) => t.id === task.id);
-                  if (tsk?.status === "accepted") {
+                  if (tsk?.status === 'accepted') {
                     // keep accepted - undo window expired
                   }
                 }
               }, 30000);
             }}
           >
-            {t("task.accept")}
+            {t('task.accept')}
           </button>
           <button
             type="button"
             className={`${styles.btn} ${styles.btnDanger}`}
-            onClick={() => openModal("taskReject", { taskId: task.id })}
+            onClick={() => openModal('taskReject', { taskId: task.id })}
           >
-            {t("task.reject")}
+            {t('task.reject')}
           </button>
         </div>
       )}

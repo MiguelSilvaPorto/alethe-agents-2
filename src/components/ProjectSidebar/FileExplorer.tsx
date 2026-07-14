@@ -5,11 +5,11 @@ import {
   Folder,
   FolderOpen,
   RefreshCw,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { getPtyCwd, listDirectory, type DirectoryEntry } from "../../lib/tauri";
-import styles from "./FileExplorer.module.css";
+import { getPtyCwd, listDirectory, type DirectoryEntry } from '../../lib/tauri';
+import styles from './FileExplorer.module.css';
 
 type FileExplorerProps = {
   cwd: string;
@@ -111,7 +111,7 @@ function DirectoryNode({
     <div>
       <button
         type="button"
-        className={`${styles.row} ${depth === 0 ? styles.rootRow : ""}`}
+        className={`${styles.row} ${depth === 0 ? styles.rootRow : ''}`}
         style={{ paddingLeft: 8 + depth * 14 }}
         onClick={() => setOpen((value) => !value)}
         title={path}
@@ -158,6 +158,6 @@ function DirectoryNode({
 }
 
 function rootName(path: string): string {
-  const normalized = path.replace(/[\\/]+$/, "");
+  const normalized = path.replace(/[\\/]+$/, '');
   return normalized.split(/[\\/]/).pop() || normalized;
 }

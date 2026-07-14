@@ -4,33 +4,33 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from "@dnd-kit/core";
-import { FolderPlus, TerminalSquare } from "lucide-react";
-import { Group as PanelGroup, Panel, Separator } from "react-resizable-panels";
-import { useEffect, useMemo } from "react";
+} from '@dnd-kit/core';
+import { FolderPlus, TerminalSquare } from 'lucide-react';
+import { Group as PanelGroup, Panel, Separator } from 'react-resizable-panels';
+import { useEffect, useMemo } from 'react';
 
 import {
   selectActiveProject,
   useProjectsStore,
-} from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import { useT } from "../../lib/i18n";
+} from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import { useT } from '../../lib/i18n';
 import {
   cellStyle,
   gridContainerStyle,
   reconcileGridLayout,
-} from "../../lib/gridLayout";
+} from '../../lib/gridLayout';
 import type {
   GridLayout,
   Group,
   Project,
   Terminal,
   WorkspaceContainer,
-} from "../../lib/types";
-import { EmptyState } from "../EmptyState/EmptyState";
-import { PaneArea } from "./PaneArea";
-import { ProjectContainer } from "./ProjectContainer";
-import styles from "./WorkspaceView.module.css";
+} from '../../lib/types';
+import { EmptyState } from '../EmptyState/EmptyState';
+import { PaneArea } from './PaneArea';
+import { ProjectContainer } from './ProjectContainer';
+import styles from './WorkspaceView.module.css';
 
 function resolveGroup(
   project: Project,
@@ -111,21 +111,21 @@ export function WorkspaceView() {
 
   const onDragEnd = (e: DragEndEvent) => {
     const from = String(e.active.id);
-    const to = e.over ? String(e.over.id) : "";
+    const to = e.over ? String(e.over.id) : '';
     if (!from || !to || from === to) return;
 
     // pane: reordena dentro do mesmo container.
     // Se o projeto está em modo grid, faz SWAP das células do grid (não da
     // ordem linear) — assim o card vai pra posição visual do alvo.
-    if (from.startsWith("pane:") && to.startsWith("pane:")) {
-      const fromId = from.slice("pane:".length);
-      const toId = to.slice("pane:".length);
+    if (from.startsWith('pane:') && to.startsWith('pane:')) {
+      const fromId = from.slice('pane:'.length);
+      const toId = to.slice('pane:'.length);
       const cont = allContainers.find(
         (c) => c.paneIds.includes(fromId) && c.paneIds.includes(toId),
       );
       if (!cont) return;
       const project = projectsById.get(cont.projectId);
-      if (project?.layoutMode === "grid" && project.gridLayout) {
+      if (project?.layoutMode === 'grid' && project.gridLayout) {
         const cells = { ...project.gridLayout.cells };
         const a = cells[fromId];
         const b = cells[toId];
@@ -146,9 +146,9 @@ export function WorkspaceView() {
     // cont: drag de container sobre outro.
     // Se há grid layout ativo (workspace OU grupo), SWAP das células.
     // Senão, reorder linear no array.
-    if (from.startsWith("cont:") && to.startsWith("cont:")) {
-      const fromPid = from.slice("cont:".length);
-      const toPid = to.slice("cont:".length);
+    if (from.startsWith('cont:') && to.startsWith('cont:')) {
+      const fromPid = from.slice('cont:'.length);
+      const toPid = to.slice('cont:'.length);
       const state = useProjectsStore.getState();
 
       // workspace grid custom?
@@ -168,7 +168,7 @@ export function WorkspaceView() {
       // group grid da tab ativa (grupo/subgrupo), incluindo descendentes.
       if (activeGroupTabId) {
         const grp = state.groups.find((g) => g.id === activeGroupTabId);
-        if (grp?.layoutMode === "grid" && grp.gridLayout) {
+        if (grp?.layoutMode === 'grid' && grp.gridLayout) {
           const cells = { ...grp.gridLayout.cells };
           const a = cells[fromPid];
           const b = cells[toPid];
@@ -189,7 +189,7 @@ export function WorkspaceView() {
         const onlyGroupId = [...groupIds][0];
         if (onlyGroupId) {
           const grp = state.groups.find((g) => g.id === onlyGroupId);
-          if (grp?.layoutMode === "grid" && grp.gridLayout) {
+          if (grp?.layoutMode === 'grid' && grp.gridLayout) {
             const cells = { ...grp.gridLayout.cells };
             const a = cells[fromPid];
             const b = cells[toPid];
@@ -233,8 +233,8 @@ export function WorkspaceView() {
         project={activeProject}
         onAddTerminal={() =>
           activeProject
-            ? openModal("newTerminal", { projectId: activeProject.id })
-            : openModal("newProject")
+            ? openModal('newTerminal', { projectId: activeProject.id })
+            : openModal('newProject')
         }
       />,
       false,
@@ -335,7 +335,7 @@ function ContainerAutoGrid({
     );
   }
 
-  if (activeGroup?.layoutMode === "grid" && activeGroup.gridLayout) {
+  if (activeGroup?.layoutMode === 'grid' && activeGroup.gridLayout) {
     return (
       <GroupGridOuter
         containers={containers}
@@ -357,7 +357,7 @@ function ContainerAutoGrid({
     return null;
   })();
   const group = groupId ? groupsById.get(groupId) : null;
-  if (group?.layoutMode === "grid" && group.gridLayout) {
+  if (group?.layoutMode === 'grid' && group.gridLayout) {
     return (
       <GroupGridOuter
         containers={containers}
@@ -376,8 +376,8 @@ function ContainerAutoGrid({
           if (!project) return null;
           const group = resolveGroup(project, groupsById);
           const isLast = i === containers.length - 1;
-          const minSize = c.collapsed ? "0%" : "15%";
-          const defaultSize = c.collapsed ? "4%" : undefined;
+          const minSize = c.collapsed ? '0%' : '15%';
+          const defaultSize = c.collapsed ? '4%' : undefined;
           return (
             <ContainerPanelFragment
               key={c.projectId}
@@ -450,8 +450,8 @@ function FragmentRowOuter({
               if (!project) return null;
               const group = resolveGroup(project, groupsById);
               const isLast = i === row.length - 1;
-              const minSize = c.collapsed ? "0%" : "15%";
-              const defaultSize = c.collapsed ? "4%" : undefined;
+              const minSize = c.collapsed ? '0%' : '15%';
+              const defaultSize = c.collapsed ? '4%' : undefined;
               return (
                 <ContainerPanelFragment
                   key={c.projectId}
@@ -571,10 +571,10 @@ function NoWorkspace({
       <div className={styles.emptyShell}>
         <EmptyState
           icon={<FolderPlus size={22} />}
-          title={t("ws.emptyProjectTitle")}
-          description={t("ws.emptyProjectDesc")}
+          title={t('ws.emptyProjectTitle')}
+          description={t('ws.emptyProjectDesc')}
           primaryAction={{
-            label: t("ws.emptyProjectAction"),
+            label: t('ws.emptyProjectAction'),
             onClick: onAddTerminal,
           }}
         />
@@ -586,10 +586,10 @@ function NoWorkspace({
       <div className={styles.emptyShell}>
         <EmptyState
           icon={<TerminalSquare size={22} />}
-          title={t("ws.emptyTerminalTitle")}
-          description={t("ws.emptyTerminalDesc")}
+          title={t('ws.emptyTerminalTitle')}
+          description={t('ws.emptyTerminalDesc')}
           primaryAction={{
-            label: t("ws.emptyTerminalAction"),
+            label: t('ws.emptyTerminalAction'),
             onClick: onAddTerminal,
           }}
         />
@@ -600,12 +600,12 @@ function NoWorkspace({
     <div className={styles.emptyShell}>
       <EmptyState
         icon={<TerminalSquare size={22} />}
-        title={t("ws.emptyContainerTitle")}
-        description={t("ws.emptyContainerDesc", {
+        title={t('ws.emptyContainerTitle')}
+        description={t('ws.emptyContainerDesc', {
           count: project.terminals.length,
         })}
         primaryAction={{
-          label: t("ws.emptyContainerAction"),
+          label: t('ws.emptyContainerAction'),
           onClick: () => openContainerWithAllPanes(project.id),
         }}
       />

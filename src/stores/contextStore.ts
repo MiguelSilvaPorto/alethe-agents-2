@@ -1,11 +1,11 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 import type {
   ContextReport,
   ContextState,
   Decision,
   Objective,
   ObjectiveStatus,
-} from "../lib/tauri";
+} from '../lib/tauri';
 import {
   contextAddDecision as apiAddDecision,
   contextDeleteObjective as apiDeleteObjective,
@@ -14,7 +14,7 @@ import {
   contextRefresh as apiRefresh,
   contextSetObjective as apiSetObjective,
   contextUpdateObjectiveStatus as apiUpdateStatus,
-} from "../lib/tauri";
+} from '../lib/tauri';
 
 type ContextStore = {
   report: ContextReport | null;

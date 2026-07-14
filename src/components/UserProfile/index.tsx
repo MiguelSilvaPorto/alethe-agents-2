@@ -1,11 +1,11 @@
-import { LogOut, Settings, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { LogOut, Settings, Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-import { useT } from "../../lib/i18n";
-import { getProfileImageUrl, getProfileInitial } from "../../lib/profile";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import styles from "./UserProfile.module.css";
+import { useT } from '../../lib/i18n';
+import { getProfileImageUrl, getProfileInitial } from '../../lib/profile';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import styles from './UserProfile.module.css';
 
 export function UserProfile() {
   const t = useT();
@@ -17,7 +17,7 @@ export function UserProfile() {
   const [open, setOpen] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const displayName = preferences.displayName || t("profile.fallbackName");
+  const displayName = preferences.displayName || t('profile.fallbackName');
   const avatarUrl = getProfileImageUrl(preferences);
   const initial = getProfileInitial(displayName);
   const activeProfile =
@@ -30,8 +30,8 @@ export function UserProfile() {
   const logout = () => {
     setPreferences({
       accountCreated: false,
-      displayName: "",
-      profileImageUrl: "",
+      displayName: '',
+      profileImageUrl: '',
     });
     setOpen(false);
   };
@@ -42,13 +42,13 @@ export function UserProfile() {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === 'Escape') setOpen(false);
     };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
     };
   }, [open]);
 
@@ -58,7 +58,7 @@ export function UserProfile() {
         type="button"
         className={styles.button}
         onClick={() => setOpen((v) => !v)}
-        aria-label={t("profile.menuLabel")}
+        aria-label={t('profile.menuLabel')}
         title={displayName}
       >
         {avatarUrl && !imgFailed ? (
@@ -75,8 +75,8 @@ export function UserProfile() {
         <span className={styles.identity}>
           <span className={styles.name}>{displayName}</span>
           <span className={styles.email}>
-            {t("profile.localAccount")}
-            {activeProfile ? ` · ${activeProfile.name}` : ""}
+            {t('profile.localAccount')}
+            {activeProfile ? ` · ${activeProfile.name}` : ''}
           </span>
         </span>
         <Settings size={13} className={styles.gear} />
@@ -99,7 +99,7 @@ export function UserProfile() {
             <div className={styles.popIdentity}>
               <strong className={styles.popName}>{displayName}</strong>
               <span className={styles.popEmail}>
-                {t("profile.localAccount")}
+                {t('profile.localAccount')}
               </span>
             </div>
           </div>
@@ -108,22 +108,22 @@ export function UserProfile() {
             type="button"
             className={styles.item}
             onClick={() => {
-              openModal("preferences");
+              openModal('preferences');
               setOpen(false);
             }}
           >
-            {t("profile.preferences")}
+            {t('profile.preferences')}
           </button>
           <button
             type="button"
             className={styles.item}
             onClick={() => {
-              openModal("profiles");
+              openModal('profiles');
               setOpen(false);
             }}
           >
             <Users size={13} />
-            <span>{t("profile.manageAccounts")}</span>
+            <span>{t('profile.manageAccounts')}</span>
           </button>
           <button
             type="button"
@@ -131,7 +131,7 @@ export function UserProfile() {
             onClick={logout}
           >
             <LogOut size={13} />
-            <span>{t("profile.logout")}</span>
+            <span>{t('profile.logout')}</span>
           </button>
         </div>
       ) : null}

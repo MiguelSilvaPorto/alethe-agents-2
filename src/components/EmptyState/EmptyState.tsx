@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import styles from "./EmptyState.module.css";
+import styles from './EmptyState.module.css';
 
 type Action = {
   label: string;
@@ -15,7 +15,7 @@ type EmptyStateProps = {
   primaryAction?: Action;
   secondaryAction?: Action;
   compact?: boolean;
-  tone?: "default" | "positive";
+  tone?: 'default' | 'positive';
   className?: string;
 };
 
@@ -26,19 +26,19 @@ export function EmptyState({
   primaryAction,
   secondaryAction,
   compact = false,
-  tone = "default",
+  tone = 'default',
   className,
 }: EmptyStateProps) {
   return (
     <div
       className={[
         styles.root,
-        compact ? styles.compact : "",
-        tone === "positive" ? styles.positive : "",
-        className ?? "",
+        compact ? styles.compact : '',
+        tone === 'positive' ? styles.positive : '',
+        className ?? '',
       ]
         .filter(Boolean)
-        .join(" ")}
+        .join(' ')}
     >
       <div className={styles.iconWrap} aria-hidden>
         {icon}

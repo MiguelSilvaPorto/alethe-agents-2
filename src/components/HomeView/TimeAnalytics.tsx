@@ -1,32 +1,32 @@
-import { RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { intlLocale, useT, type MessageKey } from "../../lib/i18n";
-import { flushActivityTracker } from "../../lib/activityTracker";
-import { getActivitySummary, type ActivitySummary } from "../../lib/tauri";
-import type { AgentType } from "../../lib/types";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { AgentIcon } from "../icons/AgentIcons";
-import styles from "./HomeView.module.css";
+import { intlLocale, useT, type MessageKey } from '../../lib/i18n';
+import { flushActivityTracker } from '../../lib/activityTracker';
+import { getActivitySummary, type ActivitySummary } from '../../lib/tauri';
+import type { AgentType } from '../../lib/types';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { AgentIcon } from '../icons/AgentIcons';
+import styles from './HomeView.module.css';
 
-type Range = "today" | "7d" | "30d" | "all";
+type Range = 'today' | '7d' | '30d' | 'all';
 const RANGE_KEYS: Record<Range, MessageKey> = {
-  today: "time.range.today",
-  "7d": "time.range.7d",
-  "30d": "time.range.30d",
-  all: "time.range.all",
+  today: 'time.range.today',
+  '7d': 'time.range.7d',
+  '30d': 'time.range.30d',
+  all: 'time.range.all',
 };
 
 function datesFor(range: Range): string[] {
-  if (range === "all") return [];
-  const count = range === "today" ? 1 : range === "7d" ? 7 : 30;
+  if (range === 'all') return [];
+  const count = range === 'today' ? 1 : range === '7d' ? 7 : 30;
   const dates: string[] = [];
   const cursor = new Date();
   cursor.setHours(12, 0, 0, 0);
   for (let index = 0; index < count; index++) {
     const year = cursor.getFullYear();
-    const month = String(cursor.getMonth() + 1).padStart(2, "0");
-    const day = String(cursor.getDate()).padStart(2, "0");
+    const month = String(cursor.getMonth() + 1).padStart(2, '0');
+    const day = String(cursor.getDate()).padStart(2, '0');
     dates.push(`${year}-${month}-${day}`);
     cursor.setDate(cursor.getDate() - 1);
   }
@@ -46,7 +46,7 @@ export function TimeAnalytics() {
   const language = useProjectsStore((state) => state.preferences.language);
   const theme = useProjectsStore((state) => state.preferences.uiTheme);
   const projects = useProjectsStore((state) => state.projects);
-  const [range, setRange] = useState<Range>("today");
+  const [range, setRange] = useState<Range>('today');
   const [summary, setSummary] = useState<ActivitySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -99,11 +99,11 @@ export function TimeAnalytics() {
     <div className={styles.timeAnalytics}>
       <div className={styles.timeAnalyticsHead}>
         <div>
-          <div className={styles.timeAnalyticsTitle}>{t("time.title")}</div>
-          <div className={styles.timeAnalyticsSub}>{t("time.subtitle")}</div>
+          <div className={styles.timeAnalyticsTitle}>{t('time.title')}</div>
+          <div className={styles.timeAnalyticsSub}>{t('time.subtitle')}</div>
         </div>
         <div className={styles.timeRange}>
-          {(["today", "7d", "30d", "all"] as Range[]).map((value) => (
+          {(['today', '7d', '30d', 'all'] as Range[]).map((value) => (
             <button
               key={value}
               type="button"
@@ -116,7 +116,7 @@ export function TimeAnalytics() {
           <button
             type="button"
             onClick={() => void load()}
-            title={t("time.refresh")}
+            title={t('time.refresh')}
           >
             <RefreshCw size={12} />
           </button>
@@ -125,37 +125,37 @@ export function TimeAnalytics() {
 
       <div className={styles.timeSummaryGrid} aria-busy={loading}>
         <Metric
-          label={t("time.active")}
+          label={t('time.active')}
           value={duration(totals?.userActiveMs ?? 0)}
-          detail={t("time.focusedDetail", {
+          detail={t('time.focusedDetail', {
             value: duration(totals?.appFocusedMs ?? 0),
           })}
         />
         <Metric
-          label={t("time.agentWall")}
+          label={t('time.agentWall')}
           value={duration(totals?.agentWallMs ?? 0)}
-          detail={t("time.agentSumDetail", {
+          detail={t('time.agentSumDetail', {
             value: duration(totals?.agentSumMs ?? 0),
           })}
         />
         <Metric
-          label={t("time.background")}
+          label={t('time.background')}
           value={duration(totals?.agentBackgroundMs ?? 0)}
-          detail={t("time.parallelDetail", {
+          detail={t('time.parallelDetail', {
             value: duration(totals?.parallelMs ?? 0),
             peak: totals?.peakConcurrent ?? 0,
           })}
         />
         <Metric
-          label={t("time.idle")}
+          label={t('time.idle')}
           value={duration(totals?.userIdleMs ?? 0)}
-          detail={t("time.noAgentDetail", { value: duration(inactive) })}
+          detail={t('time.noAgentDetail', { value: duration(inactive) })}
         />
       </div>
 
       <div className={styles.timeBreakdowns}>
         <div>
-          <div className={styles.timeBreakdownTitle}>{t("time.byAgent")}</div>
+          <div className={styles.timeBreakdownTitle}>{t('time.byAgent')}</div>
           <div className={styles.timeRows}>
             {agentRows.length ? (
               agentRows.map(([agent, value]) => (
@@ -170,34 +170,34 @@ export function TimeAnalytics() {
                   </span>
                   <span>{duration(value.workingMs)}</span>
                   <small>
-                    {t("time.backgroundShort", {
+                    {t('time.backgroundShort', {
                       value: duration(value.backgroundMs),
                     })}
                   </small>
                 </div>
               ))
             ) : (
-              <div className={styles.timeEmpty}>{t("time.empty")}</div>
+              <div className={styles.timeEmpty}>{t('time.empty')}</div>
             )}
           </div>
         </div>
         <div>
-          <div className={styles.timeBreakdownTitle}>{t("time.byProject")}</div>
+          <div className={styles.timeBreakdownTitle}>{t('time.byProject')}</div>
           <div className={styles.timeRows}>
             {projectRows.length ? (
               projectRows.map(([projectId, value]) => (
                 <div className={styles.timeRow} key={projectId}>
                   <span className={styles.timeRowName}>
                     {projectNames.get(projectId) ??
-                      (projectId === "__agent_canvas__"
-                        ? "Agent Canvas"
-                        : projectId === "__unassigned__"
-                          ? t("time.unassigned")
+                      (projectId === '__agent_canvas__'
+                        ? 'Agent Canvas'
+                        : projectId === '__unassigned__'
+                          ? t('time.unassigned')
                           : projectId)}
                   </span>
                   <span>{duration(value.activeMs + value.agentWallMs)}</span>
                   <small>
-                    {t("time.projectDetail", {
+                    {t('time.projectDetail', {
                       focus: duration(value.activeMs),
                       agents: duration(value.agentSumMs),
                     })}
@@ -205,13 +205,13 @@ export function TimeAnalytics() {
                 </div>
               ))
             ) : (
-              <div className={styles.timeEmpty}>{t("time.empty")}</div>
+              <div className={styles.timeEmpty}>{t('time.empty')}</div>
             )}
           </div>
         </div>
       </div>
       <div className={styles.timeFoot}>
-        {t("time.localNote", {
+        {t('time.localNote', {
           locale: new Intl.DateTimeFormat(
             intlLocale(language),
           ).resolvedOptions().timeZone,

@@ -1,10 +1,10 @@
-const STORAGE_PREFIX = "alethe";
-const LEGACY_PREFIX = "ensemble";
+const STORAGE_PREFIX = 'alethe';
+const LEGACY_PREFIX = 'ensemble';
 
-let activeNamespace = "default";
+let activeNamespace = 'default';
 
 export function setStorageNamespace(namespace: string): void {
-  activeNamespace = namespace.trim() || "default";
+  activeNamespace = namespace.trim() || 'default';
 }
 
 export function getStorageNamespace(): string {
@@ -30,7 +30,7 @@ export function readScopedStorage(
   const namespacedKey = scopedStorageKey(key);
   const current = localStorage.getItem(namespacedKey);
   if (current !== null) return current;
-  if (!allowLegacy || activeNamespace !== "default") return null;
+  if (!allowLegacy || activeNamespace !== 'default') return null;
 
   const candidates = [legacyStorageKey(key), ancientLegacyStorageKey(key)];
   for (const legacyKey of candidates) {

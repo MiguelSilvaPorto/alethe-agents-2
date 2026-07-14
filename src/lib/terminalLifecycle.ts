@@ -1,6 +1,6 @@
-import { removeSession } from "./sessionResume";
-import { killPty } from "./tauri";
-import { useTerminalsStore } from "../stores/terminalsStore";
+import { removeSession } from './sessionResume';
+import { killPty } from './tauri';
+import { useTerminalsStore } from '../stores/terminalsStore';
 
 export function cleanupPtys(ptyIds: Array<string | null | undefined>): void {
   const uniqueIds = Array.from(

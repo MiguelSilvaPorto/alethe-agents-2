@@ -7,30 +7,30 @@ import {
   Layers,
   Clock3,
   TerminalSquare,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { pickDirectory } from "../../lib/dialog";
+import { pickDirectory } from '../../lib/dialog';
 import {
   formatHomeDate,
   formatRelativeTimestamp,
   getGreeting,
-} from "../../lib/greeting";
-import { useT, type TFunction } from "../../lib/i18n";
+} from '../../lib/greeting';
+import { useT, type TFunction } from '../../lib/i18n';
 import {
   getFirstName,
   getProfileImageUrl,
   getProfileInitial,
-} from "../../lib/profile";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import type { AgentType, Project } from "../../lib/types";
-import { AgentIcon } from "../icons/AgentIcons";
-import { EmptyState } from "../EmptyState/EmptyState";
-import { NowPlayingWidget } from "./NowPlayingWidget";
-import { UsageStrip } from "./UsageStrip";
-import { TimeAnalytics } from "./TimeAnalytics";
-import styles from "./HomeView.module.css";
+} from '../../lib/profile';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import type { AgentType, Project } from '../../lib/types';
+import { AgentIcon } from '../icons/AgentIcons';
+import { EmptyState } from '../EmptyState/EmptyState';
+import { NowPlayingWidget } from './NowPlayingWidget';
+import { UsageStrip } from './UsageStrip';
+import { TimeAnalytics } from './TimeAnalytics';
+import styles from './HomeView.module.css';
 
 const RECENT_PROJECTS_LIMIT = 6;
 const NOTIFICATIONS_LIMIT = 5;
@@ -126,23 +126,23 @@ export function HomeView() {
         folder,
         ptyId: `agent-canvas-${Date.now()}`,
       });
-      setActiveView("agentCanvas");
+      setActiveView('agentCanvas');
     })();
   };
 
   const handleNewTerminal = () => {
     const target = recentProjects[0] ?? projects[0];
     if (target) {
-      openModal("newTerminal", { projectId: target.id });
+      openModal('newTerminal', { projectId: target.id });
     } else {
-      openModal("newProject");
+      openModal('newProject');
     }
   };
 
   const openProject = (project: Project) => {
     setActiveProjectOnly(project.id);
     openContainerWithAllPanes(project.id);
-    setActiveView("workspace");
+    setActiveView('workspace');
   };
 
   return (
@@ -172,12 +172,12 @@ export function HomeView() {
             className={styles.timeJumpButton}
             onClick={() =>
               document
-                .getElementById("time-analytics")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                .getElementById('time-analytics')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
           >
             <Clock3 size={14} />
-            {t("time.open")}
+            {t('time.open')}
           </button>
           <NowPlayingWidget enabled />
         </div>
@@ -193,19 +193,19 @@ export function HomeView() {
         </span>
         <span className={styles.agentHeroBody}>
           <span className={styles.agentHeroTitle}>
-            {t("home.agentHeroTitle")}
+            {t('home.agentHeroTitle')}
           </span>
-          <span className={styles.agentHeroSub}>{t("home.agentHeroSub")}</span>
+          <span className={styles.agentHeroSub}>{t('home.agentHeroSub')}</span>
         </span>
         <span className={styles.agentHeroCta}>
-          {t("home.agentHeroCta")}
+          {t('home.agentHeroCta')}
           <ArrowRight size={15} />
         </span>
       </button>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          {t("home.recentProjects")}
+          {t('home.recentProjects')}
           {recentProjects.length > 0 ? (
             <span className={styles.sectionCount}>{recentProjects.length}</span>
           ) : null}
@@ -226,18 +226,18 @@ export function HomeView() {
         ) : (
           <EmptyState
             icon={<FolderPlus size={22} />}
-            title={t("home.projectsEmptyTitle")}
-            description={t("home.projectsEmptyDesc")}
+            title={t('home.projectsEmptyTitle')}
+            description={t('home.projectsEmptyDesc')}
             primaryAction={{
-              label: t("home.projectsEmptyAction"),
-              onClick: () => openModal("newProject"),
+              label: t('home.projectsEmptyAction'),
+              onClick: () => openModal('newProject'),
             }}
           />
         )}
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHeader}>{t("home.usageActivity")}</div>
+        <div className={styles.sectionHeader}>{t('home.usageActivity')}</div>
         <UsageStrip />
       </section>
 
@@ -251,7 +251,7 @@ export function HomeView() {
       <div className={styles.bottomGrid}>
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            {t("home.notifications")}
+            {t('home.notifications')}
             {notifications.length > 0 ? (
               <>
                 <span className={styles.sectionCount}>
@@ -262,7 +262,7 @@ export function HomeView() {
                   className={styles.sectionAction}
                   onClick={() => clearNotifications()}
                 >
-                  {t("home.clear")}
+                  {t('home.clear')}
                 </button>
               </>
             ) : null}
@@ -305,32 +305,32 @@ export function HomeView() {
               compact
               tone="positive"
               icon={<CheckCircle2 size={18} />}
-              title={t("home.notificationsEmptyTitle")}
-              description={t("home.notificationsEmptyDesc")}
+              title={t('home.notificationsEmptyTitle')}
+              description={t('home.notificationsEmptyDesc')}
             />
           )}
         </section>
 
         <section className={styles.section}>
-          <div className={styles.sectionHeader}>{t("home.startSomething")}</div>
+          <div className={styles.sectionHeader}>{t('home.startSomething')}</div>
           <div className={styles.actionList}>
             <ActionCard
               icon={<TerminalSquare size={14} />}
-              label={t("home.newTerminal")}
+              label={t('home.newTerminal')}
               shortcut="⌘T"
               onClick={handleNewTerminal}
             />
             <ActionCard
               icon={<FolderPlus size={14} />}
-              label={t("home.newProject")}
+              label={t('home.newProject')}
               shortcut="⌘⇧P"
-              onClick={() => openModal("newProject")}
+              onClick={() => openModal('newProject')}
             />
             <ActionCard
               icon={<Layers size={14} />}
-              label={t("home.newGroup")}
+              label={t('home.newGroup')}
               shortcut="⌘⇧G"
-              onClick={() => openModal("newGroup")}
+              onClick={() => openModal('newGroup')}
             />
           </div>
         </section>
@@ -339,11 +339,11 @@ export function HomeView() {
       <footer className={styles.footer}>
         <FooterShortcut
           keys="⌘P"
-          label={t("home.searchShortcut")}
-          onClick={() => openModal("findJump")}
+          label={t('home.searchShortcut')}
+          onClick={() => openModal('findJump')}
         />
-        <FooterShortcut keys="⌘K" label={t("home.commandShortcut")} />
-        <FooterShortcut keys="?" label={t("home.helpShortcut")} />
+        <FooterShortcut keys="⌘K" label={t('home.commandShortcut')} />
+        <FooterShortcut keys="?" label={t('home.helpShortcut')} />
       </footer>
     </section>
   );
@@ -372,9 +372,9 @@ function RecentProjectCard({
         </span>
         <span className={styles.projectMeta}>
           {terminalCount === 1
-            ? t("home.terminalsOne", { n: terminalCount })
-            : t("home.terminalsMany", { n: terminalCount })}
-          {lastUsedAt ? ` · ${formatRelativeTimestamp(lastUsedAt, now)}` : ""}
+            ? t('home.terminalsOne', { n: terminalCount })
+            : t('home.terminalsMany', { n: terminalCount })}
+          {lastUsedAt ? ` · ${formatRelativeTimestamp(lastUsedAt, now)}` : ''}
         </span>
       </span>
       <ArrowRight size={15} className={styles.projectArrow} />
@@ -393,7 +393,7 @@ function ProjectBadge({ project }: { project: Project }) {
       />
     );
   }
-  const letter = project.name.trim().charAt(0).toUpperCase() || "·";
+  const letter = project.name.trim().charAt(0).toUpperCase() || '·';
   return (
     <span
       className={styles.projectLogoFallback}

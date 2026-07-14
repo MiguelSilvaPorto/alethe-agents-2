@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import type { ClaudeUsage, CodexUsage, MemoryStats } from "../lib/tauri";
-import type { AgentType } from "../lib/types";
-import type { UpdateInfo } from "../lib/updater";
+import { create } from 'zustand';
+import type { ClaudeUsage, CodexUsage, MemoryStats } from '../lib/tauri';
+import type { AgentType } from '../lib/types';
+import type { UpdateInfo } from '../lib/updater';
 
 /**
  * Estado de UI ephemeral — modais abertos, query do find/jump, drag em
@@ -10,33 +10,33 @@ import type { UpdateInfo } from "../lib/updater";
  */
 
 type ModalKind =
-  | "newProject"
-  | "newGroup"
-  | "editGroup"
-  | "editProject"
-  | "newTerminal"
-  | "newSubTab"
-  | "preferences"
-  | "findJump"
-  | "onboarding"
-  | "welcome"
-  | "layoutDesigner"
-  | "suspendGroup"
-  | "memoryAnalytics"
-  | "telemetryDashboard"
-  | "themePicker"
-  | "profiles"
-  | "sync"
-  | "topbarSettings"
-  | "updateAvailable"
-  | "workflow"
-  | "workflowDetail"
-  | "context"
-  | "taskReject"
-  | "taskBranch"
+  | 'newProject'
+  | 'newGroup'
+  | 'editGroup'
+  | 'editProject'
+  | 'newTerminal'
+  | 'newSubTab'
+  | 'preferences'
+  | 'findJump'
+  | 'onboarding'
+  | 'welcome'
+  | 'layoutDesigner'
+  | 'suspendGroup'
+  | 'memoryAnalytics'
+  | 'telemetryDashboard'
+  | 'themePicker'
+  | 'profiles'
+  | 'sync'
+  | 'topbarSettings'
+  | 'updateAvailable'
+  | 'workflow'
+  | 'workflowDetail'
+  | 'context'
+  | 'taskReject'
+  | 'taskBranch'
   | null;
 
-export type ActiveView = "home" | "workspace" | "agentCanvas";
+export type ActiveView = 'home' | 'workspace' | 'agentCanvas';
 
 export type MemorySample = MemoryStats & {
   ts: number;
@@ -146,7 +146,7 @@ export const useUiStore = create<UiState>((set) => ({
   focusedTerminalId: null,
   focusRequest: null,
   activeTerminal: null,
-  activeView: "workspace",
+  activeView: 'workspace',
   agentCanvasSession: null,
   agentCanvasBudgetUsd: null,
   toasts: [],
@@ -181,7 +181,7 @@ export const useUiStore = create<UiState>((set) => ({
     set((s) => (s.activeView === v ? s : { activeView: v })),
   toggleHome: () =>
     set((s) => ({
-      activeView: s.activeView === "home" ? "workspace" : "home",
+      activeView: s.activeView === 'home' ? 'workspace' : 'home',
     })),
   setAgentCanvasSession: (session) => set({ agentCanvasSession: session }),
   setAgentCanvasBudget: (usd) => set({ agentCanvasBudgetUsd: usd }),

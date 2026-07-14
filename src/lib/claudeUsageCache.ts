@@ -1,4 +1,4 @@
-import { getClaudeUsage, type ClaudeUsage } from "./tauri";
+import { getClaudeUsage, type ClaudeUsage } from './tauri';
 
 const TTL_MS = 60_000;
 

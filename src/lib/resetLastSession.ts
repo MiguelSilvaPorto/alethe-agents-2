@@ -9,18 +9,18 @@
  * (restartPty + --resume), generalizado pra toda a workspace.
  */
 
-import { getActiveSessions, saveSession } from "./sessionResume";
+import { getActiveSessions, saveSession } from './sessionResume';
 import {
   getPtyCwd,
   restartPty,
   snapshotClaudeSessions,
   snapshotCodexSessions,
-} from "./tauri";
-import type { AgentType } from "./types";
-import { useProjectsStore } from "../stores/projectsStore";
-import { useTerminalsStore } from "../stores/terminalsStore";
+} from './tauri';
+import type { AgentType } from './types';
+import { useProjectsStore } from '../stores/projectsStore';
+import { useTerminalsStore } from '../stores/terminalsStore';
 
-const RESUMABLE: AgentType[] = ["claude", "codex", "opencode"];
+const RESUMABLE: AgentType[] = ['claude', 'codex', 'opencode'];
 
 export type ResetLastSessionResult = { resumed: number; total: number };
 
@@ -72,9 +72,9 @@ async function latestSessionId(
 ): Promise<string | null> {
   if (!cwd) return null;
   try {
-    if (agent === "codex")
+    if (agent === 'codex')
       return pickSessionId(await snapshotCodexSessions(cwd), exclude);
-    if (agent === "claude")
+    if (agent === 'claude')
       return pickSessionId(await snapshotClaudeSessions(cwd), exclude);
   } catch {
     return null;
@@ -89,33 +89,33 @@ function buildResumeArgs(
   baseArgs: string[],
   sessionId: string | null,
 ): string[] {
-  if (agent === "claude") {
+  if (agent === 'claude') {
     // Tira qualquer --resume <id> / --continue antigos e reinjeta o novo.
-    const clean = stripFlagWithValue(baseArgs, "--resume").filter(
-      (a) => a !== "--continue",
+    const clean = stripFlagWithValue(baseArgs, '--resume').filter(
+      (a) => a !== '--continue',
     );
     return sessionId
-      ? ["--resume", sessionId, ...clean]
-      : ["--continue", ...clean];
+      ? ['--resume', sessionId, ...clean]
+      : ['--continue', ...clean];
   }
-  if (agent === "codex") {
+  if (agent === 'codex') {
     // codex usa `resume <id>` / `resume --last` como subcomando (1º arg).
     let clean = baseArgs;
-    if (baseArgs[0] === "resume") {
+    if (baseArgs[0] === 'resume') {
       const rest = baseArgs.slice(1);
-      if (rest[0] && (rest[0] === "--last" || !rest[0].startsWith("-")))
+      if (rest[0] && (rest[0] === '--last' || !rest[0].startsWith('-')))
         rest.shift();
       clean = rest;
     }
     return sessionId
-      ? ["resume", sessionId, ...clean]
-      : ["resume", "--last", ...clean];
+      ? ['resume', sessionId, ...clean]
+      : ['resume', '--last', ...clean];
   }
   // opencode
-  const clean = baseArgs.filter((a) => a !== "--session" && a !== "--resume");
+  const clean = baseArgs.filter((a) => a !== '--session' && a !== '--resume');
   return sessionId
-    ? ["--session", sessionId, ...clean]
-    : ["--continue", ...clean];
+    ? ['--session', sessionId, ...clean]
+    : ['--continue', ...clean];
 }
 
 type ResumeTarget = {
@@ -145,7 +145,7 @@ function collectLivePanes(): ResumeTarget[] {
           tabId: tab.id,
           ptyId,
           agent: tab.type,
-          cwd: (tab.cwd || terminal.cwd || "").trim(),
+          cwd: (tab.cwd || terminal.cwd || '').trim(),
           extraArgs: tab.extraArgs ?? [],
         });
       }
@@ -167,16 +167,16 @@ export async function resetLastSession(): Promise<ResetLastSessionResult> {
       let cwd = target.cwd;
       if (!cwd) {
         const live = await getPtyCwd(target.ptyId).catch(() => null);
-        cwd = (live ?? "").trim();
+        cwd = (live ?? '').trim();
       }
 
       // Sessão atualmente aberta nesse pane (pra não resumir ela mesma).
       const active = getActiveSessions()[target.ptyId];
       const exclude: SessionExclude = {
         id:
-          target.agent === "codex"
+          target.agent === 'codex'
             ? active?.codexSessionId
-            : target.agent === "opencode"
+            : target.agent === 'opencode'
               ? active?.opencodeSessionId
               : active?.claudeSessionId,
         before: active?.timestamp,
@@ -199,7 +199,7 @@ export async function resetLastSession(): Promise<ResetLastSessionResult> {
         extraArgs,
       });
       window.dispatchEvent(
-        new CustomEvent("alethe:terminal-resize-request", {
+        new CustomEvent('alethe:terminal-resize-request', {
           detail: { ptyId: target.ptyId },
         }),
       );
@@ -208,11 +208,11 @@ export async function resetLastSession(): Promise<ResetLastSessionResult> {
       saveSession(target.ptyId, {
         sessionId: target.ptyId,
         claudeSessionId:
-          target.agent === "claude" ? (sessionId ?? undefined) : undefined,
+          target.agent === 'claude' ? (sessionId ?? undefined) : undefined,
         codexSessionId:
-          target.agent === "codex" ? (sessionId ?? undefined) : undefined,
+          target.agent === 'codex' ? (sessionId ?? undefined) : undefined,
         opencodeSessionId:
-          target.agent === "opencode" ? (sessionId ?? undefined) : undefined,
+          target.agent === 'opencode' ? (sessionId ?? undefined) : undefined,
         cwd,
         agent: target.agent,
         timestamp: Date.now(),

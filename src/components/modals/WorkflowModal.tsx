@@ -1,22 +1,22 @@
-import { GitBranch, Layers, Loader2, AlertCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { GitBranch, Layers, Loader2, AlertCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { useT } from "../../lib/i18n";
-import { useUiStore } from "../../stores/uiStore";
-import { useWorkflowStore } from "../../stores/workflowStore";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { gitRevParse } from "../../lib/tauri";
-import type { WorkflowMode } from "../../lib/tauri";
-import { Modal } from "./Modal";
-import styles from "./WorkflowModal.module.css";
+import { useT } from '../../lib/i18n';
+import { useUiStore } from '../../stores/uiStore';
+import { useWorkflowStore } from '../../stores/workflowStore';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { gitRevParse } from '../../lib/tauri';
+import type { WorkflowMode } from '../../lib/tauri';
+import { Modal } from './Modal';
+import styles from './WorkflowModal.module.css';
 
-const AGENTS = ["claude", "codex", "opencode", "shell"] as const;
+const AGENTS = ['claude', 'codex', 'opencode', 'shell'] as const;
 
-type GitStatus = "checking" | "ok" | "no-repo" | "no-git";
+type GitStatus = 'checking' | 'ok' | 'no-repo' | 'no-git';
 
 export function WorkflowModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "workflow");
+  const open = useUiStore((s) => s.openModal === 'workflow');
   const closeModal = useUiStore((s) => s.closeModal);
   const startSession = useWorkflowStore((s) => s.startSession);
   const refresh = useWorkflowStore((s) => s.refresh);
@@ -24,43 +24,43 @@ export function WorkflowModal() {
   const projects = useProjectsStore((s) => s.projects);
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
-  const defaultCwd = activeProject?.terminals?.[0]?.cwd || "";
+  const defaultCwd = activeProject?.terminals?.[0]?.cwd || '';
 
-  const [task, setTask] = useState("");
-  const [agentType, setAgentType] = useState<string>("claude");
-  const [mode, setMode] = useState<WorkflowMode>("LOCAL");
-  const [repoRoot, setRepoRoot] = useState("");
+  const [task, setTask] = useState('');
+  const [agentType, setAgentType] = useState<string>('claude');
+  const [mode, setMode] = useState<WorkflowMode>('LOCAL');
+  const [repoRoot, setRepoRoot] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [gitStatus, setGitStatus] = useState<GitStatus>("checking");
+  const [gitStatus, setGitStatus] = useState<GitStatus>('checking');
 
   useEffect(() => {
     if (!open) return;
-    setGitStatus("checking");
+    setGitStatus('checking');
     setRepoRoot(defaultCwd);
 
     if (!defaultCwd) {
-      setGitStatus("no-git");
-      setMode("LOCAL");
+      setGitStatus('no-git');
+      setMode('LOCAL');
       return;
     }
 
     gitRevParse(defaultCwd)
       .then((_hash) => {
-        setGitStatus("ok");
-        setMode("GIT");
+        setGitStatus('ok');
+        setMode('GIT');
       })
       .catch(() => {
         // git rev-parse falhou — pode ser sem git ou sem repo
-        setGitStatus("no-repo");
-        setMode("LOCAL");
+        setGitStatus('no-repo');
+        setMode('LOCAL');
       });
   }, [open, defaultCwd]);
 
   // Reset state quando fecha
   useEffect(() => {
     if (!open) {
-      setTask("");
+      setTask('');
       setError(null);
       setBusy(false);
     }
@@ -76,7 +76,7 @@ export function WorkflowModal() {
         agentType,
         task.trim(),
         mode,
-        mode === "GIT" ? repoRoot.trim() || null : null,
+        mode === 'GIT' ? repoRoot.trim() || null : null,
       );
       closeModal();
       refresh();
@@ -89,29 +89,29 @@ export function WorkflowModal() {
 
   const gitIndicator = () => {
     switch (gitStatus) {
-      case "checking":
+      case 'checking':
         return {
           icon: <Loader2 size={12} className={styles.spin} />,
-          text: t("workflow.git.checking"),
-          color: "var(--fg-muted)",
+          text: t('workflow.git.checking'),
+          color: 'var(--fg-muted)',
         };
-      case "ok":
+      case 'ok':
         return {
           icon: null,
-          text: t("workflow.git.ok") + " · main",
-          color: "var(--status-working)",
+          text: t('workflow.git.ok') + ' · main',
+          color: 'var(--status-working)',
         };
-      case "no-repo":
+      case 'no-repo':
         return {
           icon: <AlertCircle size={12} />,
-          text: t("workflow.git.noRepo"),
-          color: "var(--status-waiting)",
+          text: t('workflow.git.noRepo'),
+          color: 'var(--status-waiting)',
         };
-      case "no-git":
+      case 'no-git':
         return {
           icon: <AlertCircle size={12} />,
-          text: t("workflow.git.noGit"),
-          color: "#ef4444",
+          text: t('workflow.git.noGit'),
+          color: '#ef4444',
         };
     }
   };
@@ -122,12 +122,12 @@ export function WorkflowModal() {
     <Modal
       open={open}
       onClose={closeModal}
-      title={t("workflow.new")}
+      title={t('workflow.new')}
       width={480}
     >
       <div className={styles.form}>
         <label className={styles.label}>
-          {t("workflow.task")}
+          {t('workflow.task')}
           <textarea
             className={styles.input}
             value={task}
@@ -138,7 +138,7 @@ export function WorkflowModal() {
         </label>
 
         <label className={styles.label}>
-          {t("workflow.agentType")}
+          {t('workflow.agentType')}
           <select
             className={styles.select}
             value={agentType}
@@ -153,24 +153,24 @@ export function WorkflowModal() {
         </label>
 
         <label className={styles.label}>
-          {t("workflow.mode")}
+          {t('workflow.mode')}
           <div className={styles.modeRow}>
             <button
               type="button"
-              className={`${styles.modeBtn} ${mode === "GIT" ? styles.modeActive : ""} ${gitStatus === "ok" ? styles.modeRecommended : ""}`}
-              onClick={() => setMode("GIT")}
-              disabled={gitStatus === "checking"}
+              className={`${styles.modeBtn} ${mode === 'GIT' ? styles.modeActive : ''} ${gitStatus === 'ok' ? styles.modeRecommended : ''}`}
+              onClick={() => setMode('GIT')}
+              disabled={gitStatus === 'checking'}
             >
               <GitBranch size={14} />
-              {t("workflow.mode.GIT")}
+              {t('workflow.mode.GIT')}
             </button>
             <button
               type="button"
-              className={`${styles.modeBtn} ${mode === "LOCAL" ? styles.modeActive : ""} ${gitStatus === "no-repo" || gitStatus === "no-git" ? styles.modeRecommended : ""}`}
-              onClick={() => setMode("LOCAL")}
+              className={`${styles.modeBtn} ${mode === 'LOCAL' ? styles.modeActive : ''} ${gitStatus === 'no-repo' || gitStatus === 'no-git' ? styles.modeRecommended : ''}`}
+              onClick={() => setMode('LOCAL')}
             >
               <Layers size={14} />
-              {t("workflow.mode.LOCAL")}
+              {t('workflow.mode.LOCAL')}
             </button>
           </div>
         </label>
@@ -181,7 +181,7 @@ export function WorkflowModal() {
           <span>{indicator.text}</span>
         </div>
 
-        {mode === "GIT" && (
+        {mode === 'GIT' && (
           <label className={styles.label}>
             Repo root
             <input
@@ -189,8 +189,8 @@ export function WorkflowModal() {
               type="text"
               value={repoRoot}
               onChange={(e) => setRepoRoot(e.target.value)}
-              placeholder={defaultCwd || "Select a project first"}
-              disabled={gitStatus === "checking"}
+              placeholder={defaultCwd || 'Select a project first'}
+              disabled={gitStatus === 'checking'}
             />
           </label>
         )}
@@ -212,7 +212,7 @@ export function WorkflowModal() {
             onClick={handleStart}
           >
             {busy ? <Loader2 size={14} className={styles.spin} /> : null}
-            {busy ? t("workflow.starting") : t("workflow.start")}
+            {busy ? t('workflow.starting') : t('workflow.start')}
           </button>
         </div>
       </div>

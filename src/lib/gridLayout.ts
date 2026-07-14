@@ -1,6 +1,6 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties } from 'react';
 
-import type { GridCell, GridLayout } from "./types";
+import type { GridCell, GridLayout } from './types';
 
 /** Gera um GridLayout default em N colunas baseado na lista de filhos. */
 export function autoGridLayout(childIds: string[], cols = 2): GridLayout {
@@ -118,7 +118,7 @@ function trackTemplate(count: number, sizes: number[] | undefined): string {
   if (!sizes || sizes.length !== count) {
     return `repeat(${count}, minmax(0, 1fr))`;
   }
-  return sizes.map((s) => `minmax(0, ${Math.max(0.1, s)}fr)`).join(" ");
+  return sizes.map((s) => `minmax(0, ${Math.max(0.1, s)}fr)`).join(' ');
 }
 
 /** CSS style pra uma célula. */
@@ -128,24 +128,24 @@ export function cellStyle(cell: GridCell): CSSProperties {
     gridRow: `${cell.row} / span ${cell.rowSpan}`,
     minWidth: 0,
     minHeight: 0,
-    overflow: "hidden",
-    width: "100%",
-    height: "100%",
+    overflow: 'hidden',
+    width: '100%',
+    height: '100%',
   };
 }
 
 /** CSS style pro container do grid. */
 export function gridContainerStyle(layout: GridLayout): CSSProperties {
   return {
-    display: "grid",
+    display: 'grid',
     gridTemplateColumns: trackTemplate(layout.cols, layout.colSizes),
     gridTemplateRows: trackTemplate(layout.rows, layout.rowSizes),
     gap: 4,
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
     minWidth: 0,
     minHeight: 0,
-    overflow: "hidden",
-    boxSizing: "border-box",
+    overflow: 'hidden',
+    boxSizing: 'border-box',
   };
 }

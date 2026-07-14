@@ -11,11 +11,11 @@ import {
   Sun,
   Trash2,
   Upload,
-} from "lucide-react";
-import { useEffect, useRef } from "react";
+} from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
-import { useT } from "../../lib/i18n";
-import { pickFile, saveFile } from "../../lib/dialog";
+import { useT } from '../../lib/i18n';
+import { pickFile, saveFile } from '../../lib/dialog';
 import {
   exportBackup,
   exportLogs,
@@ -24,10 +24,10 @@ import {
   openLogsFolder,
   openSpawnLog,
   resetAppData,
-} from "../../lib/tauri";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import styles from "./MainMenu.module.css";
+} from '../../lib/tauri';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import styles from './MainMenu.module.css';
 
 export function MainMenu() {
   const t = useT();
@@ -45,13 +45,13 @@ export function MainMenu() {
       if (!ref.current?.contains(e.target as Node)) toggle();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") toggle();
+      if (e.key === 'Escape') toggle();
     };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
     };
   }, [open, toggle]);
 
@@ -62,13 +62,13 @@ export function MainMenu() {
       await fn();
     } catch (err) {
       console.error(err);
-      window.alert(t("common.errorPrefix", { message: String(err) }));
+      window.alert(t('common.errorPrefix', { message: String(err) }));
     }
     toggle();
   };
 
   const reset = async () => {
-    if (!window.confirm(t("menu.confirmReset"))) return;
+    if (!window.confirm(t('menu.confirmReset'))) return;
     await resetAppData();
     window.location.reload();
   };
@@ -79,32 +79,32 @@ export function MainMenu() {
         type="button"
         className={styles.item}
         onClick={() => {
-          openModal("preferences");
+          openModal('preferences');
           toggle();
         }}
       >
-        <Settings size={14} /> <span>{t("menu.preferences")}</span>
+        <Settings size={14} /> <span>{t('menu.preferences')}</span>
       </button>
       <button
         type="button"
         className={styles.item}
         onClick={() => {
-          openModal("welcome");
+          openModal('welcome');
           toggle();
         }}
       >
-        <Sparkles size={14} /> <span>{t("menu.welcome")}</span>
+        <Sparkles size={14} /> <span>{t('menu.welcome')}</span>
       </button>
       <button
         type="button"
         className={styles.item}
         onClick={() => {
-          openModal("themePicker");
+          openModal('themePicker');
           toggle();
         }}
       >
         <Sun size={14} />
-        <span>{t("menu.pickTheme")}</span>
+        <span>{t('menu.pickTheme')}</span>
       </button>
       <button
         type="button"
@@ -112,7 +112,7 @@ export function MainMenu() {
         onClick={() => setFlat(!flat)}
       >
         <Layers size={14} />
-        <span>{flat ? t("menu.groupByProject") : t("menu.flatMode")}</span>
+        <span>{flat ? t('menu.groupByProject') : t('menu.flatMode')}</span>
       </button>
       <div className={styles.separator} />
       <button
@@ -120,21 +120,21 @@ export function MainMenu() {
         className={styles.item}
         onClick={() => void action(openDataFolder)}
       >
-        <FolderOpen size={14} /> <span>{t("menu.openDataFolder")}</span>
+        <FolderOpen size={14} /> <span>{t('menu.openDataFolder')}</span>
       </button>
       <button
         type="button"
         className={styles.item}
         onClick={() => void action(openSpawnLog)}
       >
-        <FileText size={14} /> <span>{t("menu.openSpawnLog")}</span>
+        <FileText size={14} /> <span>{t('menu.openSpawnLog')}</span>
       </button>
       <button
         type="button"
         className={styles.item}
         onClick={() => void action(openLogsFolder)}
       >
-        <ScrollText size={14} /> <span>{t("menu.openLogs")}</span>
+        <ScrollText size={14} /> <span>{t('menu.openLogs')}</span>
       </button>
       <button
         type="button"
@@ -142,15 +142,15 @@ export function MainMenu() {
         onClick={() =>
           void action(async () => {
             const target = await saveFile({
-              title: t("menu.exportLogsTitle"),
+              title: t('menu.exportLogsTitle'),
               defaultPath: `alethe-logs-${new Date().toISOString().slice(0, 10)}.zip`,
-              filters: [{ name: t("menu.logsFilter"), extensions: ["zip"] }],
+              filters: [{ name: t('menu.logsFilter'), extensions: ['zip'] }],
             });
             if (target) await exportLogs(target);
           })
         }
       >
-        <FileArchive size={14} /> <span>{t("menu.exportLogs")}</span>
+        <FileArchive size={14} /> <span>{t('menu.exportLogs')}</span>
       </button>
       <div className={styles.separator} />
       <button
@@ -159,15 +159,15 @@ export function MainMenu() {
         onClick={() =>
           void action(async () => {
             const target = await saveFile({
-              title: t("menu.exportBackupTitle"),
+              title: t('menu.exportBackupTitle'),
               defaultPath: `alethe-backup-${new Date().toISOString().slice(0, 10)}.alethe.zip`,
-              filters: [{ name: t("menu.backupFilter"), extensions: ["zip"] }],
+              filters: [{ name: t('menu.backupFilter'), extensions: ['zip'] }],
             });
             if (target) await exportBackup(target);
           })
         }
       >
-        <Download size={14} /> <span>{t("menu.exportBackup")}</span>
+        <Download size={14} /> <span>{t('menu.exportBackup')}</span>
       </button>
       <button
         type="button"
@@ -175,17 +175,17 @@ export function MainMenu() {
         onClick={() =>
           void action(async () => {
             const source = await pickFile({
-              title: t("menu.importBackupTitle"),
-              filters: [{ name: t("menu.backupFilter"), extensions: ["zip"] }],
+              title: t('menu.importBackupTitle'),
+              filters: [{ name: t('menu.backupFilter'), extensions: ['zip'] }],
             });
             if (!source) return;
-            if (!window.confirm(t("menu.confirmImport"))) return;
+            if (!window.confirm(t('menu.confirmImport'))) return;
             await importBackup(source);
             window.location.reload();
           })
         }
       >
-        <Upload size={14} /> <span>{t("menu.importBackup")}</span>
+        <Upload size={14} /> <span>{t('menu.importBackup')}</span>
       </button>
       <div className={styles.separator} />
       <button
@@ -196,14 +196,14 @@ export function MainMenu() {
           toggle();
         }}
       >
-        <RefreshCw size={14} /> <span>{t("menu.redoOnboarding")}</span>
+        <RefreshCw size={14} /> <span>{t('menu.redoOnboarding')}</span>
       </button>
       <button
         type="button"
         className={`${styles.item} ${styles.danger}`}
         onClick={() => void reset()}
       >
-        <Trash2 size={14} /> <span>{t("menu.resetAppData")}</span>
+        <Trash2 size={14} /> <span>{t('menu.resetAppData')}</span>
       </button>
     </div>
   );

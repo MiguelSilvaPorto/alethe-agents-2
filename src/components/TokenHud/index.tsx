@@ -1,30 +1,30 @@
-import { ChevronDown, Coins } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Coins } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-import { AgentIcon } from "../icons/AgentIcons";
-import { fmtTokens, fmtUsd, costLevel } from "../../lib/costFormat";
-import { useT } from "../../lib/i18n";
+import { AgentIcon } from '../icons/AgentIcons';
+import { fmtTokens, fmtUsd, costLevel } from '../../lib/costFormat';
+import { useT } from '../../lib/i18n';
 import {
   useAgentCostStore,
   selectCostTotals,
-} from "../../stores/agentCostStore";
-import { useProjectsStore } from "../../stores/projectsStore";
-import type { AgentType } from "../../lib/types";
-import styles from "./TokenHud.module.css";
+} from '../../stores/agentCostStore';
+import { useProjectsStore } from '../../stores/projectsStore';
+import type { AgentType } from '../../lib/types';
+import styles from './TokenHud.module.css';
 
 const POLL_MS = 10_000;
 
 /** Último segmento do cwd, pra rótulo curto. */
 function shortCwd(cwd: string): string {
-  const parts = cwd.replace(/[\\/]+$/, "").split(/[\\/]/);
+  const parts = cwd.replace(/[\\/]+$/, '').split(/[\\/]/);
   return parts[parts.length - 1] || cwd;
 }
 
 /** Faixa de gasto → classe de cor (tokens do tema, sem hardcode). */
 function costClass(v: number): string {
   const level = costLevel(v);
-  if (level === "high") return styles.costHigh;
-  if (level === "mid") return styles.costMid;
+  if (level === 'high') return styles.costHigh;
+  if (level === 'mid') return styles.costMid;
   return styles.costLow;
 }
 
@@ -42,9 +42,9 @@ export function TokenHud() {
   useEffect(() => {
     if (collapsed) return;
     const onVisibility = () => {
-      activeRef.current = document.visibilityState === "visible";
+      activeRef.current = document.visibilityState === 'visible';
     };
-    document.addEventListener("visibilitychange", onVisibility);
+    document.addEventListener('visibilitychange', onVisibility);
     onVisibility();
     const tick = () => {
       if (activeRef.current) void refresh();
@@ -52,7 +52,7 @@ export function TokenHud() {
     void tick();
     timer.current = window.setInterval(tick, POLL_MS);
     return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener('visibilitychange', onVisibility);
       if (timer.current) window.clearInterval(timer.current);
     };
   }, [refresh, collapsed]);
@@ -68,32 +68,32 @@ export function TokenHud() {
         type="button"
         className={styles.pill}
         onClick={() => setCollapsed(false)}
-        aria-label={t("hud.expand")}
-        title={t("hud.expand")}
+        aria-label={t('hud.expand')}
+        title={t('hud.expand')}
       >
         <Coins size={13} aria-hidden />
         <span className={`${styles.pillCost} ${costClass(totals.costUsd)}`}>
           {fmtUsd(totals.costUsd)}
         </span>
         <span className={styles.pillCount}>
-          {t("hud.agentsRunning", { count: totals.agents })}
+          {t('hud.agentsRunning', { count: totals.agents })}
         </span>
       </button>
     );
   }
 
   return (
-    <section className={styles.panel} aria-label={t("hud.title")}>
+    <section className={styles.panel} aria-label={t('hud.title')}>
       <header className={styles.head}>
         <span className={styles.headTitle}>
-          <Coins size={13} aria-hidden /> {t("hud.title")}
+          <Coins size={13} aria-hidden /> {t('hud.title')}
         </span>
         <button
           type="button"
           className={styles.collapseBtn}
           onClick={() => setCollapsed(true)}
-          aria-label={t("hud.collapse")}
-          title={t("hud.collapse")}
+          aria-label={t('hud.collapse')}
+          title={t('hud.collapse')}
         >
           <ChevronDown size={14} />
         </button>
@@ -115,14 +115,14 @@ export function TokenHud() {
               <span className={styles.rowLabel}>
                 <strong>{shortCwd(e.cwd)}</strong>
                 <span className={styles.rowMeta}>
-                  {cost?.model ?? e.agent} ·{" "}
-                  {fmtTokens(cost?.total_tokens ?? 0)} {t("hud.tokens")}
+                  {cost?.model ?? e.agent} ·{' '}
+                  {fmtTokens(cost?.total_tokens ?? 0)} {t('hud.tokens')}
                 </span>
               </span>
               <span
                 className={`${styles.rowCost} ${usd != null ? costClass(usd) : styles.costNone}`}
               >
-                {usd != null ? fmtUsd(usd) : t("hud.noCost")}
+                {usd != null ? fmtUsd(usd) : t('hud.noCost')}
               </span>
             </li>
           );
@@ -130,7 +130,7 @@ export function TokenHud() {
       </ul>
 
       <footer className={styles.foot}>
-        <span>{t("hud.total")}</span>
+        <span>{t('hud.total')}</span>
         <span className={`${styles.footCost} ${costClass(totals.costUsd)}`}>
           {fmtUsd(totals.costUsd)}
         </span>

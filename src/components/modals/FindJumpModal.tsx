@@ -6,15 +6,15 @@ import {
   Sparkles,
   Terminal,
   type LucideIcon,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import type { AgentType } from "../../lib/types";
-import { useT } from "../../lib/i18n";
-import { Modal } from "./Modal";
-import controls from "./controls.module.css";
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import type { AgentType } from '../../lib/types';
+import { useT } from '../../lib/i18n';
+import { Modal } from './Modal';
+import controls from './controls.module.css';
 
 const ICONS: Record<AgentType, LucideIcon> = {
   shell: Terminal,
@@ -36,20 +36,20 @@ type Hit = {
 
 export function FindJumpModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "findJump");
+  const open = useUiStore((s) => s.openModal === 'findJump');
   const closeModal = useUiStore((s) => s.closeModal);
   const projects = useProjectsStore((s) => s.projects);
   const openTerminalWorkspace = useProjectsStore(
     (s) => s.openTerminalWorkspace,
   );
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
-      setQuery("");
+      setQuery('');
       setCursor(0);
       // Modal já tenta autofocus mas reforça
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -66,7 +66,7 @@ export function FindJumpModal() {
           projectName: p.name,
           terminalId: term.id,
           terminalName: term.name,
-          type: active?.type ?? "shell",
+          type: active?.type ?? 'shell',
           cwd: active?.cwd ?? term.cwd,
         };
       }),
@@ -82,19 +82,19 @@ export function FindJumpModal() {
 
   const jump = (hit: Hit) => {
     openTerminalWorkspace(hit.projectId, hit.terminalId);
-    useUiStore.getState().setActiveView("workspace");
+    useUiStore.getState().setActiveView('workspace');
     useUiStore.getState().requestPaneFocus(hit.terminalId);
     closeModal();
   };
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       setCursor((c) => Math.min(c + 1, hits.length - 1));
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setCursor((c) => Math.max(c - 1, 0));
-    } else if (e.key === "Enter") {
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       const hit = hits[cursor];
       if (hit) jump(hit);
@@ -105,7 +105,7 @@ export function FindJumpModal() {
     <Modal
       open={open}
       onClose={closeModal}
-      title={t("term.findTerminalTitle")}
+      title={t('term.findTerminalTitle')}
       width={520}
     >
       <input
@@ -117,20 +117,20 @@ export function FindJumpModal() {
           setCursor(0);
         }}
         onKeyDown={onKey}
-        placeholder={t("term.findPlaceholder")}
+        placeholder={t('term.findPlaceholder')}
         autoFocus
       />
 
-      <div style={{ marginTop: 12, maxHeight: 320, overflowY: "auto" }}>
+      <div style={{ marginTop: 12, maxHeight: 320, overflowY: 'auto' }}>
         {hits.length === 0 ? (
           <div
             style={{
               padding: 24,
-              textAlign: "center",
-              color: "var(--fg-faint)",
+              textAlign: 'center',
+              color: 'var(--fg-faint)',
             }}
           >
-            {t("term.nothingFound")}
+            {t('term.nothingFound')}
           </div>
         ) : (
           hits.map((hit, i) => {
@@ -143,34 +143,34 @@ export function FindJumpModal() {
                 onClick={() => jump(hit)}
                 onMouseEnter={() => setCursor(i)}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 10,
-                  width: "100%",
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-sm)",
-                  background: active ? "var(--accent-faint)" : "transparent",
-                  color: "var(--fg)",
-                  textAlign: "left",
-                  cursor: "pointer",
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: active ? 'var(--accent-faint)' : 'transparent',
+                  color: 'var(--fg)',
+                  textAlign: 'left',
+                  cursor: 'pointer',
                   fontSize: 13,
                 }}
               >
                 <Icon size={14} />
                 <span style={{ fontWeight: 500 }}>{hit.terminalName}</span>
-                <span style={{ fontSize: 11, color: "var(--fg-muted)" }}>
+                <span style={{ fontSize: 11, color: 'var(--fg-muted)' }}>
                   · {hit.projectName}
                 </span>
                 {hit.cwd ? (
                   <span
                     style={{
-                      marginLeft: "auto",
+                      marginLeft: 'auto',
                       fontSize: 10,
-                      fontFamily: "var(--font-mono)",
-                      color: "var(--fg-faint)",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--fg-faint)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                       maxWidth: 220,
                     }}
                     title={hit.cwd}

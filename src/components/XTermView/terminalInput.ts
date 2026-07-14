@@ -24,15 +24,15 @@ export function getTerminalScrollbackRows(): number {
  * Windows Terminal.
  */
 export function shouldScrollHostScrollback(
-  bufferType: "normal" | "alternate",
+  bufferType: 'normal' | 'alternate',
   shiftKey: boolean,
 ): boolean {
   if (shiftKey) return true;
-  return bufferType !== "alternate";
+  return bufferType !== 'alternate';
 }
 
 export function normalizePastedText(text: string): string {
-  return text.replace(/\r\n?/g, "\n").replace(/\n/g, "\r");
+  return text.replace(/\r\n?/g, '\n').replace(/\n/g, '\r');
 }
 
 /**
@@ -44,8 +44,8 @@ export function formatDroppedPaths(paths: string[]): string {
   const formatted = paths
     .filter(Boolean)
     .map((p) => (/\s/.test(p) ? `"${p}"` : p))
-    .join(" ");
-  return formatted ? `${formatted} ` : "";
+    .join(' ');
+  return formatted ? `${formatted} ` : '';
 }
 
 export function getWheelScrollLines(

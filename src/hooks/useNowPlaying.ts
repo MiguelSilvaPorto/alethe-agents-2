@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 import {
   spotifyGetCurrent,
@@ -6,12 +6,12 @@ import {
   spotifyLogout,
   spotifyStatus,
   type NowPlaying,
-} from "../lib/spotify";
-import { readScopedStorage, writeScopedStorage } from "../lib/storageNamespace";
-import { useProjectsStore } from "../stores/projectsStore";
+} from '../lib/spotify';
+import { readScopedStorage, writeScopedStorage } from '../lib/storageNamespace';
+import { useProjectsStore } from '../stores/projectsStore';
 
 const POLL_MS = 8000;
-const LAST_TRACK_KEY = "home.nowPlaying.last";
+const LAST_TRACK_KEY = 'home.nowPlaying.last';
 
 /** Lê a última faixa conhecida do storage (marcada como pausada). */
 function loadLastTrack(): NowPlaying | null {
@@ -19,7 +19,7 @@ function loadLastTrack(): NowPlaying | null {
     const raw = readScopedStorage(LAST_TRACK_KEY, true);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as NowPlaying;
-    if (!parsed || typeof parsed.track !== "string" || !parsed.track)
+    if (!parsed || typeof parsed.track !== 'string' || !parsed.track)
       return null;
     return { ...parsed, playing: false };
   } catch {

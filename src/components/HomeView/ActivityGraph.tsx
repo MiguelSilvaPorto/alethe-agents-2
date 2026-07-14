@@ -1,11 +1,11 @@
-import { RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { intlLocale, useT } from "../../lib/i18n";
-import { getCachedClaudeActivity } from "../../lib/claudeActivityCache";
-import { useProjectsStore } from "../../stores/projectsStore";
-import type { ActivityDay } from "../../lib/tauri";
-import styles from "./HomeView.module.css";
+import { intlLocale, useT } from '../../lib/i18n';
+import { getCachedClaudeActivity } from '../../lib/claudeActivityCache';
+import { useProjectsStore } from '../../stores/projectsStore';
+import type { ActivityDay } from '../../lib/tauri';
+import styles from './HomeView.module.css';
 
 const DAYS_TOTAL = 91; // 13 semanas × 7 dias
 
@@ -36,7 +36,7 @@ function intensityClass(count: number, max: number): string {
 }
 
 function formatDateBR(iso: string): string {
-  const [, m, d] = iso.split("-");
+  const [, m, d] = iso.split('-');
   return `${d}/${m}`;
 }
 
@@ -72,13 +72,13 @@ export function ActivityGraph() {
   const t = useT();
   const language = useProjectsStore((s) => s.preferences.language);
   const weekdayLabels = [
-    "",
-    t("activity.weekdayMon"),
-    "",
-    t("activity.weekdayWed"),
-    "",
-    t("activity.weekdayFri"),
-    "",
+    '',
+    t('activity.weekdayMon'),
+    '',
+    t('activity.weekdayWed'),
+    '',
+    t('activity.weekdayFri'),
+    '',
   ];
   const [days, setDays] = useState<ActivityDay[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,7 +132,7 @@ export function ActivityGraph() {
   const streak = useMemo(() => computeStreak(days), [days]);
 
   const totalFormatted = total.toLocaleString(intlLocale(language));
-  const deltaSign = deltaPct === null ? "" : deltaPct >= 0 ? "▲" : "▼";
+  const deltaSign = deltaPct === null ? '' : deltaPct >= 0 ? '▲' : '▼';
   const deltaAbs = deltaPct === null ? null : Math.abs(deltaPct).toFixed(0);
   const hasData = !loading && days.length > 0;
 
@@ -155,16 +155,16 @@ export function ActivityGraph() {
             />
           </svg>
         </div>
-        <span className={styles.name}>{t("activity.title")}</span>
-        <span className={styles.plan}>{t("activity.range90d")}</span>
+        <span className={styles.name}>{t('activity.title')}</span>
+        <span className={styles.plan}>{t('activity.range90d')}</span>
         <div className={styles.headRight}>
           {hasData && (
             <span className={styles.live}>
               <span
                 className={styles.liveDot}
-                style={{ background: "var(--status-working)" }}
+                style={{ background: 'var(--status-working)' }}
               />
-              {t("widget.live")}
+              {t('widget.live')}
             </span>
           )}
           <button
@@ -172,7 +172,7 @@ export function ActivityGraph() {
             className={styles.iconBtn}
             onClick={handleRefresh}
             disabled={refreshing}
-            title={t("widget.refreshUsage")}
+            title={t('widget.refreshUsage')}
           >
             <RefreshCw
               size={12}
@@ -185,9 +185,9 @@ export function ActivityGraph() {
       <div className={styles.hero}>
         <div className={styles.heroNumWrap}>
           <span className={styles.heroNum}>
-            {loading ? "—" : totalFormatted}
+            {loading ? '—' : totalFormatted}
           </span>
-          <span className={styles.heroDen}>{t("activity.messages")}</span>
+          <span className={styles.heroDen}>{t('activity.messages')}</span>
         </div>
         {deltaAbs !== null && (
           <span className={styles.timechip}>
@@ -197,16 +197,16 @@ export function ActivityGraph() {
           </span>
         )}
       </div>
-      <div className={styles.heroSub}>{t("activity.lastDays")}</div>
+      <div className={styles.heroSub}>{t('activity.lastDays')}</div>
 
       <div className={styles.heatWrap}>
         {loading ? (
           <div className={styles.activityHeatmapLoading}>
-            {t("activity.loading")}
+            {t('activity.loading')}
           </div>
         ) : days.length === 0 ? (
           <div className={styles.activityHeatmapLoading}>
-            {t("activity.noData")}
+            {t('activity.noData')}
           </div>
         ) : (
           <>
@@ -226,8 +226,8 @@ export function ActivityGraph() {
                           className={`${styles.activityCell} ${intensityClass(day.count, max)}`}
                           title={t(
                             day.count === 1
-                              ? "activity.tooltipOne"
-                              : "activity.tooltipMany",
+                              ? 'activity.tooltipOne'
+                              : 'activity.tooltipMany',
                             {
                               count: day.count,
                               date: formatDateBR(day.date),
@@ -247,7 +247,7 @@ export function ActivityGraph() {
             </div>
             <span className={styles.activityLegendGroup}>
               <span className={styles.activityLegend}>
-                {t("activity.less")}
+                {t('activity.less')}
               </span>
               <span
                 className={`${styles.activityLegendCell} ${styles.cell0}`}
@@ -265,7 +265,7 @@ export function ActivityGraph() {
                 className={`${styles.activityLegendCell} ${styles.cell4}`}
               />
               <span className={styles.activityLegend}>
-                {t("activity.more")}
+                {t('activity.more')}
               </span>
             </span>
           </>
@@ -276,12 +276,12 @@ export function ActivityGraph() {
         <span className={styles.cardFootLeft}>
           <span
             className={styles.cardFootDot}
-            style={{ background: "var(--status-working)" }}
+            style={{ background: 'var(--status-working)' }}
           />
-          {t("activity.streak", { n: streak })}
+          {t('activity.streak', { n: streak })}
         </span>
         <span className={styles.cardFootRight}>
-          {t("activity.total", { total: totalFormatted })}
+          {t('activity.total', { total: totalFormatted })}
         </span>
       </div>
     </div>

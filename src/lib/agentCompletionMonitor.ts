@@ -1,6 +1,6 @@
-import { getLocale, translate } from "./i18n";
-import type { AgentType } from "./types";
-import { notifyAgentDone } from "./notifications";
+import { getLocale, translate } from './i18n';
+import type { AgentType } from './types';
+import { notifyAgentDone } from './notifications';
 
 const RESPONSE_IDLE_MS = 4500;
 const MIN_RESPONSE_MS = 700;
@@ -21,14 +21,14 @@ const PERMISSION_PATTERNS = [
   /needs.*permission/i,
 ];
 
-type MonitorState = "idle" | "armed" | "working";
+type MonitorState = 'idle' | 'armed' | 'working';
 
 export type AgentCompletionMonitorOptions = {
   ptyId: string;
-  agent: Exclude<AgentType, "shell">;
+  agent: Exclude<AgentType, 'shell'>;
   label?: string;
   cwd?: string | null;
-  onStatusChange?: (status: "working" | "waiting") => void;
+  onStatusChange?: (status: 'working' | 'waiting') => void;
   onComplete?: () => void;
   onBlocked?: (info: {
     ptyId: string;
@@ -40,9 +40,9 @@ export type AgentCompletionMonitorOptions = {
 };
 
 export class AgentCompletionMonitor {
-  private state: MonitorState = "idle";
-  private inputLine = "";
-  private submittedPrompt = "";
+  private state: MonitorState = 'idle';
+  private inputLine = '';
+  private submittedPrompt = '';
   private submittedAt = 0;
   private outputChars = 0;
   private idleTimer: number | null = null;
@@ -53,20 +53,20 @@ export class AgentCompletionMonitor {
   handleInput(data: string): void {
     if (this.disposed) return;
     for (const ch of data) {
-      if (ch === "\r" || ch === "\n") {
+      if (ch === '\r' || ch === '\n') {
         const prompt = this.inputLine.trim();
-        this.inputLine = "";
+        this.inputLine = '';
         if (prompt.length > 0) this.arm(prompt);
-      } else if (ch === "\b" || ch === "\x7f") {
+      } else if (ch === '\b' || ch === '\x7f') {
         this.inputLine = this.inputLine.slice(0, -1);
-      } else if (ch >= " ") {
+      } else if (ch >= ' ') {
         this.inputLine += ch;
       }
     }
   }
 
   handleOutput(chunk: string): void {
-    if (this.disposed || this.state === "idle") return;
+    if (this.disposed || this.state === 'idle') return;
 
     const clean = stripTerminalControls(chunk);
     const text = clean.trim();
@@ -78,10 +78,10 @@ export class AgentCompletionMonitor {
         // Extrair comando: linhas após o prompt principal
         const lines = text.split(/\n/);
         const cmdLine = lines.find(
-          (l) => l.includes("→") || l.includes("`") || l.includes("$ "),
+          (l) => l.includes('→') || l.includes('`') || l.includes('$ '),
         );
         const command =
-          cmdLine?.replace(/[→`$]/g, "").trim() ?? text.slice(0, 120);
+          cmdLine?.replace(/[→`$]/g, '').trim() ?? text.slice(0, 120);
         this.options.onBlocked?.({
           ptyId: this.options.ptyId,
           command,
@@ -95,14 +95,14 @@ export class AgentCompletionMonitor {
 
     this.outputChars += text.length;
     if (
-      this.state === "armed" &&
+      this.state === 'armed' &&
       this.outputChars >= MIN_OUTPUT_CHARS_AFTER_ECHO
     ) {
-      this.state = "working";
-      this.options.onStatusChange?.("working");
+      this.state = 'working';
+      this.options.onStatusChange?.('working');
     }
 
-    if (this.state === "working") this.scheduleCompletion();
+    if (this.state === 'working') this.scheduleCompletion();
   }
 
   dispose(): void {
@@ -112,11 +112,11 @@ export class AgentCompletionMonitor {
 
   private arm(prompt: string): void {
     this.clearIdleTimer();
-    this.state = "armed";
+    this.state = 'armed';
     this.submittedPrompt = prompt;
     this.submittedAt = Date.now();
     this.outputChars = 0;
-    this.options.onStatusChange?.("working");
+    this.options.onStatusChange?.('working');
   }
 
   private isLikelyImmediateEcho(text: string): boolean {
@@ -130,15 +130,15 @@ export class AgentCompletionMonitor {
     this.clearIdleTimer();
     this.idleTimer = window.setTimeout(() => {
       this.idleTimer = null;
-      if (this.disposed || this.state !== "working") return;
+      if (this.disposed || this.state !== 'working') return;
       if (Date.now() - this.submittedAt < MIN_RESPONSE_MS) return;
 
-      this.state = "idle";
-      this.options.onStatusChange?.("waiting");
+      this.state = 'idle';
+      this.options.onStatusChange?.('waiting');
       this.options.onComplete?.();
       if (this.options.notifyOnComplete !== false) {
         void notifyAgentDone(
-          translate(getLocale(), "notif.agentDoneTitle", {
+          translate(getLocale(), 'notif.agentDoneTitle', {
             agent: agentLabel(this.options.agent),
           }),
           buildNotificationBody(this.options),
@@ -160,26 +160,26 @@ function buildNotificationBody(options: AgentCompletionMonitorOptions): string {
   const label = options.label?.trim();
   const cwd = options.cwd?.trim();
   if (label && cwd)
-    return translate(locale, "notif.respondedInPath", {
+    return translate(locale, 'notif.respondedInPath', {
       label,
       path: shortPath(cwd),
     });
-  if (label) return translate(locale, "notif.responded", { label });
+  if (label) return translate(locale, 'notif.responded', { label });
   if (cwd)
-    return translate(locale, "notif.responseReadyInPath", {
+    return translate(locale, 'notif.responseReadyInPath', {
       path: shortPath(cwd),
     });
-  return translate(locale, "notif.responseReady");
+  return translate(locale, 'notif.responseReady');
 }
 
-function agentLabel(agent: Exclude<AgentType, "shell">): string {
-  if (agent === "claude") return "Claude";
-  if (agent === "codex") return "Codex";
-  return "OpenCode";
+function agentLabel(agent: Exclude<AgentType, 'shell'>): string {
+  if (agent === 'claude') return 'Claude';
+  if (agent === 'codex') return 'Codex';
+  return 'OpenCode';
 }
 
 function shortPath(path: string): string {
-  const cleaned = path.replace(/[\\/]+$/, "");
+  const cleaned = path.replace(/[\\/]+$/, '');
   const parts = cleaned.split(/[\\/]/).filter(Boolean);
   if (parts.length <= 2) return cleaned;
   return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
@@ -187,9 +187,9 @@ function shortPath(path: string): string {
 
 function stripTerminalControls(value: string): string {
   return value
-    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "")
-    .replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, "")
-    .replace(/\x1b[PX^_].*?\x1b\\/g, "")
-    .replace(/\x1b[@-_]/g, "")
-    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, "");
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, '')
+    .replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, '')
+    .replace(/\x1b[PX^_].*?\x1b\\/g, '')
+    .replace(/\x1b[@-_]/g, '')
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '');
 }

@@ -1,10 +1,10 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 import type {
   GitWorkflowStatus,
   LocalWorkflow,
   WorkflowMode,
   WorkflowSession,
-} from "../lib/tauri";
+} from '../lib/tauri';
 import {
   workflowCommitStep as apiCommitStep,
   workflowComplete as apiComplete,
@@ -12,7 +12,7 @@ import {
   workflowGetLocalStatus as apiGetLocalStatus,
   workflowGetStatus as apiGetStatus,
   workflowStartSession as apiStartSession,
-} from "../lib/tauri";
+} from '../lib/tauri';
 
 type WorkflowStore = {
   sessions: WorkflowSession[];
@@ -48,7 +48,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
       ]);
       const branchStatuses: Record<string, GitWorkflowStatus | null> = {};
       for (const s of sessions) {
-        if (s.mode === "GIT") {
+        if (s.mode === 'GIT') {
           try {
             branchStatuses[s.id] = await apiGetBranchStatus(s.id);
           } catch {

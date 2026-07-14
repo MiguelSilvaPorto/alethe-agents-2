@@ -1,8 +1,8 @@
-import claudeLogo from "../../assets/claude-code.png";
-import codexLogo from "../../assets/codex.png";
-import freebuffLogo from "../../assets/freebuff.png";
-import { iconMap } from "../../assets/icons";
-import type { AgentType, Theme } from "../../lib/types";
+import claudeLogo from '../../assets/claude-code.png';
+import codexLogo from '../../assets/codex.png';
+import freebuffLogo from '../../assets/freebuff.png';
+import { iconMap } from '../../assets/icons';
+import type { AgentType, Theme } from '../../lib/types';
 
 export function ShellIcon({ size = 16 }: { size?: number }) {
   return (
@@ -72,7 +72,7 @@ export function OpenCodeIcon({
   size?: number;
   theme: Theme;
 }) {
-  const lightIcon = theme === "light" || theme === "min-light";
+  const lightIcon = theme === 'light' || theme === 'min-light';
   return (
     <img
       src={lightIcon ? iconMap.open : iconMap.openDark}
@@ -105,10 +105,10 @@ export function AgentIcon({
   size?: number;
   theme: Theme;
 }) {
-  if (type === "shell") return <ShellIcon size={size} />;
-  if (type === "claude") return <ClaudeIcon size={size} />;
-  if (type === "codex") return <CodexIcon size={size} />;
-  if (type === "freebuff") return <FreebuffIcon size={size} />;
-  if (type === "mimo") return <MimoIcon size={size} />;
+  if (type === 'shell') return <ShellIcon size={size} />;
+  if (type === 'claude') return <ClaudeIcon size={size} />;
+  if (type === 'codex') return <CodexIcon size={size} />;
+  if (type === 'freebuff') return <FreebuffIcon size={size} />;
+  if (type === 'mimo') return <MimoIcon size={size} />;
   return <OpenCodeIcon size={size} theme={theme} />;
 }

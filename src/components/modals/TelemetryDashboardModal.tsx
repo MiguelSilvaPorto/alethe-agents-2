@@ -1,20 +1,20 @@
-import { Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { useT } from "../../lib/i18n";
+import { useT } from '../../lib/i18n';
 import {
   getTelemetrySummary,
   clearTelemetryStats,
   type TelemetrySummary,
-} from "../../lib/tauri";
-import { useUiStore } from "../../stores/uiStore";
-import { Modal } from "./Modal";
-import controls from "./controls.module.css";
-import styles from "./TelemetryDashboardModal.module.css";
+} from '../../lib/tauri';
+import { useUiStore } from '../../stores/uiStore';
+import { Modal } from './Modal';
+import controls from './controls.module.css';
+import styles from './TelemetryDashboardModal.module.css';
 
 export function TelemetryDashboardModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "telemetryDashboard");
+  const open = useUiStore((s) => s.openModal === 'telemetryDashboard');
   const onClose = useUiStore((s) => s.closeModal);
 
   const [summary, setSummary] = useState<TelemetrySummary | null>(null);
@@ -26,7 +26,7 @@ export function TelemetryDashboardModal() {
       const data = await getTelemetrySummary();
       setSummary(data);
     } catch (e) {
-      console.error("Failed to load telemetry summary:", e);
+      console.error('Failed to load telemetry summary:', e);
     } finally {
       setLoading(false);
     }
@@ -41,12 +41,12 @@ export function TelemetryDashboardModal() {
   }, [open]);
 
   const handleClear = async () => {
-    if (!window.confirm(t("mod.telemetryClearData") + "?")) return;
+    if (!window.confirm(t('mod.telemetryClearData') + '?')) return;
     try {
       await clearTelemetryStats();
       void fetchData();
     } catch (e) {
-      console.error("Failed to clear telemetry:", e);
+      console.error('Failed to clear telemetry:', e);
     }
   };
 
@@ -66,7 +66,7 @@ export function TelemetryDashboardModal() {
     <Modal
       open={open}
       onClose={onClose}
-      title={t("mod.telemetryDashboardTitle")}
+      title={t('mod.telemetryDashboardTitle')}
       width={780}
       footer={
         <button
@@ -76,31 +76,31 @@ export function TelemetryDashboardModal() {
           disabled={!summary || summary.total_tokens === 0}
         >
           <Trash2 size={14} />
-          {t("mod.telemetryClearData")}
+          {t('mod.telemetryClearData')}
         </button>
       }
     >
       {loading && !summary ? (
-        <div className={styles.noData}>{t("mod.waitingData")}</div>
+        <div className={styles.noData}>{t('mod.waitingData')}</div>
       ) : summary ? (
         <div className={styles.layout}>
-          <div className={styles.infoBox}>{t("mod.telemetryProxyInfo")}</div>
+          <div className={styles.infoBox}>{t('mod.telemetryProxyInfo')}</div>
           <div className={styles.summaryGrid}>
             <div className={styles.metric}>
               <span className={styles.metricLabel}>
-                {t("mod.telemetryTotalCost")}
+                {t('mod.telemetryTotalCost')}
               </span>
               <strong>${summary.total_cost_usd.toFixed(4)}</strong>
             </div>
             <div className={styles.metric}>
               <span className={styles.metricLabel}>
-                {t("mod.telemetryTotalTokens")}
+                {t('mod.telemetryTotalTokens')}
               </span>
               <strong>{formatTokens(summary.total_tokens)}</strong>
             </div>
             <div className={styles.metric}>
               <span className={styles.metricLabel}>
-                {t("mod.telemetryPromptTokens")}
+                {t('mod.telemetryPromptTokens')}
               </span>
               <strong>{formatTokens(summary.prompt_tokens)}</strong>
             </div>
@@ -109,7 +109,7 @@ export function TelemetryDashboardModal() {
           <div className={styles.secondaryMetrics}>
             <div className={styles.subMetric}>
               <span className={styles.subMetricLabel}>
-                {t("mod.telemetryCompletionTokens")}
+                {t('mod.telemetryCompletionTokens')}
               </span>
               <span className={styles.subMetricVal}>
                 {formatTokens(summary.completion_tokens)}
@@ -117,7 +117,7 @@ export function TelemetryDashboardModal() {
             </div>
             <div className={styles.subMetric}>
               <span className={styles.subMetricLabel}>
-                {t("mod.telemetryCacheReadTokens")}
+                {t('mod.telemetryCacheReadTokens')}
               </span>
               <span className={styles.subMetricVal}>
                 {formatTokens(summary.cache_read_tokens)}
@@ -125,7 +125,7 @@ export function TelemetryDashboardModal() {
             </div>
             <div className={styles.subMetric}>
               <span className={styles.subMetricLabel}>
-                {t("mod.telemetryCacheWriteTokens")}
+                {t('mod.telemetryCacheWriteTokens')}
               </span>
               <span className={styles.subMetricVal}>
                 {formatTokens(summary.cache_write_tokens)}
@@ -139,26 +139,26 @@ export function TelemetryDashboardModal() {
                       (summary.cache_read_tokens / summary.total_tokens) *
                       100
                     ).toFixed(1)}%`
-                  : "0%"}
+                  : '0%'}
               </span>
             </div>
           </div>
 
           <div className={styles.panels}>
             <div className={styles.panel}>
-              <h3>{t("mod.telemetryBySource")}</h3>
+              <h3>{t('mod.telemetryBySource')}</h3>
               <div className={styles.list}>
                 {summary.by_source.length === 0 ? (
-                  <div className={styles.noData}>{t("mod.noDataYet")}</div>
+                  <div className={styles.noData}>{t('mod.noDataYet')}</div>
                 ) : (
                   summary.by_source.map((s) => (
                     <div key={s.source} className={styles.row}>
                       <span className={styles.rowLabel}>
-                        {s.source === "claude_code" || s.source === "claude"
-                          ? "Claude Code"
-                          : s.source === "codex_cli" || s.source === "codex"
-                            ? "OpenAI Codex"
-                            : "OpenCode"}
+                        {s.source === 'claude_code' || s.source === 'claude'
+                          ? 'Claude Code'
+                          : s.source === 'codex_cli' || s.source === 'codex'
+                            ? 'OpenAI Codex'
+                            : 'OpenCode'}
                       </span>
                       <div className={styles.rowVal}>
                         <span>{formatTokens(s.tokens)} tokens</span>
@@ -173,10 +173,10 @@ export function TelemetryDashboardModal() {
             </div>
 
             <div className={styles.panel}>
-              <h3>{t("mod.telemetryByModel")}</h3>
+              <h3>{t('mod.telemetryByModel')}</h3>
               <div className={styles.list}>
                 {summary.by_model.length === 0 ? (
-                  <div className={styles.noData}>{t("mod.noDataYet")}</div>
+                  <div className={styles.noData}>{t('mod.noDataYet')}</div>
                 ) : (
                   summary.by_model.map((m) => (
                     <div key={m.model} className={styles.row}>
@@ -194,9 +194,9 @@ export function TelemetryDashboardModal() {
             </div>
 
             <div className={`${styles.panel} ${styles.dailyPanel}`}>
-              <h3>{t("mod.telemetryDailyHistory")}</h3>
+              <h3>{t('mod.telemetryDailyHistory')}</h3>
               {summary.daily_history.length === 0 ? (
-                <div className={styles.noData}>{t("mod.noDataYet")}</div>
+                <div className={styles.noData}>{t('mod.noDataYet')}</div>
               ) : (
                 <div className={styles.dailyList}>
                   {summary.daily_history.map((d) => {
@@ -226,7 +226,7 @@ export function TelemetryDashboardModal() {
           </div>
         </div>
       ) : (
-        <div className={styles.noData}>{t("mod.noDataYet")}</div>
+        <div className={styles.noData}>{t('mod.noDataYet')}</div>
       )}
     </Modal>
   );

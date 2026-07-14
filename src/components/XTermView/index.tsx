@@ -1,40 +1,40 @@
-import { FitAddon } from "@xterm/addon-fit";
-import { SearchAddon } from "@xterm/addon-search";
-import { WebglAddon } from "@xterm/addon-webgl";
-import { CanvasAddon } from "@xterm/addon-canvas";
-import { Unicode11Addon } from "@xterm/addon-unicode11";
-import { Terminal } from "@xterm/xterm";
-import type { ILink } from "@xterm/xterm";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { Copy, ExternalLink, FolderOpen, LayoutGrid, X } from "lucide-react";
+import { FitAddon } from '@xterm/addon-fit';
+import { SearchAddon } from '@xterm/addon-search';
+import { WebglAddon } from '@xterm/addon-webgl';
+import { CanvasAddon } from '@xterm/addon-canvas';
+import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { Terminal } from '@xterm/xterm';
+import type { ILink } from '@xterm/xterm';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { Copy, ExternalLink, FolderOpen, LayoutGrid, X } from 'lucide-react';
 import {
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
-} from "react";
-import "@xterm/xterm/css/xterm.css";
+} from 'react';
+import '@xterm/xterm/css/xterm.css';
 
-import { pickFile } from "../../lib/dialog";
-import { AgentCompletionMonitor } from "../../lib/agentCompletionMonitor";
-import { recordAgentActivityInput } from "../../lib/activityTracker";
-import { buildAgentLaunch } from "../../lib/sessionLaunch";
+import { pickFile } from '../../lib/dialog';
+import { AgentCompletionMonitor } from '../../lib/agentCompletionMonitor';
+import { recordAgentActivityInput } from '../../lib/activityTracker';
+import { buildAgentLaunch } from '../../lib/sessionLaunch';
 import {
   claimDiscoveredSession,
   registerSessionClaim,
-} from "../../lib/sessionDiscovery";
+} from '../../lib/sessionDiscovery';
 import {
   consumeSession,
   removeSession,
   saveSession,
-} from "../../lib/sessionResume";
-import { waitForSessionHint } from "../../lib/sessionWatch";
-import { acquireSpawnSlot, releaseSpawnSlot } from "../../lib/spawnQueue";
+} from '../../lib/sessionResume';
+import { waitForSessionHint } from '../../lib/sessionWatch';
+import { acquireSpawnSlot, releaseSpawnSlot } from '../../lib/spawnQueue';
 import {
   readScopedStorage,
   writeScopedStorage,
-} from "../../lib/storageNamespace";
+} from '../../lib/storageNamespace';
 import {
   attachPty,
   findCliLauncher,
@@ -51,193 +51,193 @@ import {
   snapshotCodexSessions,
   writeClipboardText,
   writePty,
-} from "../../lib/tauri";
-import { getLocale, translate, useT } from "../../lib/i18n";
-import type { AgentType, Theme } from "../../lib/types";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useTerminalsStore } from "../../stores/terminalsStore";
-import { useUiStore } from "../../stores/uiStore";
+} from '../../lib/tauri';
+import { getLocale, translate, useT } from '../../lib/i18n';
+import type { AgentType, Theme } from '../../lib/types';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useTerminalsStore } from '../../stores/terminalsStore';
+import { useUiStore } from '../../stores/uiStore';
 import {
   formatDroppedPaths,
   getTerminalScrollbackRows,
   getWheelScrollLines,
   normalizePastedText,
   shouldScrollHostScrollback,
-} from "./terminalInput";
+} from './terminalInput';
 import {
   detectTerminalLinks,
   getLogicalTerminalLine,
   terminalLinkRange,
   type DetectedTerminalLink,
-} from "./terminalLinks";
-import styles from "./XTermView.module.css";
+} from './terminalLinks';
+import styles from './XTermView.module.css';
 
 type LinkActionState = {
   text: string;
-  kind: "url" | "path";
+  kind: 'url' | 'path';
   isMarkdown?: boolean;
   x: number;
   y: number;
 };
 
 const DARK_THEME = {
-  background: "#101114",
-  foreground: "#f3f4f6",
-  cursor: "#f3f4f6",
-  selectionBackground: "#3b82f666",
+  background: '#101114',
+  foreground: '#f3f4f6',
+  cursor: '#f3f4f6',
+  selectionBackground: '#3b82f666',
 } as const;
 const LIGHT_THEME = {
-  background: "#fafafa",
-  foreground: "#18181b",
-  cursor: "#18181b",
-  selectionBackground: "#3b82f655",
+  background: '#fafafa',
+  foreground: '#18181b',
+  cursor: '#18181b',
+  selectionBackground: '#3b82f655',
 } as const;
 const DRACULA_THEME = {
-  background: "#282a36",
-  foreground: "#f8f8f2",
-  cursor: "#f8f8f2",
-  selectionBackground: "#44475a",
-  black: "#21222c",
-  red: "#ff5555",
-  green: "#50fa7b",
-  yellow: "#f1fa8c",
-  blue: "#bd93f9",
-  magenta: "#ff79c6",
-  cyan: "#8be9fd",
-  white: "#f8f8f2",
-  brightBlack: "#6272a4",
-  brightRed: "#ff6e6e",
-  brightGreen: "#69ff94",
-  brightYellow: "#ffffa5",
-  brightBlue: "#d6acff",
-  brightMagenta: "#ff92df",
-  brightCyan: "#a4ffff",
-  brightWhite: "#ffffff",
+  background: '#282a36',
+  foreground: '#f8f8f2',
+  cursor: '#f8f8f2',
+  selectionBackground: '#44475a',
+  black: '#21222c',
+  red: '#ff5555',
+  green: '#50fa7b',
+  yellow: '#f1fa8c',
+  blue: '#bd93f9',
+  magenta: '#ff79c6',
+  cyan: '#8be9fd',
+  white: '#f8f8f2',
+  brightBlack: '#6272a4',
+  brightRed: '#ff6e6e',
+  brightGreen: '#69ff94',
+  brightYellow: '#ffffa5',
+  brightBlue: '#d6acff',
+  brightMagenta: '#ff92df',
+  brightCyan: '#a4ffff',
+  brightWhite: '#ffffff',
 } as const;
 const NORD_THEME = {
-  background: "#2e3440",
-  foreground: "#eceff4",
-  cursor: "#eceff4",
-  selectionBackground: "#4c566a",
+  background: '#2e3440',
+  foreground: '#eceff4',
+  cursor: '#eceff4',
+  selectionBackground: '#4c566a',
 } as const;
 const GRUVBOX_THEME = {
-  background: "#282828",
-  foreground: "#fbf1c7",
-  cursor: "#fbf1c7",
-  selectionBackground: "#665c54",
+  background: '#282828',
+  foreground: '#fbf1c7',
+  cursor: '#fbf1c7',
+  selectionBackground: '#665c54',
 } as const;
 const SOLARIZED_THEME = {
-  background: "#002b36",
-  foreground: "#fdf6e3",
-  cursor: "#fdf6e3",
-  selectionBackground: "#073642",
+  background: '#002b36',
+  foreground: '#fdf6e3',
+  cursor: '#fdf6e3',
+  selectionBackground: '#073642',
 } as const;
 const TOKYO_NIGHT_THEME = {
-  background: "#1a1b26",
-  foreground: "#c0caf5",
-  cursor: "#c0caf5",
-  selectionBackground: "#414868",
+  background: '#1a1b26',
+  foreground: '#c0caf5',
+  cursor: '#c0caf5',
+  selectionBackground: '#414868',
 } as const;
 const VSCODE_THEME = {
-  background: "#1e1e1e",
-  foreground: "#cccccc",
-  cursor: "#cccccc",
-  selectionBackground: "#264f78",
-  black: "#000000",
-  red: "#cd3131",
-  green: "#0dbc79",
-  yellow: "#e5e510",
-  blue: "#2472c8",
-  magenta: "#bc3fbc",
-  cyan: "#11a8cd",
-  white: "#e5e5e5",
-  brightBlack: "#666666",
-  brightRed: "#f14c4c",
-  brightGreen: "#23d18b",
-  brightYellow: "#f5f543",
-  brightBlue: "#3b8eea",
-  brightMagenta: "#d670d6",
-  brightCyan: "#29b8db",
-  brightWhite: "#e5e5e5",
+  background: '#1e1e1e',
+  foreground: '#cccccc',
+  cursor: '#cccccc',
+  selectionBackground: '#264f78',
+  black: '#000000',
+  red: '#cd3131',
+  green: '#0dbc79',
+  yellow: '#e5e510',
+  blue: '#2472c8',
+  magenta: '#bc3fbc',
+  cyan: '#11a8cd',
+  white: '#e5e5e5',
+  brightBlack: '#666666',
+  brightRed: '#f14c4c',
+  brightGreen: '#23d18b',
+  brightYellow: '#f5f543',
+  brightBlue: '#3b8eea',
+  brightMagenta: '#d670d6',
+  brightCyan: '#29b8db',
+  brightWhite: '#e5e5e5',
 } as const;
 const MIN_DARK_THEME = {
-  background: "#1f1f1f",
-  foreground: "#fafafa",
-  cursor: "#fafafa",
-  selectionBackground: "#383838",
-  black: "#1a1a1a",
-  red: "#f97583",
-  green: "#fafafa",
-  yellow: "#ff9800",
-  blue: "#d0d0d0",
-  magenta: "#bdbdbd",
-  cyan: "#9db1c5",
-  white: "#bbbbbb",
-  brightBlack: "#6b737c",
-  brightRed: "#ff7a84",
-  brightGreen: "#ffffff",
-  brightYellow: "#ffab70",
-  brightBlue: "#e0e0e0",
-  brightMagenta: "#d0d0d0",
-  brightCyan: "#9db1c5",
-  brightWhite: "#fafafa",
+  background: '#1f1f1f',
+  foreground: '#fafafa',
+  cursor: '#fafafa',
+  selectionBackground: '#383838',
+  black: '#1a1a1a',
+  red: '#f97583',
+  green: '#fafafa',
+  yellow: '#ff9800',
+  blue: '#d0d0d0',
+  magenta: '#bdbdbd',
+  cyan: '#9db1c5',
+  white: '#bbbbbb',
+  brightBlack: '#6b737c',
+  brightRed: '#ff7a84',
+  brightGreen: '#ffffff',
+  brightYellow: '#ffab70',
+  brightBlue: '#e0e0e0',
+  brightMagenta: '#d0d0d0',
+  brightCyan: '#9db1c5',
+  brightWhite: '#fafafa',
 } as const;
 const DARK_LEMON_THEME = {
-  background: "#141414",
-  foreground: "#ffffff",
-  cursor: "#ffff50",
-  selectionBackground: "#ffff5028",
-  black: "#1a1a1a",
-  red: "#ff5370",
-  green: "#c3e88d",
-  yellow: "#ffcb6b",
-  blue: "#82aaff",
-  magenta: "#c792ea",
-  cyan: "#89ddff",
-  white: "#cfcfcf",
-  brightBlack: "#5a5a5a",
-  brightRed: "#ff5370",
-  brightGreen: "#c3e88d",
-  brightYellow: "#ffff50",
-  brightBlue: "#82aaff",
-  brightMagenta: "#c792ea",
-  brightCyan: "#89ddff",
-  brightWhite: "#ffffff",
+  background: '#141414',
+  foreground: '#ffffff',
+  cursor: '#ffff50',
+  selectionBackground: '#ffff5028',
+  black: '#1a1a1a',
+  red: '#ff5370',
+  green: '#c3e88d',
+  yellow: '#ffcb6b',
+  blue: '#82aaff',
+  magenta: '#c792ea',
+  cyan: '#89ddff',
+  white: '#cfcfcf',
+  brightBlack: '#5a5a5a',
+  brightRed: '#ff5370',
+  brightGreen: '#c3e88d',
+  brightYellow: '#ffff50',
+  brightBlue: '#82aaff',
+  brightMagenta: '#c792ea',
+  brightCyan: '#89ddff',
+  brightWhite: '#ffffff',
 } as const;
 const MIN_LIGHT_THEME = {
-  background: "#ffffff",
-  foreground: "#212121",
-  cursor: "#212121",
-  selectionBackground: "#eeeeee",
-  black: "#212121",
-  red: "#d32f2f",
-  green: "#22863a",
-  yellow: "#ff9800",
-  blue: "#1976d2",
-  magenta: "#6f42c1",
-  cyan: "#2b5581",
-  white: "#e0e0e0",
-  brightBlack: "#757575",
-  brightRed: "#d32f2f",
-  brightGreen: "#22863a",
-  brightYellow: "#ff9800",
-  brightBlue: "#1976d2",
-  brightMagenta: "#6f42c1",
-  brightCyan: "#2b5581",
-  brightWhite: "#ffffff",
+  background: '#ffffff',
+  foreground: '#212121',
+  cursor: '#212121',
+  selectionBackground: '#eeeeee',
+  black: '#212121',
+  red: '#d32f2f',
+  green: '#22863a',
+  yellow: '#ff9800',
+  blue: '#1976d2',
+  magenta: '#6f42c1',
+  cyan: '#2b5581',
+  white: '#e0e0e0',
+  brightBlack: '#757575',
+  brightRed: '#d32f2f',
+  brightGreen: '#22863a',
+  brightYellow: '#ff9800',
+  brightBlue: '#1976d2',
+  brightMagenta: '#6f42c1',
+  brightCyan: '#2b5581',
+  brightWhite: '#ffffff',
 } as const;
 
 function getXtermTheme(theme: Theme) {
-  if (theme === "light") return LIGHT_THEME;
-  if (theme === "dracula") return DRACULA_THEME;
-  if (theme === "nord") return NORD_THEME;
-  if (theme === "gruvbox") return GRUVBOX_THEME;
-  if (theme === "solarized") return SOLARIZED_THEME;
-  if (theme === "tokyo-night") return TOKYO_NIGHT_THEME;
-  if (theme === "vscode") return VSCODE_THEME;
-  if (theme === "min-dark") return MIN_DARK_THEME;
-  if (theme === "min-light") return MIN_LIGHT_THEME;
-  if (theme === "dark-lemon") return DARK_LEMON_THEME;
+  if (theme === 'light') return LIGHT_THEME;
+  if (theme === 'dracula') return DRACULA_THEME;
+  if (theme === 'nord') return NORD_THEME;
+  if (theme === 'gruvbox') return GRUVBOX_THEME;
+  if (theme === 'solarized') return SOLARIZED_THEME;
+  if (theme === 'tokyo-night') return TOKYO_NIGHT_THEME;
+  if (theme === 'vscode') return VSCODE_THEME;
+  if (theme === 'min-dark') return MIN_DARK_THEME;
+  if (theme === 'min-light') return MIN_LIGHT_THEME;
+  if (theme === 'dark-lemon') return DARK_LEMON_THEME;
   return DARK_THEME;
 }
 
@@ -301,8 +301,8 @@ async function writePtyChunked(
   // isso, cada \r interno vira Enter e TUIs como o Claude submetem só a
   // primeira linha — a colagem grande chegava cortada. Os marcadores ficam
   // FORA do chunking pra nunca serem partidos no meio.
-  const open = bracketed ? "\x1b[200~" : "";
-  const close = bracketed ? "\x1b[201~" : "";
+  const open = bracketed ? '\x1b[200~' : '';
+  const close = bracketed ? '\x1b[201~' : '';
 
   if (text.length <= PASTE_CHUNK_SIZE) {
     await writePty(id, `${open}${text}${close}`);
@@ -327,7 +327,7 @@ export function XTermView({
   extraArgs,
   sessionId,
   env,
-  terminalTheme = "dark",
+  terminalTheme = 'dark',
   onSpawned,
   onSessionId,
   onExit,
@@ -341,7 +341,7 @@ export function XTermView({
   const linkTooltipHideTimerRef = useRef<number | null>(null);
 
   const cliPathOverride = useProjectsStore((s) =>
-    command && command !== "shell" ? (s.cliPaths[command] ?? null) : null,
+    command && command !== 'shell' ? (s.cliPaths[command] ?? null) : null,
   );
   const setCliPath = useProjectsStore((s) => s.setCliPath);
 
@@ -358,13 +358,13 @@ export function XTermView({
 
   const promptHistoryRef = useRef<string[]>([]);
   const historyCursorRef = useRef(-1);
-  const currentLineRef = useRef("");
+  const currentLineRef = useRef('');
 
   const [commandNotFound, setCommandNotFound] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
   const [bootPhase, setBootPhase] = useState<
-    "queued" | "spawning" | "attaching" | "ready"
-  >("queued");
+    'queued' | 'spawning' | 'attaching' | 'ready'
+  >('queued');
   const [linkActions, setLinkActions] = useState<LinkActionState | null>(null);
   const [dropActive, setDropActive] = useState(false);
 
@@ -416,7 +416,7 @@ export function XTermView({
       await openInBrowser(target);
     } catch (err) {
       useUiStore.getState().pushToast({
-        title: translate(getLocale(), "xterm.toastOpenBrowserFail"),
+        title: translate(getLocale(), 'xterm.toastOpenBrowserFail'),
         body: String(err),
       });
     }
@@ -427,7 +427,7 @@ export function XTermView({
       await openInFileExplorer(target);
     } catch (err) {
       useUiStore.getState().pushToast({
-        title: translate(getLocale(), "xterm.toastOpenFolderFail"),
+        title: translate(getLocale(), 'xterm.toastOpenFolderFail'),
         body: String(err),
       });
     }
@@ -437,12 +437,12 @@ export function XTermView({
     try {
       await writeClipboardText(target);
       useUiStore.getState().pushToast({
-        title: translate(getLocale(), "xterm.toastCopied"),
+        title: translate(getLocale(), 'xterm.toastCopied'),
         body: target,
       });
     } catch (err) {
       useUiStore.getState().pushToast({
-        title: translate(getLocale(), "xterm.toastCopyFail"),
+        title: translate(getLocale(), 'xterm.toastCopyFail'),
         body: String(err),
       });
     }
@@ -455,14 +455,14 @@ export function XTermView({
       promptHistoryRef.current = [];
     }
     historyCursorRef.current = -1;
-    currentLineRef.current = "";
+    currentLineRef.current = '';
   }, [ptyId]);
 
   const recordPromptInput = (data: string) => {
     for (const ch of data) {
-      if (ch === "\r" || ch === "\n") {
+      if (ch === '\r' || ch === '\n') {
         const line = currentLineRef.current.trim();
-        currentLineRef.current = "";
+        currentLineRef.current = '';
         historyCursorRef.current = -1;
         if (line.length < 2) continue;
         const history = promptHistoryRef.current;
@@ -477,25 +477,25 @@ export function XTermView({
         } catch {
           /* localStorage cheio — ignora */
         }
-      } else if (ch === "\b" || ch === "\x7f") {
+      } else if (ch === '\b' || ch === '\x7f') {
         currentLineRef.current = currentLineRef.current.slice(0, -1);
-      } else if (ch >= " ") {
+      } else if (ch >= ' ') {
         currentLineRef.current += ch;
       }
     }
   };
 
-  const navigateHistory = (direction: "up" | "down") => {
+  const navigateHistory = (direction: 'up' | 'down') => {
     const history = promptHistoryRef.current;
     const id = ptyIdRef.current;
     if (history.length === 0 || !id) return;
     let cursor = historyCursorRef.current;
     if (cursor === -1)
-      cursor = direction === "up" ? history.length - 1 : history.length;
-    else cursor = direction === "up" ? cursor - 1 : cursor + 1;
+      cursor = direction === 'up' ? history.length - 1 : history.length;
+    else cursor = direction === 'up' ? cursor - 1 : cursor + 1;
     cursor = Math.max(0, Math.min(history.length, cursor));
     historyCursorRef.current = cursor;
-    const entry = history[cursor] ?? "";
+    const entry = history[cursor] ?? '';
     void writePty(id, `\x15${entry}`);
     currentLineRef.current = entry;
   };
@@ -510,7 +510,7 @@ export function XTermView({
     let unlistenDragDrop: (() => void) | null = null;
     let resizeTimer: number | null = null;
     let writeFrame: number | null = null;
-    let pendingWrite = "";
+    let pendingWrite = '';
     let lastCols = 0;
     let lastRows = 0;
     let resizeRaf: number | null = null;
@@ -526,7 +526,7 @@ export function XTermView({
       scrollback: getTerminalScrollbackRows(),
       scrollOnUserInput: false,
       windowsMode: true,
-      windowsPty: { backend: "conpty", buildNumber: 22000 },
+      windowsPty: { backend: 'conpty', buildNumber: 22000 },
       fontFamily: 'Cascadia Mono, Consolas, "Courier New", monospace',
       fontSize: 14,
       theme: getXtermTheme(terminalTheme),
@@ -542,9 +542,9 @@ export function XTermView({
     terminal.loadAddon(searchAddon);
     terminal.loadAddon(unicode11Addon);
     try {
-      terminal.unicode.activeVersion = "11";
+      terminal.unicode.activeVersion = '11';
     } catch (e) {
-      console.warn("[XTermView] Não foi possível ativar Unicode 11:", e);
+      console.warn('[XTermView] Não foi possível ativar Unicode 11:', e);
     }
     terminal.open(container);
     terminalRef.current = terminal;
@@ -572,7 +572,7 @@ export function XTermView({
     // Renderer WebGL (GPU) — o renderer DOM padrão trava a digitação,
     // principalmente com zoom da WebView ≠ 100%. Fallback: Canvas renderer.
     // Skip para OpenCode — WebGL corrompe o atlas ao scrollar por muitas linhas.
-    if (command !== "opencode") {
+    if (command !== 'opencode') {
       let webglAddon: WebglAddon | null = null;
       try {
         webglAddon = new WebglAddon();
@@ -586,7 +586,7 @@ export function XTermView({
             const canvasAddon = new CanvasAddon();
             terminal.loadAddon(canvasAddon);
           } catch (e) {
-            console.error("Canvas fallback failed:", e);
+            console.error('Canvas fallback failed:', e);
           }
           // Um syncScrollArea assíncrono já agendado pode ler `dimensions` de um
           // renderer morto e lançar ("Cannot read properties of undefined
@@ -617,7 +617,7 @@ export function XTermView({
           const canvasAddon = new CanvasAddon();
           terminal.loadAddon(canvasAddon);
         } catch (e) {
-          console.error("Canvas fallback failed:", e);
+          console.error('Canvas fallback failed:', e);
         }
       }
     }
@@ -628,7 +628,7 @@ export function XTermView({
       writeFrame = null;
       if (!pendingWrite) return;
       const chunk = pendingWrite;
-      pendingWrite = "";
+      pendingWrite = '';
       const hadScrolledUp = userScrolledUp;
       terminal.write(chunk, () => {
         if (hadScrolledUp) userScrolledUp = true;
@@ -643,7 +643,7 @@ export function XTermView({
     };
 
     const getTerminalLineHeight = () => {
-      const row = container.querySelector<HTMLElement>(".xterm-rows > div");
+      const row = container.querySelector<HTMLElement>('.xterm-rows > div');
       return (
         row?.getBoundingClientRect().height || terminal.options.fontSize || 18
       );
@@ -665,7 +665,7 @@ export function XTermView({
       event.stopPropagation();
       terminal.scrollLines(lines);
     };
-    container.addEventListener("wheel", onWheel, {
+    container.addEventListener('wheel', onWheel, {
       passive: false,
       capture: true,
     });
@@ -691,11 +691,11 @@ export function XTermView({
     void getCurrentWebview()
       .onDragDropEvent((event) => {
         const p = event.payload;
-        if (p.type === "enter" || p.type === "over") {
+        if (p.type === 'enter' || p.type === 'over') {
           setDropActive(isOverThisPane(p.position));
-        } else if (p.type === "leave") {
+        } else if (p.type === 'leave') {
           setDropActive(false);
-        } else if (p.type === "drop") {
+        } else if (p.type === 'drop') {
           setDropActive(false);
           if (isOverThisPane(p.position) && p.paths.length > 0) {
             pasteText(formatDroppedPaths(p.paths));
@@ -712,27 +712,27 @@ export function XTermView({
       });
 
     terminal.attachCustomKeyEventHandler((event) => {
-      if (event.type !== "keydown") return true;
+      if (event.type !== 'keydown') return true;
       const ctrl = event.ctrlKey || event.metaKey;
       if (!ctrl || event.altKey) return true;
 
       const key = event.key.toLowerCase();
 
       if (
-        key === "+" ||
-        key === "=" ||
-        key === "-" ||
-        key === "_" ||
-        key === "0" ||
-        event.code === "NumpadAdd" ||
-        event.code === "NumpadSubtract" ||
-        event.code === "Numpad0"
+        key === '+' ||
+        key === '=' ||
+        key === '-' ||
+        key === '_' ||
+        key === '0' ||
+        event.code === 'NumpadAdd' ||
+        event.code === 'NumpadSubtract' ||
+        event.code === 'Numpad0'
       ) {
         return false;
       }
 
       // Ctrl+C: copia se tem seleção, senão envia SIGINT pro PTY
-      if (key === "c" && terminal.hasSelection()) {
+      if (key === 'c' && terminal.hasSelection()) {
         const selection = terminal.getSelection();
         if (selection) {
           void writeClipboardText(selection).catch(() =>
@@ -742,13 +742,13 @@ export function XTermView({
           return false;
         }
       }
-      if (key === "c") {
+      if (key === 'c') {
         const now = Date.now();
         const id = ptyIdRef.current;
         if (id && now - lastCtrlCRef.current < 1500) {
           lastCtrlCRef.current = 0;
           terminal.write(
-            "\r\n\x1b[33m[force kill — PTY terminated]\x1b[0m\r\n",
+            '\r\n\x1b[33m[force kill — PTY terminated]\x1b[0m\r\n',
           );
           void killPty(id);
           return false;
@@ -756,15 +756,15 @@ export function XTermView({
         lastCtrlCRef.current = now;
       }
 
-      if (key === "v") {
+      if (key === 'v') {
         // Para OpenCode: não bloquear — deixar o xterm.js repassar pro PTY
         // (OpenCode tem suporte nativo a colar imagens)
-        if (command === "opencode") {
+        if (command === 'opencode') {
           return true;
         }
         event.preventDefault();
         void readClipboardText()
-          .catch(() => navigator.clipboard?.readText() ?? "")
+          .catch(() => navigator.clipboard?.readText() ?? '')
           .then(pasteText)
           .catch(() => {
             terminal.focus();
@@ -772,23 +772,23 @@ export function XTermView({
         return false;
       }
 
-      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-        navigateHistory(event.key === "ArrowUp" ? "up" : "down");
+      if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        navigateHistory(event.key === 'ArrowUp' ? 'up' : 'down');
         return false;
       }
       return true;
     });
 
     const focusTerminal = () => terminal.focus();
-    container.addEventListener("click", focusTerminal);
+    container.addEventListener('click', focusTerminal);
 
     const onPaste = (event: ClipboardEvent) => {
       // Para OpenCode: verificar se há imagem no clipboard
-      if (command === "opencode") {
+      if (command === 'opencode') {
         const items = event.clipboardData?.items;
         if (items) {
           for (const item of items) {
-            if (item.type.startsWith("image/")) {
+            if (item.type.startsWith('image/')) {
               // Tem imagem — NÃO bloquear, deixar o xterm.js repassar pro PTY
               // OpenCode tem suporte nativo a processar imagens coladas
               return;
@@ -797,7 +797,7 @@ export function XTermView({
         }
       }
       // Para outros agentes: comportamento atual (só texto)
-      const raw = event.clipboardData?.getData("text/plain") ?? "";
+      const raw = event.clipboardData?.getData('text/plain') ?? '';
       event.preventDefault();
       event.stopPropagation();
       void readClipboardText()
@@ -807,7 +807,7 @@ export function XTermView({
           terminal.focus();
         });
     };
-    container.addEventListener("paste", onPaste);
+    container.addEventListener('paste', onPaste);
 
     const runResize = () => {
       resizeTimer = null;
@@ -864,7 +864,7 @@ export function XTermView({
       forceNextResize ||= force;
       if (resizeTimer !== null) window.clearTimeout(resizeTimer);
       if (resizeRaf !== null) window.cancelAnimationFrame(resizeRaf);
-      const debounceMs = command === "opencode" ? 250 : 80;
+      const debounceMs = command === 'opencode' ? 250 : 80;
       // RAF + setTimeout: RAF coalesce eventos no mesmo frame visual,
       // setTimeout garante deadline máximo mesmo se RAF não disparar
       resizeRaf = window.requestAnimationFrame(() => {
@@ -889,9 +889,9 @@ export function XTermView({
       window.setTimeout(() => scheduleResize(true), 150);
       window.setTimeout(() => scheduleResize(true), 400);
     };
-    window.addEventListener("resize", onWindowResize);
-    window.addEventListener("alethe:zoom-changed", scheduleObservedResize);
-    window.addEventListener("alethe:terminal-resize-request", onResizeRequest);
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('alethe:zoom-changed', scheduleObservedResize);
+    window.addEventListener('alethe:terminal-resize-request', onResizeRequest);
 
     // Fits sucessivos pós-mount para estabilizar após transições visuais (ex: Focus Mode de 240ms)
     window.setTimeout(() => scheduleResize(true), 80);
@@ -908,7 +908,7 @@ export function XTermView({
       void writePty(id, data);
     });
 
-    const RESUMABLE_AGENTS = ["claude", "codex", "opencode"];
+    const RESUMABLE_AGENTS = ['claude', 'codex', 'opencode'];
 
     async function start() {
       try {
@@ -924,20 +924,20 @@ export function XTermView({
           /* sem layout ainda — o resize agendado cobre */
         }
         setCommandNotFound(null);
-        setBootPhase("queued");
+        setBootPhase('queued');
 
         // Pré-resolve CLI: se for agent, precisa achar override OU launcher
         // auto-detectado antes de spawnar. Sem isso, o pwsh executa `& 'claude'`
         // e mostra erro CommandNotFound dentro do terminal — UX feia.
         let launcherOverride: string | undefined;
-        if (command && command !== "shell") {
+        if (command && command !== 'shell') {
           if (cliPathOverride) {
             launcherOverride = cliPathOverride;
           } else {
             const auto = await findCliLauncher(command);
             if (!auto) {
               setCommandNotFound(command);
-              useTerminalsStore.getState().setStatus(ptyId, "offline");
+              useTerminalsStore.getState().setStatus(ptyId, 'offline');
               return;
             }
           }
@@ -950,19 +950,19 @@ export function XTermView({
             ? consumeSession(ptyId)
             : null;
         const savedConversationId =
-          command === "claude"
+          command === 'claude'
             ? savedSession?.claudeSessionId
-            : command === "codex"
+            : command === 'codex'
               ? savedSession?.codexSessionId
-              : command === "opencode"
+              : command === 'opencode'
                 ? savedSession?.opencodeSessionId
                 : undefined;
         let resumeId = sessionId ?? savedConversationId;
         // OpenCode: quando temos savedSession mas não temos o ID da sessão,
         // usar --continue pra retomar a última sessão (OpenCode não gera UUID
         // no spawn como o Claude).
-        if (command === "opencode" && savedSession && !resumeId) {
-          resumeId = "__continue__";
+        if (command === 'opencode' && savedSession && !resumeId) {
+          resumeId = '__continue__';
         }
         // Claude: valida que a conversa ainda existe no cwd antes de passar
         // --resume. Se o id ficou órfão (conversa apagada, cwd diferente de onde
@@ -975,7 +975,7 @@ export function XTermView({
         // erro/timeout mantém o resume original (evita falso negativo).
         // Ressalva: com 2+ panes Claude no MESMO cwd, ambos podem cair na mesma
         // conversa mais recente — aceitável pro caso comum (1 Claude por pasta).
-        if (command === "claude" && resumeId && cwd) {
+        if (command === 'claude' && resumeId && cwd) {
           try {
             const existing = await snapshotClaudeSessions(cwd);
             if (!existing.some((s) => s.id === resumeId)) {
@@ -1003,14 +1003,14 @@ export function XTermView({
         // Snapshot leve das sessões Codex existentes antes do spawn para
         // identificar e persistir o ID novo sem usar `resume --last`.
         const codexSessionsBeforePromise =
-          command === "codex" && cwd && !launch.sessionId
+          command === 'codex' && cwd && !launch.sessionId
             ? snapshotCodexSessions(cwd).catch(() => [])
             : null;
 
         // Snapshot leve das sessões OpenCode existentes antes do spawn para
         // identificar e persistir o ID novo.
         const opencodeSessionsBeforePromise =
-          command === "opencode" && cwd && !launch.sessionId
+          command === 'opencode' && cwd && !launch.sessionId
             ? snapshotOpenCodeSessions(cwd).catch(() => [])
             : null;
 
@@ -1021,7 +1021,7 @@ export function XTermView({
           releaseSpawnSlot();
           return;
         }
-        setBootPhase("spawning");
+        setBootPhase('spawning');
         let response: { id: string };
         try {
           response = await spawnPty({
@@ -1038,15 +1038,15 @@ export function XTermView({
           releaseSpawnSlot();
         }
         if (disposed) return;
-        setBootPhase("attaching");
+        setBootPhase('attaching');
         ptyIdRef.current = response.id;
         useTerminalsStore.getState().registerPty(response.id);
         onSpawnedRef.current?.(response.id);
 
         if (
-          command === "claude" ||
-          command === "codex" ||
-          command === "opencode"
+          command === 'claude' ||
+          command === 'codex' ||
+          command === 'opencode'
         ) {
           completionMonitor = new AgentCompletionMonitor({
             ptyId: response.id,
@@ -1065,18 +1065,18 @@ export function XTermView({
           saveSession(ptyId, {
             sessionId: response.id,
             claudeSessionId:
-              command === "claude" ? launch.sessionId : undefined,
-            codexSessionId: command === "codex" ? launch.sessionId : undefined,
+              command === 'claude' ? launch.sessionId : undefined,
+            codexSessionId: command === 'codex' ? launch.sessionId : undefined,
             opencodeSessionId:
-              command === "opencode" ? launch.sessionId : undefined,
-            cwd: cwd ?? "",
+              command === 'opencode' ? launch.sessionId : undefined,
+            cwd: cwd ?? '',
             agent: command,
             timestamp: Date.now(),
           });
 
           // Codex precisa do ID especifico; `resume --last` junta terminais
           // diferentes na mesma conversa quando existem 2+ Codex abertos.
-          if (command === "codex" && cwd && codexSessionsBeforePromise) {
+          if (command === 'codex' && cwd && codexSessionsBeforePromise) {
             const detectCodexSession = async () => {
               const before = new Set(
                 (await codexSessionsBeforePromise).map((s) => s.id),
@@ -1085,14 +1085,14 @@ export function XTermView({
                 // Acorda no hint do watcher (session://new) ou no teto de 3s.
                 await Promise.race([
                   new Promise((r) => setTimeout(r, 3000)),
-                  waitForSessionHint("codex"),
+                  waitForSessionHint('codex'),
                 ]);
                 if (disposed) return;
                 const sessions = await snapshotCodexSessions(cwd).catch(
                   () => [],
                 );
                 const newSession = claimDiscoveredSession(
-                  "codex",
+                  'codex',
                   cwd,
                   before,
                   sessions,
@@ -1101,7 +1101,7 @@ export function XTermView({
                   saveSession(ptyId, {
                     sessionId: response.id,
                     codexSessionId: newSession.id,
-                    cwd: cwd ?? "",
+                    cwd: cwd ?? '',
                     agent: command,
                     timestamp: Date.now(),
                   });
@@ -1115,7 +1115,7 @@ export function XTermView({
 
           // OpenCode: detecta o ID da sessão nova pós-spawn (similar ao Codex).
           // Quando usamos --continue, a sessão já existe — pegamos a mais recente.
-          if (command === "opencode" && cwd && opencodeSessionsBeforePromise) {
+          if (command === 'opencode' && cwd && opencodeSessionsBeforePromise) {
             const detectOpenCodeSession = async () => {
               const before = new Set(
                 (await opencodeSessionsBeforePromise).map((s) => s.id),
@@ -1123,7 +1123,7 @@ export function XTermView({
               for (let attempt = 0; attempt < 4; attempt++) {
                 await Promise.race([
                   new Promise((r) => setTimeout(r, 3000)),
-                  waitForSessionHint("opencode"),
+                  waitForSessionHint('opencode'),
                 ]);
                 if (disposed) return;
                 const sessions = await snapshotOpenCodeSessions(cwd).catch(
@@ -1131,7 +1131,7 @@ export function XTermView({
                 );
                 // Primeiro tenta achar sessão NOVA (não estava no before)
                 const newSession = claimDiscoveredSession(
-                  "opencode",
+                  'opencode',
                   cwd,
                   before,
                   sessions,
@@ -1140,7 +1140,7 @@ export function XTermView({
                   saveSession(ptyId, {
                     sessionId: response.id,
                     opencodeSessionId: newSession.id,
-                    cwd: cwd ?? "",
+                    cwd: cwd ?? '',
                     agent: command,
                     timestamp: Date.now(),
                   });
@@ -1148,12 +1148,12 @@ export function XTermView({
                   return;
                 }
                 // Se usamos --continue e não achou nova, pega a mais recente
-                if (resumeId === "__continue__" && sessions.length > 0) {
+                if (resumeId === '__continue__' && sessions.length > 0) {
                   const mostRecent = sessions[0];
                   saveSession(ptyId, {
                     sessionId: response.id,
                     opencodeSessionId: mostRecent.id,
-                    cwd: cwd ?? "",
+                    cwd: cwd ?? '',
                     agent: command,
                     timestamp: Date.now(),
                   });
@@ -1198,29 +1198,29 @@ export function XTermView({
         unlistenExit = exitUnlisten;
 
         scheduleResize();
-        if (!disposed) setBootPhase("ready");
+        if (!disposed) setBootPhase('ready');
       } catch (err) {
         terminal.writeln(`Failed to start PTY: ${String(err)}`);
-        if (!disposed) setBootPhase("ready");
+        if (!disposed) setBootPhase('ready');
       }
     }
     void start();
 
     return () => {
       disposed = true;
-      container.removeEventListener("wheel", onWheel, true);
-      container.removeEventListener("click", focusTerminal);
-      container.removeEventListener("paste", onPaste);
-      window.removeEventListener("resize", onWindowResize);
-      window.removeEventListener("alethe:zoom-changed", scheduleObservedResize);
+      container.removeEventListener('wheel', onWheel, true);
+      container.removeEventListener('click', focusTerminal);
+      container.removeEventListener('paste', onPaste);
+      window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener('alethe:zoom-changed', scheduleObservedResize);
       window.removeEventListener(
-        "alethe:terminal-resize-request",
+        'alethe:terminal-resize-request',
         onResizeRequest,
       );
       ro.disconnect();
       if (resizeTimer !== null) window.clearTimeout(resizeTimer);
       if (writeFrame !== null) window.cancelAnimationFrame(writeFrame);
-      pendingWrite = "";
+      pendingWrite = '';
 
       unlistenData?.();
       unlistenExit?.();
@@ -1249,8 +1249,8 @@ export function XTermView({
       const picked = await pickFile({
         title: `Selecione o executável do ${agent}`,
         filters: [
-          { name: "Executável", extensions: ["cmd", "exe", "bat", "ps1"] },
-          { name: "Todos", extensions: ["*"] },
+          { name: 'Executável', extensions: ['cmd', 'exe', 'bat', 'ps1'] },
+          { name: 'Todos', extensions: ['*'] },
         ],
       });
       if (!picked) return;
@@ -1262,19 +1262,19 @@ export function XTermView({
   );
 
   const bootLabel =
-    bootPhase === "queued"
-      ? "Aguardando vez na fila…"
-      : bootPhase === "spawning"
-        ? "Iniciando processo…"
-        : bootPhase === "attaching"
-          ? "Conectando ao terminal…"
+    bootPhase === 'queued'
+      ? 'Aguardando vez na fila…'
+      : bootPhase === 'spawning'
+        ? 'Iniciando processo…'
+        : bootPhase === 'attaching'
+          ? 'Conectando ao terminal…'
           : null;
 
   return (
     <>
       <div
         ref={containerRef}
-        className={`${styles.host} ${dropActive ? styles.dropActive : ""}`}
+        className={`${styles.host} ${dropActive ? styles.dropActive : ''}`}
         style={{ background: getXtermTheme(terminalTheme).background }}
       />
       {bootLabel && !commandNotFound ? (
@@ -1316,8 +1316,8 @@ export function XTermView({
                   openMarkdownInGrid(linkActions.text);
                   hideLinkActions();
                 }}
-                title={t("xterm.openInGrid")}
-                aria-label={t("xterm.openInGrid")}
+                title={t('xterm.openInGrid')}
+                aria-label={t('xterm.openInGrid')}
               >
                 <LayoutGrid size={14} />
               </button>
@@ -1329,9 +1329,9 @@ export function XTermView({
                 void openLinkInFolder(linkActions.text);
                 hideLinkActions();
               }}
-              disabled={linkActions.kind === "url"}
-              title={t("xterm.openInFolder")}
-              aria-label={t("xterm.openInFolder")}
+              disabled={linkActions.kind === 'url'}
+              title={t('xterm.openInFolder')}
+              aria-label={t('xterm.openInFolder')}
             >
               <FolderOpen size={14} />
             </button>
@@ -1342,8 +1342,8 @@ export function XTermView({
                 void copyLinkText(linkActions.text);
                 hideLinkActions();
               }}
-              title={t("xterm.copy")}
-              aria-label={t("xterm.copy")}
+              title={t('xterm.copy')}
+              aria-label={t('xterm.copy')}
             >
               <Copy size={14} />
             </button>
@@ -1355,14 +1355,14 @@ export function XTermView({
                 hideLinkActions();
               }}
               title={t(
-                linkActions.kind === "url"
-                  ? "xterm.openInBrowser"
-                  : "xterm.openInDefaultApp",
+                linkActions.kind === 'url'
+                  ? 'xterm.openInBrowser'
+                  : 'xterm.openInDefaultApp',
               )}
               aria-label={t(
-                linkActions.kind === "url"
-                  ? "xterm.openInBrowser"
-                  : "xterm.openInDefaultApp",
+                linkActions.kind === 'url'
+                  ? 'xterm.openInBrowser'
+                  : 'xterm.openInDefaultApp',
               )}
             >
               <ExternalLink size={14} />
@@ -1371,8 +1371,8 @@ export function XTermView({
               type="button"
               className={styles.linkActionBtn}
               onClick={hideLinkActions}
-              title={t("common.close")}
-              aria-label={t("common.close")}
+              title={t('common.close')}
+              aria-label={t('common.close')}
             >
               <X size={14} />
             </button>

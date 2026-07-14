@@ -1,15 +1,15 @@
-import { Group, Panel, Separator } from "react-resizable-panels";
+import { Group, Panel, Separator } from 'react-resizable-panels';
 
-import { useProjectsStore } from "../../stores/projectsStore";
+import { useProjectsStore } from '../../stores/projectsStore';
 import {
   cellStyle,
   gridContainerStyle,
   reconcileGridLayout,
-} from "../../lib/gridLayout";
-import type { GridLayout, LayoutMode, Terminal } from "../../lib/types";
-import { MarkdownPane } from "../MarkdownPane";
-import { TerminalPane } from "../TerminalPane";
-import styles from "./WorkspaceView.module.css";
+} from '../../lib/gridLayout';
+import type { GridLayout, LayoutMode, Terminal } from '../../lib/types';
+import { MarkdownPane } from '../MarkdownPane';
+import { TerminalPane } from '../TerminalPane';
+import styles from './WorkspaceView.module.css';
 
 /** Renderiza o pane certo conforme o tipo (terminal ou markdown viewer). */
 function Pane({
@@ -19,7 +19,7 @@ function Pane({
   projectId: string;
   terminal: Terminal;
 }) {
-  if (terminal.kind === "markdown") {
+  if (terminal.kind === 'markdown') {
     return <MarkdownPane projectId={projectId} terminal={terminal} />;
   }
   return <TerminalPane projectId={projectId} terminal={terminal} />;
@@ -47,9 +47,9 @@ export function PaneArea({
       </div>
     );
   }
-  if (layoutMode === "grid")
+  if (layoutMode === 'grid')
     return <GridLayoutComponent projectId={projectId} terminals={terminals} />;
-  if (layoutMode === "spotlight")
+  if (layoutMode === 'spotlight')
     return (
       <SpotlightLayout
         projectId={projectId}
@@ -57,7 +57,7 @@ export function PaneArea({
         terminals={terminals}
       />
     );
-  if (layoutMode === "sidebar")
+  if (layoutMode === 'sidebar')
     return (
       <SidebarLayout
         projectId={projectId}
@@ -91,7 +91,7 @@ function GridLayoutComponent({
     : {
         cols: 2,
         rows: Math.ceil(ids.length / 2),
-        cells: {} as GridLayout["cells"],
+        cells: {} as GridLayout['cells'],
       };
   // se sem layout salvo, faz auto-fill posicional
   if (!layout) {

@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-import type { PtyStatus } from "../lib/types";
+import type { PtyStatus } from '../lib/types';
 
 /**
  * Runtime PTY state — não persistido. Mapeia ptyId → status atual,
@@ -43,7 +43,7 @@ type TerminalsState = {
 function emptyRuntime(ptyId: string): PtyRuntime {
   return {
     ptyId,
-    status: "waiting",
+    status: 'waiting',
     lastTransitionAt: Date.now(),
     alive: true,
     expectedOldExits: 0,
@@ -69,7 +69,7 @@ export const useTerminalsStore = create<TerminalsState>((set) => ({
           [ptyId]: {
             ...base,
             alive: true,
-            status: "waiting",
+            status: 'waiting',
             lastTransitionAt: Date.now(),
             expectedOldExits: base.expectedOldExits + 1,
           },
@@ -111,7 +111,7 @@ export const useTerminalsStore = create<TerminalsState>((set) => ({
           [ptyId]: {
             ...current,
             alive: false,
-            status: "stopped",
+            status: 'stopped',
             lastTransitionAt: Date.now(),
           },
         },

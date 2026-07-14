@@ -1,4 +1,4 @@
-import * as Dialog from "@radix-ui/react-dialog";
+import * as Dialog from '@radix-ui/react-dialog';
 import {
   Check,
   ChevronRight,
@@ -12,27 +12,27 @@ import {
   UserRound,
   X,
   type LucideIcon,
-} from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { AgentIcon } from "../icons/AgentIcons";
-import { LOCALES, useT } from "../../lib/i18n";
-import { isMacOS } from "../../lib/platform";
-import { getProfileImageUrl, getProfileInitial } from "../../lib/profile";
-import { THEME_OPTIONS, themeDescription, themeLabel } from "../../lib/themes";
+import { AgentIcon } from '../icons/AgentIcons';
+import { LOCALES, useT } from '../../lib/i18n';
+import { isMacOS } from '../../lib/platform';
+import { getProfileImageUrl, getProfileInitial } from '../../lib/profile';
+import { THEME_OPTIONS, themeDescription, themeLabel } from '../../lib/themes';
 import {
   SPAWN_CONCURRENCY_LIMITS,
   UI_ZOOM_LIMITS,
   useProjectsStore,
-} from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import { resetLastSession } from "../../lib/resetLastSession";
-import type { AgentType } from "../../lib/types";
-import { ImageInput } from "./ImageInput";
-import controls from "./controls.module.css";
-import styles from "./PreferencesModal.module.css";
+} from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import { resetLastSession } from '../../lib/resetLastSession';
+import type { AgentType } from '../../lib/types';
+import { ImageInput } from './ImageInput';
+import controls from './controls.module.css';
+import styles from './PreferencesModal.module.css';
 
-type CategoryId = "account" | "appearance" | "terminal" | "integrations";
+type CategoryId = 'account' | 'appearance' | 'terminal' | 'integrations';
 
 type Category = {
   id: CategoryId;
@@ -50,22 +50,22 @@ type SearchItem = {
 };
 
 const AGENTS: { id: AgentType; label: string }[] = [
-  { id: "shell", label: "Shell" },
-  { id: "claude", label: "Claude Code" },
-  { id: "codex", label: "Codex" },
-  { id: "opencode", label: "OpenCode" },
-  { id: "freebuff", label: "Freebuff" },
-  { id: "mimo", label: "Mimo Code" },
+  { id: 'shell', label: 'Shell' },
+  { id: 'claude', label: 'Claude Code' },
+  { id: 'codex', label: 'Codex' },
+  { id: 'opencode', label: 'OpenCode' },
+  { id: 'freebuff', label: 'Freebuff' },
+  { id: 'mimo', label: 'Mimo Code' },
 ];
 
 export function PreferencesModal() {
   const t = useT();
-  const open = useUiStore((state) => state.openModal === "preferences");
+  const open = useUiStore((state) => state.openModal === 'preferences');
   const closeModal = useUiStore((state) => state.closeModal);
   const openModal = useUiStore((state) => state.openModal_);
   const preferences = useProjectsStore((state) => state.preferences);
-  const [category, setCategory] = useState<CategoryId>("account");
-  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<CategoryId>('account');
+  const [query, setQuery] = useState('');
   const [resultCursor, setResultCursor] = useState(0);
   const [pendingTarget, setPendingTarget] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -74,27 +74,27 @@ export function PreferencesModal() {
   const categories = useMemo<Category[]>(
     () => [
       {
-        id: "account",
-        label: t("prefs.categoryAccount"),
-        description: t("prefs.categoryAccountDesc"),
+        id: 'account',
+        label: t('prefs.categoryAccount'),
+        description: t('prefs.categoryAccountDesc'),
         Icon: UserRound,
       },
       {
-        id: "appearance",
-        label: t("prefs.categoryAppearance"),
-        description: t("prefs.categoryAppearanceDesc"),
+        id: 'appearance',
+        label: t('prefs.categoryAppearance'),
+        description: t('prefs.categoryAppearanceDesc'),
         Icon: Palette,
       },
       {
-        id: "terminal",
-        label: t("prefs.categoryTerminal"),
-        description: t("prefs.categoryTerminalDesc"),
+        id: 'terminal',
+        label: t('prefs.categoryTerminal'),
+        description: t('prefs.categoryTerminalDesc'),
         Icon: TerminalSquare,
       },
       {
-        id: "integrations",
-        label: t("prefs.categoryIntegrations"),
-        description: t("prefs.categoryIntegrationsDesc"),
+        id: 'integrations',
+        label: t('prefs.categoryIntegrations'),
+        description: t('prefs.categoryIntegrationsDesc'),
         Icon: Plug,
       },
     ],
@@ -104,90 +104,90 @@ export function PreferencesModal() {
   const searchItems = useMemo<SearchItem[]>(
     () => [
       {
-        category: "account",
-        target: "profile",
-        label: t("prefs.profile"),
-        description: t("prefs.profileDesc"),
-        keywords: "avatar photo name nome perfil account conta",
+        category: 'account',
+        target: 'profile',
+        label: t('prefs.profile'),
+        description: t('prefs.profileDesc'),
+        keywords: 'avatar photo name nome perfil account conta',
       },
       {
-        category: "account",
-        target: "language",
-        label: t("prefs.language"),
-        description: t("prefs.languageDesc"),
-        keywords: "language idioma português english",
+        category: 'account',
+        target: 'language',
+        label: t('prefs.language'),
+        description: t('prefs.languageDesc'),
+        keywords: 'language idioma português english',
       },
       {
-        category: "account",
-        target: "local-accounts",
-        label: t("prefs.localAccounts"),
-        description: t("prefs.localAccountsDesc"),
-        keywords: "account profile conta perfil local switch trocar",
+        category: 'account',
+        target: 'local-accounts',
+        label: t('prefs.localAccounts'),
+        description: t('prefs.localAccountsDesc'),
+        keywords: 'account profile conta perfil local switch trocar',
       },
       {
-        category: "appearance",
-        target: "ui-theme",
-        label: t("prefs.uiTheme"),
-        description: t("prefs.uiThemeDesc"),
-        keywords: "theme tema colors cores light dark claro escuro",
+        category: 'appearance',
+        target: 'ui-theme',
+        label: t('prefs.uiTheme'),
+        description: t('prefs.uiThemeDesc'),
+        keywords: 'theme tema colors cores light dark claro escuro',
       },
       {
-        category: "appearance",
-        target: "ui-zoom",
-        label: t("prefs.uiZoom"),
-        description: t("prefs.uiZoomDesc"),
-        keywords: "zoom scale escala tamanho interface",
+        category: 'appearance',
+        target: 'ui-zoom',
+        label: t('prefs.uiZoom'),
+        description: t('prefs.uiZoomDesc'),
+        keywords: 'zoom scale escala tamanho interface',
       },
       {
-        category: "appearance",
-        target: "git-control",
-        label: t("prefs.gitControl"),
-        description: t("prefs.gitControlDesc"),
-        keywords: "git source control sidebar version controle versao",
+        category: 'appearance',
+        target: 'git-control',
+        label: t('prefs.gitControl'),
+        description: t('prefs.gitControlDesc'),
+        keywords: 'git source control sidebar version controle versao',
       },
       {
-        category: "terminal",
-        target: "terminal-theme",
-        label: t("prefs.terminalTheme"),
-        description: t("prefs.terminalThemeDesc"),
-        keywords: "terminal theme tema colors cores",
+        category: 'terminal',
+        target: 'terminal-theme',
+        label: t('prefs.terminalTheme'),
+        description: t('prefs.terminalThemeDesc'),
+        keywords: 'terminal theme tema colors cores',
       },
       {
-        category: "terminal",
-        target: "spawn-concurrency",
-        label: t("prefs.spawnConcurrency"),
-        description: t("prefs.spawnConcurrencyDesc"),
+        category: 'terminal',
+        target: 'spawn-concurrency',
+        label: t('prefs.spawnConcurrency'),
+        description: t('prefs.spawnConcurrencyDesc'),
         keywords:
-          "spawn concurrency parallel paralelo fila queue performance pty",
+          'spawn concurrency parallel paralelo fila queue performance pty',
       },
       {
-        category: "terminal",
-        target: "agents",
-        label: t("prefs.agentsTitle"),
-        description: t("prefs.agentsDesc"),
-        keywords: "agents agentes claude codex opencode shell",
+        category: 'terminal',
+        target: 'agents',
+        label: t('prefs.agentsTitle'),
+        description: t('prefs.agentsDesc'),
+        keywords: 'agents agentes claude codex opencode shell',
       },
       {
-        category: "terminal",
-        target: "reset-session",
-        label: t("prefs.resetSession"),
-        description: t("prefs.resetSessionDesc"),
+        category: 'terminal',
+        target: 'reset-session',
+        label: t('prefs.resetSession'),
+        description: t('prefs.resetSessionDesc'),
         keywords:
-          "reset session resume retomar resetar sessão última last recover recuperar resume crash boot",
+          'reset session resume retomar resetar sessão última last recover recuperar resume crash boot',
       },
       {
-        category: "integrations",
-        target: "spotify",
-        label: t("prefs.spotify"),
-        description: t("prefs.spotifyDesc"),
-        keywords: "spotify music música client id secret",
+        category: 'integrations',
+        target: 'spotify',
+        label: t('prefs.spotify'),
+        description: t('prefs.spotifyDesc'),
+        keywords: 'spotify music música client id secret',
       },
       {
-        category: "integrations",
-        target: "discord",
-        label: t("prefs.discordPresence"),
-        description: t("prefs.discordPresenceHint"),
-        keywords: "discord rich presence status integração",
+        category: 'integrations',
+        target: 'discord',
+        label: t('prefs.discordPresence'),
+        description: t('prefs.discordPresenceHint'),
+        keywords: 'discord rich presence status integração',
       },
     ],
     [t],
@@ -206,7 +206,7 @@ export function PreferencesModal() {
   const activeCategory =
     categories.find((item) => item.id === category) ?? categories[0];
   const avatarUrl = getProfileImageUrl(preferences);
-  const displayName = preferences.displayName || t("profile.fallbackName");
+  const displayName = preferences.displayName || t('profile.fallbackName');
   const initial = getProfileInitial(displayName);
   const enabledCount = Object.values(preferences.enabledAgents).filter(
     Boolean,
@@ -214,8 +214,8 @@ export function PreferencesModal() {
 
   useEffect(() => {
     if (!open) return;
-    setCategory("account");
-    setQuery("");
+    setCategory('account');
+    setQuery('');
     setResultCursor(0);
     setPendingTarget(null);
   }, [open]);
@@ -230,7 +230,7 @@ export function PreferencesModal() {
       const target = contentRef.current?.querySelector<HTMLElement>(
         `[data-setting-id="${pendingTarget}"]`,
       );
-      target?.scrollIntoView({ block: "start", behavior: "smooth" });
+      target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
       target?.focus({ preventScroll: true });
       setPendingTarget(null);
     });
@@ -240,25 +240,25 @@ export function PreferencesModal() {
   const openSearchResult = (item: SearchItem) => {
     setCategory(item.category);
     setPendingTarget(item.target);
-    setQuery("");
+    setQuery('');
   };
 
   const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "ArrowDown" && results.length > 0) {
+    if (event.key === 'ArrowDown' && results.length > 0) {
       event.preventDefault();
       setResultCursor((cursor) => (cursor + 1) % results.length);
-    } else if (event.key === "ArrowUp" && results.length > 0) {
+    } else if (event.key === 'ArrowUp' && results.length > 0) {
       event.preventDefault();
       setResultCursor(
         (cursor) => (cursor - 1 + results.length) % results.length,
       );
-    } else if (event.key === "Enter" && results[resultCursor]) {
+    } else if (event.key === 'Enter' && results[resultCursor]) {
       event.preventDefault();
       openSearchResult(results[resultCursor]);
-    } else if (event.key === "Escape" && query) {
+    } else if (event.key === 'Escape' && query) {
       event.preventDefault();
       event.stopPropagation();
-      setQuery("");
+      setQuery('');
     }
   };
 
@@ -276,25 +276,25 @@ export function PreferencesModal() {
           onOpenAutoFocus={(event) => {
             event.preventDefault();
             const input = dialogRef.current?.querySelector<HTMLInputElement>(
-              "[data-settings-search]",
+              '[data-settings-search]',
             );
             input?.focus();
           }}
         >
           <Dialog.Title className={styles.srOnly}>
-            {t("prefs.title")}
+            {t('prefs.title')}
           </Dialog.Title>
 
           <aside className={styles.sidebar}>
             <button
               type="button"
               className={styles.profileButton}
-              onClick={() => setCategory("account")}
+              onClick={() => setCategory('account')}
             >
               <Avatar url={avatarUrl} initial={initial} />
               <span className={styles.profileCopy}>
                 <strong>{displayName}</strong>
-                <span>{t("prefs.editProfile")}</span>
+                <span>{t('prefs.editProfile')}</span>
               </span>
               <ChevronRight size={14} />
             </button>
@@ -306,15 +306,15 @@ export function PreferencesModal() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={onSearchKeyDown}
-                placeholder={t("prefs.searchPlaceholder")}
-                aria-label={t("prefs.searchPlaceholder")}
+                placeholder={t('prefs.searchPlaceholder')}
+                aria-label={t('prefs.searchPlaceholder')}
                 aria-expanded={Boolean(query)}
               />
               {query ? (
                 <button
                   type="button"
-                  onClick={() => setQuery("")}
-                  aria-label={t("prefs.clearSearch")}
+                  onClick={() => setQuery('')}
+                  aria-label={t('prefs.clearSearch')}
                 >
                   <X size={13} />
                 </button>
@@ -349,21 +349,21 @@ export function PreferencesModal() {
                   ))
                 ) : (
                   <div className={styles.searchEmpty}>
-                    {t("prefs.noSearchResults")}
+                    {t('prefs.noSearchResults')}
                   </div>
                 )}
               </div>
             ) : (
-              <nav className={styles.nav} aria-label={t("prefs.title")}>
+              <nav className={styles.nav} aria-label={t('prefs.title')}>
                 <span className={styles.navLabel}>
-                  {t("prefs.settingsLabel")}
+                  {t('prefs.settingsLabel')}
                 </span>
                 {categories.map(({ id, label, Icon }) => (
                   <button
                     key={id}
                     type="button"
                     className={category === id ? styles.navActive : undefined}
-                    aria-current={category === id ? "page" : undefined}
+                    aria-current={category === id ? 'page' : undefined}
                     onClick={() => {
                       setCategory(id);
                       contentRef.current?.scrollTo({ top: 0 });
@@ -387,7 +387,7 @@ export function PreferencesModal() {
                 <button
                   type="button"
                   className={styles.close}
-                  aria-label={t("common.close")}
+                  aria-label={t('common.close')}
                 >
                   <X size={18} />
                 </button>
@@ -396,18 +396,18 @@ export function PreferencesModal() {
 
             <div ref={contentRef} className={styles.content}>
               <div className={styles.contentInner}>
-                {category === "account" ? (
+                {category === 'account' ? (
                   <AccountPage
                     avatarUrl={avatarUrl}
                     initial={initial}
-                    onManageAccounts={() => openModal("profiles")}
+                    onManageAccounts={() => openModal('profiles')}
                   />
                 ) : null}
-                {category === "appearance" ? <AppearancePage /> : null}
-                {category === "terminal" ? (
+                {category === 'appearance' ? <AppearancePage /> : null}
+                {category === 'terminal' ? (
                   <TerminalPage enabledCount={enabledCount} />
                 ) : null}
-                {category === "integrations" ? <IntegrationsPage /> : null}
+                {category === 'integrations' ? <IntegrationsPage /> : null}
               </div>
             </div>
           </main>
@@ -435,32 +435,32 @@ function AccountPage({
     <>
       <SettingsSection
         id="profile"
-        title={t("prefs.profile")}
-        description={t("prefs.profileDesc")}
+        title={t('prefs.profile')}
+        description={t('prefs.profileDesc')}
       >
         <div className={styles.profileEditor}>
           <Avatar url={avatarUrl} initial={initial} large />
           <div className={styles.profileFields}>
             <label>
-              <span>{t("prefs.displayName")}</span>
+              <span>{t('prefs.displayName')}</span>
               <input
                 className={controls.input}
                 value={preferences.displayName}
                 onChange={(event) =>
                   setPreferences({ displayName: event.target.value })
                 }
-                placeholder={t("prefs.namePlaceholder")}
+                placeholder={t('prefs.namePlaceholder')}
                 maxLength={60}
               />
             </label>
             <ImageInput
-              label={t("prefs.profilePhoto")}
+              label={t('prefs.profilePhoto')}
               value={preferences.profileImageUrl}
               onChange={(profileImageUrl) =>
                 setPreferences({ profileImageUrl })
               }
-              placeholder={t("prefs.photoPlaceholder")}
-              hint={t("image.urlOrUpload")}
+              placeholder={t('prefs.photoPlaceholder')}
+              hint={t('image.urlOrUpload')}
             />
           </div>
         </div>
@@ -468,8 +468,8 @@ function AccountPage({
 
       <SettingsSection
         id="language"
-        title={t("prefs.language")}
-        description={t("prefs.languageDesc")}
+        title={t('prefs.language')}
+        description={t('prefs.languageDesc')}
       >
         <div className={styles.choiceGrid}>
           {LOCALES.map((locale) => (
@@ -492,8 +492,8 @@ function AccountPage({
 
       <SettingsSection
         id="local-accounts"
-        title={t("prefs.localAccounts")}
-        description={t("prefs.localAccountsDesc")}
+        title={t('prefs.localAccounts')}
+        description={t('prefs.localAccountsDesc')}
       >
         <button
           type="button"
@@ -501,7 +501,7 @@ function AccountPage({
           onClick={onManageAccounts}
         >
           <UserRound size={15} />
-          {t("profile.manageAccounts")}
+          {t('profile.manageAccounts')}
           <ChevronRight size={15} />
         </button>
       </SettingsSection>
@@ -519,8 +519,8 @@ function AppearancePage() {
     <>
       <SettingsSection
         id="ui-theme"
-        title={t("prefs.uiTheme")}
-        description={t("prefs.uiThemeDesc")}
+        title={t('prefs.uiTheme')}
+        description={t('prefs.uiThemeDesc')}
       >
         <div className={styles.themeGrid}>
           {THEME_OPTIONS.map((theme) => {
@@ -550,15 +550,15 @@ function AppearancePage() {
 
       <SettingsSection
         id="ui-zoom"
-        title={t("prefs.uiZoom")}
-        description={t("prefs.uiZoomDesc")}
+        title={t('prefs.uiZoom')}
+        description={t('prefs.uiZoomDesc')}
       >
         <div className={styles.zoomControl}>
           <button
             type="button"
             onClick={() => setUiZoom(preferences.uiZoom - UI_ZOOM_LIMITS.step)}
             disabled={preferences.uiZoom <= UI_ZOOM_LIMITS.min}
-            aria-label={t("prefs.zoomDecrease")}
+            aria-label={t('prefs.zoomDecrease')}
           >
             <Minus size={15} />
           </button>
@@ -567,7 +567,7 @@ function AppearancePage() {
             type="button"
             onClick={() => setUiZoom(preferences.uiZoom + UI_ZOOM_LIMITS.step)}
             disabled={preferences.uiZoom >= UI_ZOOM_LIMITS.max}
-            aria-label={t("prefs.zoomIncrease")}
+            aria-label={t('prefs.zoomIncrease')}
           >
             <Plus size={15} />
           </button>
@@ -575,7 +575,7 @@ function AppearancePage() {
             type="button"
             onClick={() => setUiZoom(1)}
             disabled={preferences.uiZoom === 1}
-            aria-label={t("prefs.zoomReset")}
+            aria-label={t('prefs.zoomReset')}
           >
             <RotateCcw size={15} />
           </button>
@@ -584,8 +584,8 @@ function AppearancePage() {
 
       <SettingsSection
         id="git-control"
-        title={t("prefs.gitControl")}
-        description={t("prefs.gitControlDesc")}
+        title={t('prefs.gitControl')}
+        description={t('prefs.gitControlDesc')}
       >
         <div className={styles.segmented}>
           <button
@@ -595,7 +595,7 @@ function AppearancePage() {
             }
             onClick={() => setPreferences({ showGitControl: true })}
           >
-            {t("prefs.gitControlShow")}
+            {t('prefs.gitControlShow')}
           </button>
           <button
             type="button"
@@ -604,7 +604,7 @@ function AppearancePage() {
             }
             onClick={() => setPreferences({ showGitControl: false })}
           >
-            {t("prefs.gitControlHide")}
+            {t('prefs.gitControlHide')}
           </button>
         </div>
       </SettingsSection>
@@ -636,17 +636,17 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
       const { resumed, total } = await resetLastSession();
       if (total === 0) {
         pushToast({
-          title: t("prefs.resetSessionEmpty"),
-          body: t("prefs.resetSessionEmptyBody"),
+          title: t('prefs.resetSessionEmpty'),
+          body: t('prefs.resetSessionEmptyBody'),
         });
       } else {
         pushToast({
-          title: t("prefs.resetSessionDone"),
-          body: t("prefs.resetSessionDoneBody", { count: resumed }),
+          title: t('prefs.resetSessionDone'),
+          body: t('prefs.resetSessionDoneBody', { count: resumed }),
         });
       }
     } catch (err) {
-      pushToast({ title: t("prefs.resetSessionFailed"), body: String(err) });
+      pushToast({ title: t('prefs.resetSessionFailed'), body: String(err) });
     } finally {
       setResetting(false);
     }
@@ -656,8 +656,8 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
     <>
       <SettingsSection
         id="spawn-concurrency"
-        title={t("prefs.spawnConcurrency")}
-        description={t("prefs.spawnConcurrencyDesc")}
+        title={t('prefs.spawnConcurrency')}
+        description={t('prefs.spawnConcurrencyDesc')}
       >
         <div className={styles.zoomControl}>
           <button
@@ -666,7 +666,7 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
               setConcurrency(concurrency - SPAWN_CONCURRENCY_LIMITS.step)
             }
             disabled={concurrency <= SPAWN_CONCURRENCY_LIMITS.min}
-            aria-label={t("prefs.spawnConcurrencyDecrease")}
+            aria-label={t('prefs.spawnConcurrencyDecrease')}
           >
             <Minus size={15} />
           </button>
@@ -677,7 +677,7 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
               setConcurrency(concurrency + SPAWN_CONCURRENCY_LIMITS.step)
             }
             disabled={concurrency >= SPAWN_CONCURRENCY_LIMITS.max}
-            aria-label={t("prefs.spawnConcurrencyIncrease")}
+            aria-label={t('prefs.spawnConcurrencyIncrease')}
           >
             <Plus size={15} />
           </button>
@@ -685,7 +685,7 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
             type="button"
             onClick={() => setConcurrency(3)}
             disabled={concurrency === 3}
-            aria-label={t("prefs.spawnConcurrencyReset")}
+            aria-label={t('prefs.spawnConcurrencyReset')}
           >
             <RotateCcw size={15} />
           </button>
@@ -694,12 +694,12 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
 
       <SettingsSection
         id="terminal-theme"
-        title={t("prefs.terminalTheme")}
-        description={t("prefs.terminalThemeDesc")}
+        title={t('prefs.terminalTheme')}
+        description={t('prefs.terminalThemeDesc')}
       >
         <select
           className={styles.select}
-          value={preferences.terminalTheme ?? ""}
+          value={preferences.terminalTheme ?? ''}
           onChange={(event) =>
             setTerminalTheme(
               event.target.value
@@ -708,7 +708,7 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
             )
           }
         >
-          <option value="">{t("common.followUi")}</option>
+          <option value="">{t('common.followUi')}</option>
           {THEME_OPTIONS.map((theme) => (
             <option key={theme.id} value={theme.id}>
               {themeLabel(t, theme.id)}
@@ -719,8 +719,8 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
 
       <SettingsSection
         id="agents"
-        title={t("prefs.enabledAgents", { count: enabledCount })}
-        description={t("prefs.agentsDesc")}
+        title={t('prefs.enabledAgents', { count: enabledCount })}
+        description={t('prefs.agentsDesc')}
       >
         <div className={styles.agentList}>
           {AGENTS.map((agent) => {
@@ -758,8 +758,8 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
 
       <SettingsSection
         id="limit-reset-notify"
-        title={t("prefs.limitResetNotify")}
-        description={t("prefs.limitResetNotifyDesc")}
+        title={t('prefs.limitResetNotify')}
+        description={t('prefs.limitResetNotifyDesc')}
       >
         <div className={styles.segmented}>
           <button
@@ -769,7 +769,7 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
             }
             onClick={() => setPreferences({ notifyOnLimitReset: true })}
           >
-            {t("prefs.limitResetNotifyOn")}
+            {t('prefs.limitResetNotifyOn')}
           </button>
           <button
             type="button"
@@ -778,7 +778,7 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
             }
             onClick={() => setPreferences({ notifyOnLimitReset: false })}
           >
-            {t("prefs.limitResetNotifyOff")}
+            {t('prefs.limitResetNotifyOff')}
           </button>
         </div>
       </SettingsSection>
@@ -791,14 +791,14 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
         >
           <label
             style={{
-              display: "flex",
-              alignItems: "center",
+              display: 'flex',
+              alignItems: 'center',
               gap: 12,
-              padding: "8px 12px",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border)",
-              background: "var(--bg-sunken)",
-              cursor: "pointer",
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border)',
+              background: 'var(--bg-sunken)',
+              cursor: 'pointer',
             }}
           >
             <input
@@ -817,8 +817,8 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
 
       <SettingsSection
         id="reset-session"
-        title={t("prefs.resetSession")}
-        description={t("prefs.resetSessionDesc")}
+        title={t('prefs.resetSession')}
+        description={t('prefs.resetSessionDesc')}
       >
         <button
           type="button"
@@ -828,8 +828,8 @@ function TerminalPage({ enabledCount }: { enabledCount: number }) {
         >
           <RotateCcw size={15} />
           {resetting
-            ? t("prefs.resetSessionBusy")
-            : t("prefs.resetSessionButton")}
+            ? t('prefs.resetSessionBusy')
+            : t('prefs.resetSessionButton')}
         </button>
       </SettingsSection>
     </>
@@ -844,8 +844,8 @@ function IntegrationsPage() {
     <>
       <SettingsSection
         id="spotify"
-        title={t("prefs.spotify")}
-        description={t("prefs.spotifyDesc")}
+        title={t('prefs.spotify')}
+        description={t('prefs.spotifyDesc')}
       >
         <div className={styles.integrationFields}>
           <label>
@@ -872,10 +872,10 @@ function IntegrationsPage() {
             />
           </label>
           <p>
-            {t("prefs.spotifyHint", {
-              redirect: "http://127.0.0.1:8888/callback",
-              idEnv: "SPOTIFY_CLIENT_ID",
-              secretEnv: "SPOTIFY_CLIENT_SECRET",
+            {t('prefs.spotifyHint', {
+              redirect: 'http://127.0.0.1:8888/callback',
+              idEnv: 'SPOTIFY_CLIENT_ID',
+              secretEnv: 'SPOTIFY_CLIENT_SECRET',
             })}
           </p>
         </div>
@@ -883,8 +883,8 @@ function IntegrationsPage() {
 
       <SettingsSection
         id="discord"
-        title={t("prefs.discordPresence")}
-        description={t("prefs.discordPresenceHint")}
+        title={t('prefs.discordPresence')}
+        description={t('prefs.discordPresenceHint')}
       >
         <div className={styles.segmented}>
           <button
@@ -896,7 +896,7 @@ function IntegrationsPage() {
             }
             onClick={() => setPreferences({ discordRichPresenceEnabled: true })}
           >
-            {t("prefs.discordPresenceEnabled")}
+            {t('prefs.discordPresenceEnabled')}
           </button>
           <button
             type="button"
@@ -909,7 +909,7 @@ function IntegrationsPage() {
               setPreferences({ discordRichPresenceEnabled: false })
             }
           >
-            {t("prefs.discordPresenceDisabled")}
+            {t('prefs.discordPresenceDisabled')}
           </button>
         </div>
       </SettingsSection>
@@ -953,11 +953,11 @@ function Avatar({
       src={url}
       alt=""
       draggable={false}
-      className={`${styles.avatar} ${large ? styles.avatarLarge : ""}`}
+      className={`${styles.avatar} ${large ? styles.avatarLarge : ''}`}
     />
   ) : (
     <span
-      className={`${styles.avatar} ${styles.avatarFallback} ${large ? styles.avatarLarge : ""}`}
+      className={`${styles.avatar} ${styles.avatarFallback} ${large ? styles.avatarLarge : ''}`}
     >
       {initial}
     </span>

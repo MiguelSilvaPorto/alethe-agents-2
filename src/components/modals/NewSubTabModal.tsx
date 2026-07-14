@@ -1,28 +1,28 @@
-import { Folder, FolderCheck, Zap } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Folder, FolderCheck, Zap } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { useUiStore } from "../../stores/uiStore";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { pickDirectory } from "../../lib/dialog";
-import { UNRESTRICTED_FLAG, type AgentType } from "../../lib/types";
-import { AgentIcon } from "../icons/AgentIcons";
-import { useT } from "../../lib/i18n";
-import { Modal } from "./Modal";
-import controls from "./controls.module.css";
-import picker from "./agentPicker.module.css";
+import { useUiStore } from '../../stores/uiStore';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { pickDirectory } from '../../lib/dialog';
+import { UNRESTRICTED_FLAG, type AgentType } from '../../lib/types';
+import { AgentIcon } from '../icons/AgentIcons';
+import { useT } from '../../lib/i18n';
+import { Modal } from './Modal';
+import controls from './controls.module.css';
+import picker from './agentPicker.module.css';
 
 const AGENTS: { type: AgentType; label: string }[] = [
-  { type: "shell", label: "Shell" },
-  { type: "claude", label: "Claude" },
-  { type: "codex", label: "Codex" },
-  { type: "opencode", label: "OpenCode" },
-  { type: "freebuff", label: "Freebuff" },
-  { type: "mimo", label: "Mimo" },
+  { type: 'shell', label: 'Shell' },
+  { type: 'claude', label: 'Claude' },
+  { type: 'codex', label: 'Codex' },
+  { type: 'opencode', label: 'OpenCode' },
+  { type: 'freebuff', label: 'Freebuff' },
+  { type: 'mimo', label: 'Mimo' },
 ];
 
 export function NewSubTabModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "newSubTab");
+  const open = useUiStore((s) => s.openModal === 'newSubTab');
   const context = useUiStore((s) => s.modalContext) as {
     projectId?: string;
     terminalId?: string;
@@ -41,8 +41,8 @@ export function NewSubTabModal() {
     );
   });
 
-  const [type, setType] = useState<AgentType>("shell");
-  const [cwd, setCwd] = useState("");
+  const [type, setType] = useState<AgentType>('shell');
+  const [cwd, setCwd] = useState('');
   const [unrestricted, setUnrestricted] = useState<Record<AgentType, boolean>>({
     shell: false,
     claude: false,
@@ -57,7 +57,7 @@ export function NewSubTabModal() {
     const activeTab =
       terminal?.tabs.find((item) => item.id === terminal.activeTabId) ??
       terminal?.tabs[0];
-    return activeTab?.cwd?.trim() || terminal?.cwd?.trim() || "";
+    return activeTab?.cwd?.trim() || terminal?.cwd?.trim() || '';
   }, [terminal]);
 
   useEffect(() => {
@@ -66,8 +66,8 @@ export function NewSubTabModal() {
   }, [open, context?.projectId, context?.terminalId, inheritedCwd]);
 
   const reset = () => {
-    setType("shell");
-    setCwd("");
+    setType('shell');
+    setCwd('');
     setUnrestricted({
       shell: false,
       claude: false,
@@ -105,11 +105,11 @@ export function NewSubTabModal() {
         reset();
         closeModal();
       }}
-      title={t("term.newSubTabTitle")}
+      title={t('term.newSubTabTitle')}
       footer={
         <>
           <button type="button" className={controls.btn} onClick={closeModal}>
-            {t("term.cancel")}
+            {t('term.cancel')}
           </button>
           <button
             type="button"
@@ -117,13 +117,13 @@ export function NewSubTabModal() {
             onClick={submit}
             disabled={!context?.terminalId}
           >
-            {t("term.add")}
+            {t('term.add')}
           </button>
         </>
       }
     >
       <div className={controls.field}>
-        <label className={controls.label}>{t("term.type")}</label>
+        <label className={controls.label}>{t('term.type')}</label>
         <div className={picker.list}>
           {visibleAgents.map((a) => {
             const active = type === a.type;
@@ -131,7 +131,7 @@ export function NewSubTabModal() {
               <button
                 key={a.type}
                 type="button"
-                className={`${picker.row} ${active ? picker.rowActive : ""}`}
+                className={`${picker.row} ${active ? picker.rowActive : ''}`}
                 onClick={() => setType(a.type)}
               >
                 <span className={picker.rowIcon}>
@@ -142,7 +142,7 @@ export function NewSubTabModal() {
                   {UNRESTRICTED_FLAG[a.type] ? (
                     <button
                       type="button"
-                      className={`${picker.cwdBtn} ${unrestricted[a.type] ? picker.boltActive : ""}`}
+                      className={`${picker.cwdBtn} ${unrestricted[a.type] ? picker.boltActive : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setType(a.type);
@@ -153,22 +153,22 @@ export function NewSubTabModal() {
                       }}
                       title={
                         unrestricted[a.type]
-                          ? t("term.unrestrictedActive", {
-                              flag: UNRESTRICTED_FLAG[a.type] ?? "",
+                          ? t('term.unrestrictedActive', {
+                              flag: UNRESTRICTED_FLAG[a.type] ?? '',
                             })
-                          : t("term.unrestrictedEnable")
+                          : t('term.unrestrictedEnable')
                       }
-                      aria-label={t("term.unrestricted")}
+                      aria-label={t('term.unrestricted')}
                     >
                       <Zap
                         size={14}
-                        className={unrestricted[a.type] ? picker.bolt : ""}
+                        className={unrestricted[a.type] ? picker.bolt : ''}
                       />
                     </button>
                   ) : null}
                   <button
                     type="button"
-                    className={`${picker.cwdBtn} ${active && (cwd || inheritedCwd) ? picker.set : ""}`}
+                    className={`${picker.cwdBtn} ${active && (cwd || inheritedCwd) ? picker.set : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setType(a.type);
@@ -177,9 +177,9 @@ export function NewSubTabModal() {
                     title={
                       active && (cwd || inheritedCwd)
                         ? cwd || inheritedCwd
-                        : t("term.chooseFolder")
+                        : t('term.chooseFolder')
                     }
-                    aria-label={t("term.chooseFolder")}
+                    aria-label={t('term.chooseFolder')}
                   >
                     {active && (cwd || inheritedCwd) ? (
                       <FolderCheck size={14} />
@@ -194,20 +194,20 @@ export function NewSubTabModal() {
         </div>
       </div>
       <div className={controls.field}>
-        <label className={controls.label}>{t("term.folderCwd")}</label>
+        <label className={controls.label}>{t('term.folderCwd')}</label>
         <div className={controls.cwdRow}>
           <input
             className={controls.input}
             value={cwd}
             onChange={(e) => setCwd(e.target.value)}
-            placeholder={inheritedCwd || t("term.defaultPlaceholder")}
+            placeholder={inheritedCwd || t('term.defaultPlaceholder')}
           />
           <button
             type="button"
             className={controls.btn}
             onClick={browse}
-            aria-label={t("term.chooseFolder")}
-            title={t("term.chooseFolder")}
+            aria-label={t('term.chooseFolder')}
+            title={t('term.chooseFolder')}
           >
             <Folder size={14} />
           </button>

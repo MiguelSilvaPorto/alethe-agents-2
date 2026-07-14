@@ -1,8 +1,8 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-import { getActiveSessions } from "../lib/sessionResume";
-import { getSessionCost, type SessionCost } from "../lib/tauri";
-import { useTerminalsStore } from "./terminalsStore";
+import { getActiveSessions } from '../lib/sessionResume';
+import { getSessionCost, type SessionCost } from '../lib/tauri';
+import { useTerminalsStore } from './terminalsStore';
 
 /**
  * Custo ao vivo por agente, pro Token HUD. Fonte da verdade de "quem está vivo"
@@ -46,12 +46,12 @@ function liveAgentSessions(): Array<{
   }> = [];
   for (const [ptyId, s] of Object.entries(sessions)) {
     if (!alive[ptyId]?.alive) continue;
-    let sessionId = "";
-    if (s.agent === "codex") sessionId = s.codexSessionId || "";
-    else if (s.agent === "claude") sessionId = s.claudeSessionId || "";
-    else if (s.agent === "opencode") sessionId = s.opencodeSessionId || "";
+    let sessionId = '';
+    if (s.agent === 'codex') sessionId = s.codexSessionId || '';
+    else if (s.agent === 'claude') sessionId = s.claudeSessionId || '';
+    else if (s.agent === 'opencode') sessionId = s.opencodeSessionId || '';
     if (!sessionId) continue;
-    if (s.agent !== "claude" && s.agent !== "codex" && s.agent !== "opencode") {
+    if (s.agent !== 'claude' && s.agent !== 'codex' && s.agent !== 'opencode') {
       continue;
     }
     out.push({ ptyId, agent: s.agent, sessionId, cwd: s.cwd });

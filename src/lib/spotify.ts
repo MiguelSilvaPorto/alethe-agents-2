@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from '@tauri-apps/api/core';
 
 export type NowPlaying = {
   playing: boolean;
@@ -17,19 +17,19 @@ export type SpotifyCredentials = {
 };
 
 export function spotifyLogin(credentials: SpotifyCredentials): Promise<void> {
-  return invoke("spotify_login", credentials);
+  return invoke('spotify_login', credentials);
 }
 
 export function spotifyLogout(): Promise<void> {
-  return invoke("spotify_logout");
+  return invoke('spotify_logout');
 }
 
 export function spotifyStatus(): Promise<boolean> {
-  return invoke<boolean>("spotify_status");
+  return invoke<boolean>('spotify_status');
 }
 
 export function spotifyGetCurrent(
   credentials: SpotifyCredentials,
 ): Promise<NowPlaying | null> {
-  return invoke<NowPlaying | null>("spotify_get_current", credentials);
+  return invoke<NowPlaying | null>('spotify_get_current', credentials);
 }

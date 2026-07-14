@@ -10,22 +10,22 @@
 
 export type AgentTemplate = {
   name: string;
-  category: "orquestra" | "front" | "back" | "qa" | "docs" | "economia";
+  category: 'orquestra' | 'front' | 'back' | 'qa' | 'docs' | 'economia';
   /** Badge de custo: comunica o gasto relativo no canvas. */
-  cost: "barato" | "medio" | "caro";
+  cost: 'barato' | 'medio' | 'caro';
   summary: string;
   content: string;
 };
 
-const MARKER = "<!-- gerado pelo Alethe (biblioteca) — seguro deletar -->";
+const MARKER = '<!-- gerado pelo Alethe (biblioteca) — seguro deletar -->';
 
 export const AGENT_LIBRARY: AgentTemplate[] = [
   {
-    name: "orchestrator",
-    category: "orquestra",
-    cost: "medio",
+    name: 'orchestrator',
+    category: 'orquestra',
+    cost: 'medio',
     summary:
-      "Tech-lead. Decompõe a meta em streams e tasks com dependências. Só planeja.",
+      'Tech-lead. Decompõe a meta em streams e tasks com dependências. Só planeja.',
     content: `---
 name: orchestrator
 description: MUST BE USED no início de uma tarefa grande e nos marcos - decompõe a meta em streams (front/back/qa/docs) e numa lista de tasks com dependências, sugerindo o agente certo por task com viés de custo. NÃO edita arquivos; só planeja.
@@ -47,10 +47,10 @@ ${MARKER}
 `,
   },
   {
-    name: "frontend-dev",
-    category: "front",
-    cost: "caro",
-    summary: "UI, componentes, styling. Dono da camada front.",
+    name: 'frontend-dev',
+    category: 'front',
+    cost: 'caro',
+    summary: 'UI, componentes, styling. Dono da camada front.',
     content: `---
 name: frontend-dev
 description: MUST BE USED para trabalho de frontend - UI, componentes, styling, estado do cliente, acessibilidade. Use proativamente quando a tarefa for da camada de apresentação.
@@ -70,10 +70,10 @@ ${MARKER}
 `,
   },
   {
-    name: "backend-dev",
-    category: "back",
-    cost: "caro",
-    summary: "API, banco, regras de negócio. Dono da camada back.",
+    name: 'backend-dev',
+    category: 'back',
+    cost: 'caro',
+    summary: 'API, banco, regras de negócio. Dono da camada back.',
     content: `---
 name: backend-dev
 description: MUST BE USED para trabalho de backend - APIs, banco de dados, regras de negócio, autenticação, integração. Use proativamente quando a tarefa for da camada de servidor.
@@ -93,10 +93,10 @@ ${MARKER}
 `,
   },
   {
-    name: "qa-reviewer",
-    category: "qa",
-    cost: "barato",
-    summary: "Revisão e testes. Read-only + Bash.",
+    name: 'qa-reviewer',
+    category: 'qa',
+    cost: 'barato',
+    summary: 'Revisão e testes. Read-only + Bash.',
     content: `---
 name: qa-reviewer
 description: MUST BE USED para revisar mudanças e rodar testes - encontrar bugs, regressões, casos de borda não tratados. Use proativamente depois de implementações relevantes.
@@ -116,10 +116,10 @@ ${MARKER}
 `,
   },
   {
-    name: "docs-writer",
-    category: "docs",
-    cost: "barato",
-    summary: "Documentação. Haiku.",
+    name: 'docs-writer',
+    category: 'docs',
+    cost: 'barato',
+    summary: 'Documentação. Haiku.',
     content: `---
 name: docs-writer
 description: MUST BE USED para escrever e atualizar documentação - README, docs de API, comentários de módulo, guias de setup. Use proativamente quando código novo precisar de doc.

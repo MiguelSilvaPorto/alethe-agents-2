@@ -2,7 +2,7 @@ export type DetectedTerminalLink = {
   text: string;
   index: number;
   displayLength: number;
-  kind: "url" | "path";
+  kind: 'url' | 'path';
   isMarkdown?: boolean;
 };
 
@@ -25,20 +25,20 @@ const LINK_START_PATTERN = /https?:\/\/|(?:[A-Za-z]:\\|\\\\)|(?:~|\/)(?=[^/])/g;
 const MARKDOWN_PATH_PATTERN = /\.(md|markdown)(?::\d+(?::\d+)?)?$/i;
 const LINK_TRAILING_PUNCTUATION = /[\s),.;:]+$/;
 const HARD_LINK_DELIMITERS = new Set([
-  "\t",
-  "\r",
-  "\n",
-  "<",
-  ">",
+  '\t',
+  '\r',
+  '\n',
+  '<',
+  '>',
   '"',
   "'",
-  "`",
-  "|",
+  '`',
+  '|',
 ]);
 
 function findLinkEnd(line: string, start: number): number {
   const opener = line[start - 1];
-  const closer = opener === "(" ? ")" : opener === "[" ? "]" : undefined;
+  const closer = opener === '(' ? ')' : opener === '[' ? ']' : undefined;
   if (closer) {
     const boundedEnd = line.indexOf(closer, start);
     if (boundedEnd !== -1) return boundedEnd;
@@ -48,10 +48,10 @@ function findLinkEnd(line: string, start: number): number {
   while (end < line.length) {
     const char = line[end];
     if (HARD_LINK_DELIMITERS.has(char)) break;
-    if (char === " " && line[end + 1] === " ") break;
+    if (char === ' ' && line[end + 1] === ' ') break;
 
     // A second link after whitespace belongs to a separate match.
-    if (char === " ") {
+    if (char === ' ') {
       const remainder = line.slice(end + 1);
       if (/^(?:https?:\/\/|[A-Za-z]:\\|\\\\|~\/|\/)/.test(remainder)) break;
     }
@@ -70,21 +70,21 @@ export function detectTerminalLinks(line: string): DetectedTerminalLink[] {
     if (links.some((link) => index < link.index + link.displayLength)) continue;
 
     const raw = line.slice(index, findLinkEnd(line, index));
-    const displayText = raw.replace(LINK_TRAILING_PUNCTUATION, "");
+    const displayText = raw.replace(LINK_TRAILING_PUNCTUATION, '');
     if (!displayText) continue;
 
     const kind =
-      displayText.startsWith("http://") || displayText.startsWith("https://")
-        ? "url"
-        : "path";
+      displayText.startsWith('http://') || displayText.startsWith('https://')
+        ? 'url'
+        : 'path';
     const text =
-      kind === "url" ? displayText : displayText.replace(/\\ /g, " ");
+      kind === 'url' ? displayText : displayText.replace(/\\ /g, ' ');
     links.push({
       text,
       index,
       displayLength: displayText.length,
       kind,
-      isMarkdown: kind === "path" && MARKDOWN_PATH_PATTERN.test(text),
+      isMarkdown: kind === 'path' && MARKDOWN_PATH_PATTERN.test(text),
     });
   }
   return links;
@@ -117,9 +117,9 @@ export function getLogicalTerminalLine(
   )
     endIndex += 1;
 
-  let text = "";
+  let text = '';
   for (let index = startIndex; index <= endIndex; index += 1) {
-    text += buffer.getLine(index)?.translateToString(index === endIndex) ?? "";
+    text += buffer.getLine(index)?.translateToString(index === endIndex) ?? '';
   }
 
   return { text, startLine: startIndex + 1 };
@@ -128,7 +128,7 @@ export function getLogicalTerminalLine(
 export function terminalLinkRange(
   startLine: number,
   columns: number,
-  link: Pick<DetectedTerminalLink, "index" | "displayLength">,
+  link: Pick<DetectedTerminalLink, 'index' | 'displayLength'>,
 ) {
   const startOffset = link.index;
   const endOffset = link.index + link.displayLength - 1;

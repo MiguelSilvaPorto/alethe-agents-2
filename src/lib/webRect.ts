@@ -1,4 +1,4 @@
-import type { WebRect } from "./tauri";
+import type { WebRect } from './tauri';
 
 /**
  * Igualdade de retângulos da WebView. Usado pelo GhosttySurface para coalescer

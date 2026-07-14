@@ -1,4 +1,4 @@
-import { open, save, type DialogFilter } from "@tauri-apps/plugin-dialog";
+import { open, save, type DialogFilter } from '@tauri-apps/plugin-dialog';
 
 export async function pickDirectory(opts?: {
   defaultPath?: string;
@@ -8,7 +8,7 @@ export async function pickDirectory(opts?: {
     multiple: false,
     defaultPath: opts?.defaultPath,
   });
-  if (typeof result === "string") return result;
+  if (typeof result === 'string') return result;
   return null;
 }
 
@@ -24,7 +24,7 @@ export async function pickFile(opts?: {
     filters: opts?.filters,
     defaultPath: opts?.defaultPath,
   });
-  if (typeof result === "string") return result;
+  if (typeof result === 'string') return result;
   return null;
 }
 

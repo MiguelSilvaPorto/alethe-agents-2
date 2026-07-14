@@ -1,8 +1,8 @@
-import { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 
-import { getLocale, type MessageKey, translate } from "../../lib/i18n";
-import { recordFrontendError } from "../../lib/tauri";
-import styles from "./ErrorBoundary.module.css";
+import { getLocale, type MessageKey, translate } from '../../lib/i18n';
+import { recordFrontendError } from '../../lib/tauri';
+import styles from './ErrorBoundary.module.css';
 
 type Props = {
   children: ReactNode;
@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    const kind = this.props.label ? `react:${this.props.label}` : "react";
+    const kind = this.props.label ? `react:${this.props.label}` : 'react';
     void recordFrontendError(
       error.message || String(error),
       error.stack ?? info.componentStack ?? null,
@@ -49,21 +49,21 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className={styles.wrap} role="alert">
         <div className={styles.card}>
-          <h2 className={styles.title}>{tr("errorBoundary.title")}</h2>
-          <p className={styles.body}>{tr("errorBoundary.body")}</p>
+          <h2 className={styles.title}>{tr('errorBoundary.title')}</h2>
+          <p className={styles.body}>{tr('errorBoundary.body')}</p>
           {error.message ? (
             <pre className={styles.detail}>{error.message}</pre>
           ) : null}
           <div className={styles.actions}>
             <button type="button" className={styles.btn} onClick={this.reset}>
-              {tr("errorBoundary.retry")}
+              {tr('errorBoundary.retry')}
             </button>
             <button
               type="button"
               className={styles.btnPrimary}
               onClick={this.reload}
             >
-              {tr("errorBoundary.reload")}
+              {tr('errorBoundary.reload')}
             </button>
           </div>
         </div>

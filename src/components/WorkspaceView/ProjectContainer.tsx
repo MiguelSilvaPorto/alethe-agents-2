@@ -1,4 +1,4 @@
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import {
   ChevronRight,
   GripVertical,
@@ -6,20 +6,20 @@ import {
   Minimize2,
   Minus,
   TerminalSquare,
-} from "lucide-react";
-import { memo, useMemo } from "react";
+} from 'lucide-react';
+import { memo, useMemo } from 'react';
 
 import type {
   Group,
   Project,
   Terminal,
   WorkspaceContainer,
-} from "../../lib/types";
-import { useT } from "../../lib/i18n";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { EmptyState } from "../EmptyState/EmptyState";
-import { PaneArea } from "./PaneArea";
-import styles from "./ProjectContainer.module.css";
+} from '../../lib/types';
+import { useT } from '../../lib/i18n';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { EmptyState } from '../EmptyState/EmptyState';
+import { PaneArea } from './PaneArea';
+import styles from './ProjectContainer.module.css';
 
 export type ProjectContainerProps = {
   container: WorkspaceContainer;
@@ -52,7 +52,7 @@ export const ProjectContainer = memo(function ProjectContainer({
   );
   const activeGroupGrid = useMemo(() => {
     if (!group) return null;
-    if (group.layoutMode !== "grid" || !group.gridLayout) return null;
+    if (group.layoutMode !== 'grid' || !group.gridLayout) return null;
     return { groupId: group.id, layout: group.gridLayout };
   }, [group]);
 
@@ -64,10 +64,10 @@ export const ProjectContainer = memo(function ProjectContainer({
     e.preventDefault();
     e.stopPropagation();
     const grid = workspaceGridLayout
-      ? { kind: "workspace" as const, layout: workspaceGridLayout }
+      ? { kind: 'workspace' as const, layout: workspaceGridLayout }
       : activeGroupGrid
         ? {
-            kind: "group" as const,
+            kind: 'group' as const,
             groupId: activeGroupGrid.groupId,
             layout: activeGroupGrid.layout,
           }
@@ -81,7 +81,7 @@ export const ProjectContainer = memo(function ProjectContainer({
     ) as HTMLElement | null;
     if (!node) return;
     let gridEl: HTMLElement | null = node.parentElement;
-    while (gridEl && getComputedStyle(gridEl).display !== "grid") {
+    while (gridEl && getComputedStyle(gridEl).display !== 'grid') {
       gridEl = gridEl.parentElement;
     }
     if (!gridEl) return;
@@ -142,15 +142,15 @@ export const ProjectContainer = memo(function ProjectContainer({
       if (!canResizeX && !canResizeY) return;
 
       const next = { ...grid.layout, colSizes, rowSizes };
-      if (grid.kind === "workspace") setWorkspaceGridLayout(next);
+      if (grid.kind === 'workspace') setWorkspaceGridLayout(next);
       else setGroupGridLayout(grid.groupId, next);
     };
     const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   const showResizeHandle =
@@ -177,15 +177,15 @@ export const ProjectContainer = memo(function ProjectContainer({
   // Cor do container = cor do PROJETO (cada projeto fica visualmente único).
   // Cor do grupo fica reservada pro bullet/tag na sidebar (organização).
   // Fallback pro neutro se o projeto não tem cor.
-  const accent = project.color || group?.color || "var(--border-strong)";
+  const accent = project.color || group?.color || 'var(--border-strong)';
 
   if (container.collapsed) {
     return (
       <div
         className={styles.collapsed}
-        style={{ ["--container-accent" as string]: accent }}
+        style={{ ['--container-accent' as string]: accent }}
         onClick={() => setCollapsed(project.id, false)}
-        title={`${group ? group.name + " · " : ""}${t("ws.containerExpandHint", { name: project.name })}`}
+        title={`${group ? group.name + ' · ' : ''}${t('ws.containerExpandHint', { name: project.name })}`}
       >
         {project.iconUrl ? (
           <img src={project.iconUrl} alt="" className={styles.projectIcon} />
@@ -204,10 +204,10 @@ export const ProjectContainer = memo(function ProjectContainer({
     <div
       ref={setRefs}
       data-pane-box="1"
-      className={`${styles.box} ${draggable.isDragging ? styles.boxDragging : ""} ${
-        isDropTarget ? styles.boxDropTarget : ""
+      className={`${styles.box} ${draggable.isDragging ? styles.boxDragging : ''} ${
+        isDropTarget ? styles.boxDropTarget : ''
       }`}
-      style={{ ["--container-accent" as string]: accent }}
+      style={{ ['--container-accent' as string]: accent }}
     >
       <div className={styles.tag}>
         {!isFullscreen ? (
@@ -216,8 +216,8 @@ export const ProjectContainer = memo(function ProjectContainer({
             className={styles.dragHandle}
             {...draggable.attributes}
             {...draggable.listeners}
-            title={t("ws.dragToReorderContainer")}
-            aria-label={t("ws.dragContainer")}
+            title={t('ws.dragToReorderContainer')}
+            aria-label={t('ws.dragContainer')}
           >
             <GripVertical size={11} />
           </button>
@@ -239,8 +239,8 @@ export const ProjectContainer = memo(function ProjectContainer({
               e.stopPropagation();
               setCollapsed(project.id, true);
             }}
-            title={t("ws.collapseContainer")}
-            aria-label={t("ws.collapse")}
+            title={t('ws.collapseContainer')}
+            aria-label={t('ws.collapse')}
           >
             <ChevronRight size={11} />
           </button>
@@ -258,10 +258,10 @@ export const ProjectContainer = memo(function ProjectContainer({
             }}
             title={
               isFullscreen
-                ? t("ws.exitFullscreen")
-                : t("ws.containerFullscreen")
+                ? t('ws.exitFullscreen')
+                : t('ws.containerFullscreen')
             }
-            aria-label={t("ws.toggleFullscreen")}
+            aria-label={t('ws.toggleFullscreen')}
           >
             {isFullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
           </button>
@@ -272,8 +272,8 @@ export const ProjectContainer = memo(function ProjectContainer({
               e.stopPropagation();
               closeContainer(project.id);
             }}
-            title={t("ws.closeContainer")}
-            aria-label={t("ws.close")}
+            title={t('ws.closeContainer')}
+            aria-label={t('ws.close')}
           >
             <Minus size={11} />
           </button>
@@ -285,10 +285,10 @@ export const ProjectContainer = memo(function ProjectContainer({
             <EmptyState
               compact
               icon={<TerminalSquare size={18} />}
-              title={t("ws.panesEmptyTitle")}
-              description={t("ws.panesEmptyDesc")}
+              title={t('ws.panesEmptyTitle')}
+              description={t('ws.panesEmptyDesc')}
               primaryAction={{
-                label: t("ws.panesEmptyAction"),
+                label: t('ws.panesEmptyAction'),
                 onClick: () => openContainerWithAllPanes(project.id),
               }}
             />
@@ -307,7 +307,7 @@ export const ProjectContainer = memo(function ProjectContainer({
         <div
           className={styles.gridResize}
           onPointerDown={startGridResize}
-          title={t("ws.dragToResizeSpan")}
+          title={t('ws.dragToResizeSpan')}
         />
       ) : null}
     </div>

@@ -1,5 +1,5 @@
-import { check, type Update } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
+import { check, type Update } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
 
 /** Metadados de um update disponível, prontos pra exibir na UI. */
 export type UpdateInfo = {
@@ -45,20 +45,20 @@ export async function checkForUpdate(): Promise<UpdateInfo | null> {
 export async function installPendingUpdate(
   onProgress?: (progress: UpdateProgress) => void,
 ): Promise<void> {
-  if (!pending) throw new Error("Nenhum update pendente para instalar.");
+  if (!pending) throw new Error('Nenhum update pendente para instalar.');
   let total = 0;
   let downloaded = 0;
   await pending.downloadAndInstall((event) => {
     switch (event.event) {
-      case "Started":
+      case 'Started':
         total = event.data.contentLength ?? 0;
         onProgress?.({ downloaded: 0, total });
         break;
-      case "Progress":
+      case 'Progress':
         downloaded += event.data.chunkLength;
         onProgress?.({ downloaded, total });
         break;
-      case "Finished":
+      case 'Finished':
         onProgress?.({ downloaded: total, total });
         break;
     }

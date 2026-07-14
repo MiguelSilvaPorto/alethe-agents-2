@@ -3,9 +3,9 @@
  * retomar agentes automaticamente ao reabrir o app.
  */
 
-import { readScopedStorage, writeScopedStorage } from "./storageNamespace";
+import { readScopedStorage, writeScopedStorage } from './storageNamespace';
 
-const STORAGE_KEY = "active-sessions";
+const STORAGE_KEY = 'active-sessions';
 
 export type SavedSession = {
   sessionId: string;

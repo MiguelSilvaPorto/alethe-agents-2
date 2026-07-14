@@ -1,183 +1,183 @@
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { Bell, X } from "lucide-react";
-import { lazy, Suspense, type CSSProperties, useEffect } from "react";
+import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { Bell, X } from 'lucide-react';
+import { lazy, Suspense, type CSSProperties, useEffect } from 'react';
 
-import { ghosttyKillAll } from "./lib/tauri";
+import { ghosttyKillAll } from './lib/tauri';
 
-import { AgentIcon } from "./components/icons/AgentIcons";
-import { ErrorBoundary } from "./components/ErrorBoundary";
-import { FocusOverlay } from "./components/FocusOverlay";
-import { MainMenu } from "./components/MainMenu";
-import { ProjectSidebar } from "./components/ProjectSidebar";
-import { TaskPanel } from "./components/TaskPanel";
-import { TitleBar } from "./components/TitleBar";
-import { TokenHud } from "./components/TokenHud";
-import { useKeybindings } from "./hooks/useKeybindings";
-import { useDiscordPresence } from "./hooks/useDiscordPresence";
-import { startActivityTracker } from "./lib/activityTracker";
-import { intlLocale, translate } from "./lib/i18n";
-import { setMaxConcurrentSpawns } from "./lib/spawnQueue";
-import { getLastCrashReport, getProxyPort } from "./lib/tauri";
-import { checkForUpdate } from "./lib/updater";
-import { useProjectsStore } from "./stores/projectsStore";
-import { type InAppToast, useUiStore } from "./stores/uiStore";
-import styles from "./App.module.css";
-import logoLoading from "./assets/logo-loading.png";
+import { AgentIcon } from './components/icons/AgentIcons';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { FocusOverlay } from './components/FocusOverlay';
+import { MainMenu } from './components/MainMenu';
+import { ProjectSidebar } from './components/ProjectSidebar';
+import { TaskPanel } from './components/TaskPanel';
+import { TitleBar } from './components/TitleBar';
+import { TokenHud } from './components/TokenHud';
+import { useKeybindings } from './hooks/useKeybindings';
+import { useDiscordPresence } from './hooks/useDiscordPresence';
+import { startActivityTracker } from './lib/activityTracker';
+import { intlLocale, translate } from './lib/i18n';
+import { setMaxConcurrentSpawns } from './lib/spawnQueue';
+import { getLastCrashReport, getProxyPort } from './lib/tauri';
+import { checkForUpdate } from './lib/updater';
+import { useProjectsStore } from './stores/projectsStore';
+import { type InAppToast, useUiStore } from './stores/uiStore';
+import styles from './App.module.css';
+import logoLoading from './assets/logo-loading.png';
 
 const AgentCanvasPOC = lazy(() =>
-  import("./components/AgentCanvasPOC").then((module) => ({
+  import('./components/AgentCanvasPOC').then((module) => ({
     default: module.AgentCanvasPOC,
   })),
 );
 const HomeView = lazy(() =>
-  import("./components/HomeView").then((module) => ({
+  import('./components/HomeView').then((module) => ({
     default: module.HomeView,
   })),
 );
 const LayoutDesignerModal = lazy(() =>
-  import("./components/modals/LayoutDesignerModal").then((module) => ({
+  import('./components/modals/LayoutDesignerModal').then((module) => ({
     default: module.LayoutDesignerModal,
   })),
 );
 const MemoryAnalyticsModal = lazy(() =>
-  import("./components/modals/MemoryAnalyticsModal").then((module) => ({
+  import('./components/modals/MemoryAnalyticsModal').then((module) => ({
     default: module.MemoryAnalyticsModal,
   })),
 );
 const TelemetryDashboardModal = lazy(() =>
-  import("./components/modals/TelemetryDashboardModal").then((module) => ({
+  import('./components/modals/TelemetryDashboardModal').then((module) => ({
     default: module.TelemetryDashboardModal,
   })),
 );
 
 const WorkspaceView = lazy(() =>
-  import("./components/WorkspaceView").then((module) => ({
+  import('./components/WorkspaceView').then((module) => ({
     default: module.WorkspaceView,
   })),
 );
 
 const FindJumpModal = lazy(() =>
-  import("./components/modals/FindJumpModal").then((module) => ({
+  import('./components/modals/FindJumpModal').then((module) => ({
     default: module.FindJumpModal,
   })),
 );
 
 const EditGroupModal = lazy(() =>
-  import("./components/modals/EditGroupModal").then((module) => ({
+  import('./components/modals/EditGroupModal').then((module) => ({
     default: module.EditGroupModal,
   })),
 );
 
 const EditProjectModal = lazy(() =>
-  import("./components/modals/EditProjectModal").then((module) => ({
+  import('./components/modals/EditProjectModal').then((module) => ({
     default: module.EditProjectModal,
   })),
 );
 
 const NewGroupModal = lazy(() =>
-  import("./components/modals/NewGroupModal").then((module) => ({
+  import('./components/modals/NewGroupModal').then((module) => ({
     default: module.NewGroupModal,
   })),
 );
 
 const NewProjectModal = lazy(() =>
-  import("./components/modals/NewProjectModal").then((module) => ({
+  import('./components/modals/NewProjectModal').then((module) => ({
     default: module.NewProjectModal,
   })),
 );
 
 const NewSubTabModal = lazy(() =>
-  import("./components/modals/NewSubTabModal").then((module) => ({
+  import('./components/modals/NewSubTabModal').then((module) => ({
     default: module.NewSubTabModal,
   })),
 );
 
 const NewTerminalModal = lazy(() =>
-  import("./components/modals/NewTerminalModal").then((module) => ({
+  import('./components/modals/NewTerminalModal').then((module) => ({
     default: module.NewTerminalModal,
   })),
 );
 
 const OnboardingModal = lazy(() =>
-  import("./components/modals/OnboardingModal").then((module) => ({
+  import('./components/modals/OnboardingModal').then((module) => ({
     default: module.OnboardingModal,
   })),
 );
 
 const ProfilesModal = lazy(() =>
-  import("./components/modals/ProfilesModal").then((module) => ({
+  import('./components/modals/ProfilesModal').then((module) => ({
     default: module.ProfilesModal,
   })),
 );
 
 const PreferencesModal = lazy(() =>
-  import("./components/modals/PreferencesModal").then((module) => ({
+  import('./components/modals/PreferencesModal').then((module) => ({
     default: module.PreferencesModal,
   })),
 );
 
 const SyncModal = lazy(() =>
-  import("./components/modals/SyncModal").then((module) => ({
+  import('./components/modals/SyncModal').then((module) => ({
     default: module.SyncModal,
   })),
 );
 
 const SuspendGroupModal = lazy(() =>
-  import("./components/modals/SuspendGroupModal").then((module) => ({
+  import('./components/modals/SuspendGroupModal').then((module) => ({
     default: module.SuspendGroupModal,
   })),
 );
 
 const ContextModal = lazy(() =>
-  import("./components/modals/ContextModal").then((module) => ({
+  import('./components/modals/ContextModal').then((module) => ({
     default: module.ContextModal,
   })),
 );
 
 const WorkflowModal = lazy(() =>
-  import("./components/modals/WorkflowModal").then((module) => ({
+  import('./components/modals/WorkflowModal').then((module) => ({
     default: module.WorkflowModal,
   })),
 );
 
 const WorkflowDetailModal = lazy(() =>
-  import("./components/modals/WorkflowDetailModal").then((module) => ({
+  import('./components/modals/WorkflowDetailModal').then((module) => ({
     default: module.WorkflowDetailModal,
   })),
 );
 
 const ThemePickerModal = lazy(() =>
-  import("./components/modals/ThemePickerModal").then((module) => ({
+  import('./components/modals/ThemePickerModal').then((module) => ({
     default: module.ThemePickerModal,
   })),
 );
 
 const TopbarSettingsModal = lazy(() =>
-  import("./components/modals/TopbarSettingsModal").then((module) => ({
+  import('./components/modals/TopbarSettingsModal').then((module) => ({
     default: module.TopbarSettingsModal,
   })),
 );
 
 const UpdateModal = lazy(() =>
-  import("./components/modals/UpdateModal").then((module) => ({
+  import('./components/modals/UpdateModal').then((module) => ({
     default: module.UpdateModal,
   })),
 );
 
 const WelcomeModal = lazy(() =>
-  import("./components/modals/WelcomeModal").then((module) => ({
+  import('./components/modals/WelcomeModal').then((module) => ({
     default: module.WelcomeModal,
   })),
 );
 
 const RejectDialog = lazy(() =>
-  import("./components/TaskPanel/RejectDialog").then((module) => ({
+  import('./components/TaskPanel/RejectDialog').then((module) => ({
     default: module.RejectDialog,
   })),
 );
 
 const TaskBranchModal = lazy(() =>
-  import("./components/TaskPanel/TaskBranchModal").then((module) => ({
+  import('./components/TaskPanel/TaskBranchModal').then((module) => ({
     default: module.TaskBranchModal,
   })),
 );
@@ -200,9 +200,9 @@ function ToastItem({ toast }: { toast: InAppToast }) {
   }, [dismissToast, toast.id]);
 
   const accentStyle = {
-    "--toast-accent": toast.agent
+    '--toast-accent': toast.agent
       ? `var(--agent-${toast.agent})`
-      : "var(--accent)",
+      : 'var(--accent)',
   } as CSSProperties;
 
   return (
@@ -283,7 +283,7 @@ export default function App() {
   }, [uiTheme]);
 
   useEffect(() => {
-    document.documentElement.lang = language === "pt-BR" ? "pt-BR" : "en";
+    document.documentElement.lang = language === 'pt-BR' ? 'pt-BR' : 'en';
   }, [language]);
 
   useEffect(() => {
@@ -300,7 +300,7 @@ export default function App() {
       })
       .finally(() => {
         window.dispatchEvent(
-          new CustomEvent("alethe:zoom-changed", { detail: { zoom: uiZoom } }),
+          new CustomEvent('alethe:zoom-changed', { detail: { zoom: uiZoom } }),
         );
       });
   }, [hydrated, uiZoom]);
@@ -312,11 +312,11 @@ export default function App() {
       setPreferences({ firstLaunchAt: Date.now() });
     }
     if (preferences.accountCreated && preferences.onboardingDone) {
-      useUiStore.getState().openModal_("welcome");
+      useUiStore.getState().openModal_('welcome');
     }
     useUiStore
       .getState()
-      .setActiveView(preferences.alwaysStartOnHome ? "home" : "workspace");
+      .setActiveView(preferences.alwaysStartOnHome ? 'home' : 'workspace');
   }, [hydrated]);
 
   useEffect(() => {
@@ -331,7 +331,7 @@ export default function App() {
         useUiStore.getState().setProxyPort(port);
       })
       .catch((err) => {
-        console.error("Falha ao inicializar proxy de telemetria:", err);
+        console.error('Falha ao inicializar proxy de telemetria:', err);
       });
   }, [hydrated]);
 
@@ -361,8 +361,8 @@ export default function App() {
         const lang = useProjectsStore.getState().preferences.language;
         const when = new Date(report.last_heartbeat_ms || report.started_at_ms);
         useUiStore.getState().pushToast({
-          title: translate(lang, "crash.uncleanTitle"),
-          body: translate(lang, "crash.uncleanBody", {
+          title: translate(lang, 'crash.uncleanTitle'),
+          body: translate(lang, 'crash.uncleanBody', {
             total: Math.round(report.total_mb),
             procs: report.process_count,
             time: when.toLocaleTimeString(intlLocale(lang)),
@@ -380,34 +380,34 @@ export default function App() {
     <>
       <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh",
-          background: "var(--bg)",
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          background: 'var(--bg)',
         }}
       >
         <TitleBar />
-        <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
           {sidebarVisible ? <ProjectSidebar /> : null}
           <ErrorBoundary label="view">
             <div
               style={{
-                display: "flex",
+                display: 'flex',
                 flex: 1,
                 minHeight: 0,
-                width: "100%",
-                overflow: "hidden",
+                width: '100%',
+                overflow: 'hidden',
               }}
             >
               {/* WorkspaceView — montado só quando workspace está ativo */}
               <Suspense fallback={<LoadingScreen />}>
-                {activeView === "workspace" ? (
+                {activeView === 'workspace' ? (
                   <div
                     style={{
-                      display: "flex",
+                      display: 'flex',
                       flex: 1,
                       minHeight: 0,
-                      overflow: "hidden",
+                      overflow: 'hidden',
                     }}
                   >
                     <WorkspaceView />
@@ -415,15 +415,15 @@ export default function App() {
                 ) : null}
               </Suspense>
               {/* TaskPanel — sempre renderizado, visibilidade controlada por CSS */}
-              {activeView === "workspace" ? <TaskPanel /> : null}
+              {activeView === 'workspace' ? <TaskPanel /> : null}
               {/* HomeView e AgentCanvasPOC — lazy, montados apenas quando ativos */}
               <Suspense fallback={<LoadingScreen />}>
-                {activeView === "home" ? (
-                  <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+                {activeView === 'home' ? (
+                  <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
                     <HomeView />
                   </div>
-                ) : activeView === "agentCanvas" ? (
-                  <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+                ) : activeView === 'agentCanvas' ? (
+                  <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
                     <AgentCanvasPOC />
                   </div>
                 ) : null}
@@ -457,15 +457,15 @@ export default function App() {
           <ThemePickerModal />
           <TopbarSettingsModal />
           <UpdateModal />
-          {openModal === "layoutDesigner" ? <LayoutDesignerModal /> : null}
-          {openModal === "memoryAnalytics" ? <MemoryAnalyticsModal /> : null}
-          {openModal === "telemetryDashboard" ? (
+          {openModal === 'layoutDesigner' ? <LayoutDesignerModal /> : null}
+          {openModal === 'memoryAnalytics' ? <MemoryAnalyticsModal /> : null}
+          {openModal === 'telemetryDashboard' ? (
             <TelemetryDashboardModal />
           ) : null}
         </Suspense>
       </ErrorBoundary>
       <InAppNotifications />
-      {activeView === "agentCanvas" ? <TokenHud /> : null}
+      {activeView === 'agentCanvas' ? <TokenHud /> : null}
     </>
   );
 }

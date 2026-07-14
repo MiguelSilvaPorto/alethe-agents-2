@@ -1,5 +1,5 @@
-import type React from "react";
-import type { GridLayout } from "../lib/types";
+import type React from 'react';
+import type { GridLayout } from '../lib/types';
 
 /**
  * Retorna um handler de pointerDown que inicia o resize de uma célula
@@ -23,7 +23,7 @@ export function useGridResize(
     ) as HTMLElement | null;
     if (!node) return;
     let gridEl: HTMLElement | null = node.parentElement;
-    while (gridEl && getComputedStyle(gridEl).display !== "grid") {
+    while (gridEl && getComputedStyle(gridEl).display !== 'grid') {
       gridEl = gridEl.parentElement;
     }
     if (!gridEl) return;
@@ -85,11 +85,11 @@ export function useGridResize(
       onUpdate({ ...gridLayout, colSizes, rowSizes });
     };
     const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   return onPointerDown;

@@ -1,9 +1,9 @@
-import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
-import type { ReactNode } from "react";
+import * as Dialog from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
+import type { ReactNode } from 'react';
 
-import { useT } from "../../lib/i18n";
-import styles from "./Modal.module.css";
+import { useT } from '../../lib/i18n';
+import styles from './Modal.module.css';
 
 type Props = {
   open: boolean;
@@ -36,7 +36,7 @@ export function Modal({
             // foca o primeiro input ao invés do botão close
             const root = e.currentTarget as HTMLElement | null;
             const input = root?.querySelector<HTMLElement>(
-              "input,textarea,[data-autofocus]",
+              'input,textarea,[data-autofocus]',
             );
             if (input) {
               e.preventDefault();
@@ -49,7 +49,7 @@ export function Modal({
             <Dialog.Close asChild>
               <button
                 type="button"
-                aria-label={t("common.close")}
+                aria-label={t('common.close')}
                 className={styles.close}
               >
                 <X size={16} />

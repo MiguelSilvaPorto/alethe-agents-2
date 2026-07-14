@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 import {
   MAX_RECENT_PROJECT_TABS,
@@ -7,8 +7,8 @@ import {
   selectActiveContainer,
   selectActiveProject,
   useProjectsStore,
-} from "../stores/projectsStore";
-import { useUiStore } from "../stores/uiStore";
+} from '../stores/projectsStore';
+import { useUiStore } from '../stores/uiStore';
 
 /**
  * Atalhos globais. Ignora se o foco estiver num input/textarea editáveis —
@@ -18,7 +18,7 @@ export function useKeybindings() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // Esc fecha modal aberto
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         const ui = useUiStore.getState();
         if (ui.openModal) {
           e.preventDefault();
@@ -36,8 +36,8 @@ export function useKeybindings() {
       const target = e.target as HTMLElement | null;
       const inEditable =
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
           target.isContentEditable);
 
       const ctrl = e.ctrlKey || e.metaKey;
@@ -61,7 +61,7 @@ export function useKeybindings() {
         ctrl &&
         !e.shiftKey &&
         !e.altKey &&
-        (e.key === "t" || e.key === "T")
+        (e.key === 't' || e.key === 'T')
       ) {
         e.preventDefault();
         const projects = useProjectsStore.getState();
@@ -69,26 +69,26 @@ export function useKeybindings() {
         if (!project) return;
         const cwd = getProjectDefaultCwd(project);
         projects.createTerminal(project.id, {
-          name: "shell",
+          name: 'shell',
           cwd,
-          firstTab: { type: "shell", cwd },
+          firstTab: { type: 'shell', cwd },
         });
         return;
       }
 
       // Ctrl+Shift+T → modal de novo terminal (escolhe tipo)
-      if (ctrl && e.shiftKey && (e.key === "T" || e.key === "t")) {
+      if (ctrl && e.shiftKey && (e.key === 'T' || e.key === 't')) {
         e.preventDefault();
         const project = selectActiveProject(useProjectsStore.getState());
         if (!project) return;
         useUiStore
           .getState()
-          .openModal_("newTerminal", { projectId: project.id });
+          .openModal_('newTerminal', { projectId: project.id });
         return;
       }
 
       // Ctrl+W → fecha (oculta) o primeiro pane do container ativo
-      if (ctrl && !e.shiftKey && (e.key === "w" || e.key === "W")) {
+      if (ctrl && !e.shiftKey && (e.key === 'w' || e.key === 'W')) {
         e.preventDefault();
         const projects = useProjectsStore.getState();
         const container = selectActiveContainer(projects);
@@ -98,28 +98,28 @@ export function useKeybindings() {
       }
 
       // Ctrl+P → busca/jump (find)
-      if (ctrl && !e.shiftKey && (e.key === "p" || e.key === "P")) {
+      if (ctrl && !e.shiftKey && (e.key === 'p' || e.key === 'P')) {
         e.preventDefault();
-        useUiStore.getState().openModal_("findJump");
+        useUiStore.getState().openModal_('findJump');
         return;
       }
 
       // Ctrl+Shift+P → modal novo projeto
-      if (ctrl && e.shiftKey && (e.key === "P" || e.key === "p")) {
+      if (ctrl && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
         e.preventDefault();
-        useUiStore.getState().openModal_("newProject");
+        useUiStore.getState().openModal_('newProject');
         return;
       }
 
       // Ctrl+Shift+G → modal novo grupo
-      if (ctrl && e.shiftKey && (e.key === "G" || e.key === "g")) {
+      if (ctrl && e.shiftKey && (e.key === 'G' || e.key === 'g')) {
         e.preventDefault();
-        useUiStore.getState().openModal_("newGroup");
+        useUiStore.getState().openModal_('newGroup');
         return;
       }
 
       // Ctrl+Shift+H → toggle Home ↔ workspace
-      if (ctrl && e.shiftKey && (e.key === "H" || e.key === "h")) {
+      if (ctrl && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
         e.preventDefault();
         useUiStore.getState().toggleHome();
         return;
@@ -139,17 +139,17 @@ export function useKeybindings() {
       if (
         e.altKey &&
         !ctrl &&
-        (e.key === "ArrowLeft" || e.key === "ArrowRight")
+        (e.key === 'ArrowLeft' || e.key === 'ArrowRight')
       ) {
         e.preventDefault();
         const projects = useProjectsStore.getState();
-        projects.navigateWorkspaceHistory(e.key === "ArrowLeft" ? -1 : 1);
-        useUiStore.getState().setActiveView("workspace");
+        projects.navigateWorkspaceHistory(e.key === 'ArrowLeft' ? -1 : 1);
+        useUiStore.getState().setActiveView('workspace');
         return;
       }
 
       // Ctrl+Tab → alterna tabs de projeto da topbar sem reordenar os slots.
-      if (ctrl && e.key === "Tab") {
+      if (ctrl && e.key === 'Tab') {
         e.preventDefault();
         const projects = useProjectsStore.getState();
         const ui = useUiStore.getState();
@@ -168,13 +168,13 @@ export function useKeybindings() {
             : (currentIndex + direction + topTabs.length) % topTabs.length;
         const nextTab = topTabs[nextIndex];
         projects.activateWorkspaceTab(nextTab.id);
-        ui.setActiveView("workspace");
+        ui.setActiveView('workspace');
         return;
       }
     };
 
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, []);
 }
 
@@ -183,13 +183,13 @@ function isZoomKey(e: KeyboardEvent): boolean {
 }
 
 function isZoomInKey(e: KeyboardEvent): boolean {
-  return e.key === "+" || e.key === "=" || e.code === "NumpadAdd";
+  return e.key === '+' || e.key === '=' || e.code === 'NumpadAdd';
 }
 
 function isZoomOutKey(e: KeyboardEvent): boolean {
-  return e.key === "-" || e.key === "_" || e.code === "NumpadSubtract";
+  return e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract';
 }
 
 function isZoomResetKey(e: KeyboardEvent): boolean {
-  return e.key === "0" || e.code === "Numpad0";
+  return e.key === '0' || e.code === 'Numpad0';
 }

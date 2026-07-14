@@ -1,4 +1,4 @@
-import { getLocale, intlLocale, translate, type Locale } from "./i18n";
+import { getLocale, intlLocale, translate, type Locale } from './i18n';
 
 /**
  * Saudação dinâmica baseada na hora local, localizada.
@@ -9,24 +9,24 @@ export function getGreeting(
   locale: Locale = getLocale(),
 ): string {
   const h = date.getHours();
-  if (h >= 5 && h < 12) return translate(locale, "greeting.morning");
-  if (h >= 12 && h < 18) return translate(locale, "greeting.afternoon");
-  return translate(locale, "greeting.evening");
+  if (h >= 5 && h < 12) return translate(locale, 'greeting.morning');
+  if (h >= 12 && h < 18) return translate(locale, 'greeting.afternoon');
+  return translate(locale, 'greeting.evening');
 }
 
 /** Abreviação de dia da semana no idioma atual (ex: "wed" / "qua"). */
 function weekdayShort(date: Date, locale: Locale): string {
-  return new Intl.DateTimeFormat(intlLocale(locale), { weekday: "short" })
+  return new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short' })
     .format(date)
-    .replace(".", "")
+    .replace('.', '')
     .toLowerCase();
 }
 
 /** Abreviação de mês no idioma atual (ex: "may" / "mai"). */
 function monthShort(date: Date, locale: Locale): string {
-  return new Intl.DateTimeFormat(intlLocale(locale), { month: "short" })
+  return new Intl.DateTimeFormat(intlLocale(locale), { month: 'short' })
     .format(date)
-    .replace(".", "")
+    .replace('.', '')
     .toLowerCase();
 }
 
@@ -38,8 +38,8 @@ export function formatHomeDate(
   const wd = weekdayShort(date, locale);
   const day = date.getDate();
   const mo = monthShort(date, locale);
-  const h = String(date.getHours()).padStart(2, "0");
-  const m = String(date.getMinutes()).padStart(2, "0");
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
   return `${wd}, ${day} ${mo} · ${h}:${m}`;
 }
 
@@ -49,11 +49,11 @@ export function formatRelativeTimestamp(
   now: number = Date.now(),
   locale: Locale = getLocale(),
 ): string {
-  if (!ts) return "—";
+  if (!ts) return '—';
   const diffMs = now - ts;
   const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return translate(locale, "time.now");
-  if (diffMin < 60) return translate(locale, "time.minutes", { n: diffMin });
+  if (diffMin < 1) return translate(locale, 'time.now');
+  if (diffMin < 60) return translate(locale, 'time.minutes', { n: diffMin });
   const date = new Date(ts);
   const today = new Date(now);
   const sameDay =
@@ -61,8 +61,8 @@ export function formatRelativeTimestamp(
     date.getMonth() === today.getMonth() &&
     date.getDate() === today.getDate();
   if (sameDay) {
-    const h = String(date.getHours()).padStart(2, "0");
-    const m = String(date.getMinutes()).padStart(2, "0");
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
     return `${h}:${m}`;
   }
   const yesterday = new Date(today);
@@ -72,11 +72,11 @@ export function formatRelativeTimestamp(
     date.getMonth() === yesterday.getMonth() &&
     date.getDate() === yesterday.getDate();
   if (isYesterday) {
-    const h = String(date.getHours()).padStart(2, "0");
-    const m = String(date.getMinutes()).padStart(2, "0");
-    return translate(locale, "time.yesterday", { time: `${h}:${m}` });
+    const h = String(date.getHours()).padStart(2, '0');
+    const m = String(date.getMinutes()).padStart(2, '0');
+    return translate(locale, 'time.yesterday', { time: `${h}:${m}` });
   }
   const diffDays = Math.floor(diffMs / 86_400_000);
-  if (diffDays < 30) return translate(locale, "time.daysAgo", { n: diffDays });
+  if (diffDays < 30) return translate(locale, 'time.daysAgo', { n: diffDays });
   return `${date.getDate()} ${monthShort(date, locale)}`;
 }

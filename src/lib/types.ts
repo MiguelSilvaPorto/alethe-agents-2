@@ -1,10 +1,10 @@
 export type AgentType =
-  "shell" | "claude" | "codex" | "opencode" | "freebuff" | "mimo";
+  'shell' | 'claude' | 'codex' | 'opencode' | 'freebuff' | 'mimo';
 
 /** Idiomas suportados pela UI. `en` é o default. */
-export type Locale = "en" | "pt-BR";
+export type Locale = 'en' | 'pt-BR';
 
-export type LayoutMode = "auto" | "spotlight" | "sidebar" | "grid";
+export type LayoutMode = 'auto' | 'spotlight' | 'sidebar' | 'grid';
 
 /** Posição/tamanho de uma Célula no grid. Coordenadas 1-based (CSS Grid style). */
 export type GridCell = {
@@ -27,17 +27,17 @@ export type GridLayout = {
 };
 
 export type Theme =
-  | "dark"
-  | "light"
-  | "dracula"
-  | "nord"
-  | "gruvbox"
-  | "solarized"
-  | "tokyo-night"
-  | "vscode"
-  | "min-dark"
-  | "min-light"
-  | "dark-lemon";
+  | 'dark'
+  | 'light'
+  | 'dracula'
+  | 'nord'
+  | 'gruvbox'
+  | 'solarized'
+  | 'tokyo-night'
+  | 'vscode'
+  | 'min-dark'
+  | 'min-light'
+  | 'dark-lemon';
 
 export type SubTab = {
   id: string;
@@ -59,16 +59,16 @@ export type SubTab = {
 /** Flag de "modo irrestrito" por agente (skip permissions / approvals). */
 export const UNRESTRICTED_FLAG: Record<AgentType, string | null> = {
   shell: null,
-  claude: "--dangerously-skip-permissions",
-  codex: "--dangerously-bypass-approvals-and-sandbox",
-  opencode: "--auto",
+  claude: '--dangerously-skip-permissions',
+  codex: '--dangerously-bypass-approvals-and-sandbox',
+  opencode: '--auto',
   // freebuff/mimo não documentam flag de skip-permissions própria.
   freebuff: null,
   mimo: null,
 };
 
 /** Tipo de pane. Ausente = 'terminal' (back-compat, sem migração). */
-export type PaneKind = "terminal" | "markdown";
+export type PaneKind = 'terminal' | 'markdown' | 'file';
 
 export type Terminal = {
   id: string;
@@ -87,7 +87,7 @@ export type Terminal = {
 };
 
 export type TaskStatus =
-  "implementing" | "review" | "pending" | "accepted" | "blocked";
+  'implementing' | 'review' | 'pending' | 'accepted' | 'blocked';
 
 export type TaskRejection = {
   feedback: string;
@@ -173,11 +173,11 @@ export type WorkspaceContainer = {
 };
 
 export type WorkspaceRecentTab = {
-  kind: "project" | "group";
+  kind: 'project' | 'group';
   id: string;
 };
 
-export type WorkspaceTabKind = "project" | "group" | "terminal" | "composition";
+export type WorkspaceTabKind = 'project' | 'group' | 'terminal' | 'composition';
 
 /** Estado visual restaurável. PTYs e conteúdo dos terminais permanecem globais. */
 export type WorkspaceViewSnapshot = {
@@ -290,8 +290,8 @@ export type ProjectsFile = {
 };
 
 export const DEFAULT_PREFERENCES: Preferences = {
-  language: "en",
-  uiTheme: "dark",
+  language: 'en',
+  uiTheme: 'dark',
   uiZoom: 1,
   terminalTheme: null,
   enabledAgents: {
@@ -306,12 +306,12 @@ export const DEFAULT_PREFERENCES: Preferences = {
   workspaceFlat: false,
   fullscreenContainerId: null,
   firstLaunchAt: null,
-  displayName: "",
-  profileImageUrl: "",
+  displayName: '',
+  profileImageUrl: '',
   accountCreated: false,
   alwaysStartOnHome: false,
-  spotifyClientId: "",
-  spotifyClientSecret: "",
+  spotifyClientId: '',
+  spotifyClientSecret: '',
   discordRichPresenceEnabled: true,
   topbarShowClaudeUsage: true,
   topbarShowCodexUsage: true,
@@ -346,16 +346,16 @@ export const EMPTY_PROJECTS_FILE: ProjectsFile = {
 
 /** Status runtime de um PTY (não persistido). */
 export type PtyStatus =
-  "working" | "waiting" | "stopped" | "disabled" | "offline";
+  'working' | 'waiting' | 'stopped' | 'disabled' | 'offline';
 
 /** Cores predefinidas pra grupos e projetos. */
 export const GROUP_COLORS = [
-  "#6ea8ff",
-  "#22d3ee",
-  "#a78bfa",
-  "#34d399",
-  "#f59e0b",
-  "#ef4444",
-  "#ec4899",
-  "#10b981",
+  '#6ea8ff',
+  '#22d3ee',
+  '#a78bfa',
+  '#34d399',
+  '#f59e0b',
+  '#ef4444',
+  '#ec4899',
+  '#10b981',
 ] as const;

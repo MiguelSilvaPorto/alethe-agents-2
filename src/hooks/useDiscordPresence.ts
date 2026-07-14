@@ -1,16 +1,16 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
-import { clearDiscordPresence, setDiscordPresence } from "../lib/tauri";
-import { useProjectsStore } from "../stores/projectsStore";
-import { useUiStore } from "../stores/uiStore";
+import { clearDiscordPresence, setDiscordPresence } from '../lib/tauri';
+import { useProjectsStore } from '../stores/projectsStore';
+import { useUiStore } from '../stores/uiStore';
 
 const STARTED_AT = Math.floor(Date.now() / 1000);
 const REFRESH_INTERVAL_MS = 30_000;
 
 const VIEW_LABELS = {
-  home: "Viewing the dashboard",
-  workspace: "Managing terminals",
-  agentCanvas: "Orchestrating AI agents",
+  home: 'Viewing the dashboard',
+  workspace: 'Managing terminals',
+  agentCanvas: 'Orchestrating AI agents',
 } as const;
 
 export function useDiscordPresence() {
@@ -30,7 +30,7 @@ export function useDiscordPresence() {
 
     const update = () => {
       void setDiscordPresence(
-        "Working with Alethe",
+        'Working with Alethe',
         VIEW_LABELS[activeView],
         STARTED_AT,
       ).catch(() => undefined);

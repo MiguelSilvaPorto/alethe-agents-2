@@ -10,10 +10,10 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
-} from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { useT, type MessageKey } from "../../lib/i18n";
+import { useT, type MessageKey } from '../../lib/i18n';
 import {
   getPtyCwd,
   gitCommit,
@@ -25,9 +25,9 @@ import {
   gitUnstage,
   type GitFileChange,
   type GitRepositoryStatus,
-} from "../../lib/tauri";
-import { useUiStore } from "../../stores/uiStore";
-import styles from "./GitControl.module.css";
+} from '../../lib/tauri';
+import { useUiStore } from '../../stores/uiStore';
+import styles from './GitControl.module.css';
 
 type GitControlProps = {
   cwd: string;
@@ -35,12 +35,12 @@ type GitControlProps = {
   terminalName: string;
 };
 
-type GroupKind = "staged" | "changes" | "untracked" | "conflicts";
+type GroupKind = 'staged' | 'changes' | 'untracked' | 'conflicts';
 
 const ERROR_KEYS: Record<string, MessageKey> = {
-  git_not_found: "git.error.notFound",
-  not_a_git_repository: "git.error.notRepository",
-  directory_not_found: "git.error.directory",
+  git_not_found: 'git.error.notFound',
+  not_a_git_repository: 'git.error.notRepository',
+  directory_not_found: 'git.error.directory',
 };
 
 export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
@@ -51,7 +51,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const requestId = useRef(0);
   // Coalesce refreshes automáticos (interval + focus) — defesa extra contra
   // rajadas de eventos de foco que poderiam disparar git em loop. Refresh manual
@@ -81,7 +81,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
       }
       if (!liveCwd) {
         setStatus(null);
-        setError("directory_not_found");
+        setError('directory_not_found');
         setLoading(false);
         return;
       }
@@ -106,13 +106,13 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
   useEffect(() => {
     void refresh();
     const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") void refresh(true);
+      if (document.visibilityState === 'visible') void refresh(true);
     }, 15000);
     const onFocus = () => void refresh(true);
-    window.addEventListener("focus", onFocus);
+    window.addEventListener('focus', onFocus);
     return () => {
       window.clearInterval(interval);
-      window.removeEventListener("focus", onFocus);
+      window.removeEventListener('focus', onFocus);
       requestId.current += 1;
     };
   }, [refresh]);
@@ -122,10 +122,10 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
     setBusy(true);
     try {
       await action();
-      if (success) pushToast({ title: success, body: "" });
+      if (success) pushToast({ title: success, body: '' });
       await refresh(true);
     } catch (cause) {
-      pushToast({ title: t("git.error.action"), body: readableError(cause) });
+      pushToast({ title: t('git.error.action'), body: readableError(cause) });
     } finally {
       setBusy(false);
     }
@@ -146,19 +146,19 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
   const commit = async () => {
     if (!status || !message.trim() || busy) return;
     if (status.conflicts.length > 0) {
-      pushToast({ title: t("git.error.conflicts"), body: "" });
+      pushToast({ title: t('git.error.conflicts'), body: '' });
       return;
     }
     if (status.staged.length === 0) {
       if (allStageable.length === 0) return;
-      if (!window.confirm(t("git.confirm.stageAllCommit"))) return;
+      if (!window.confirm(t('git.confirm.stageAllCommit'))) return;
     }
     await run(async () => {
       if (status.staged.length === 0)
         await gitStage(status.repoRoot, allStageable);
       await gitCommit(status.repoRoot, message.trim());
-      setMessage("");
-    }, t("git.commit.done"));
+      setMessage('');
+    }, t('git.commit.done'));
   };
 
   // Sync estilo VSCode: puxa se está atrás, empurra sempre (push sem nada a
@@ -168,29 +168,29 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
     await run(async () => {
       if (status.behind > 0) await gitPull(status.repoRoot);
       await gitPush(status.repoRoot);
-    }, t("git.sync.done"));
+    }, t('git.sync.done'));
   };
 
   if (!liveCwd) {
     return (
       <GitMessage
-        title={t("git.empty.noFolder")}
-        description={t("git.empty.noFolderDesc")}
+        title={t('git.empty.noFolder')}
+        description={t('git.empty.noFolderDesc')}
       />
     );
   }
 
   if (loading && !status) {
-    return <GitMessage title={t("git.loading")} />;
+    return <GitMessage title={t('git.loading')} />;
   }
 
   if (error && !status) {
     return (
       <GitMessage
-        title={t(ERROR_KEYS[error] ?? "git.error.generic")}
+        title={t(ERROR_KEYS[error] ?? 'git.error.generic')}
         description={
-          error.startsWith("git_command_failed:")
-            ? error.slice(error.indexOf(":") + 1)
+          error.startsWith('git_command_failed:')
+            ? error.slice(error.indexOf(':') + 1)
             : undefined
         }
         action={
@@ -200,7 +200,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
             onClick={() => void refresh()}
           >
             <RefreshCw size={13} />
-            {t("git.refresh")}
+            {t('git.refresh')}
           </button>
         }
       />
@@ -213,7 +213,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
     status.changes.length +
     status.untracked.length +
     status.conflicts.length;
-  const syncTitle = t("git.sync.title", {
+  const syncTitle = t('git.sync.title', {
     ahead: status.ahead,
     behind: status.behind,
   });
@@ -230,8 +230,8 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
           className={styles.iconButton}
           onClick={() => void refresh()}
           disabled={loading || busy}
-          title={t("git.refresh")}
-          aria-label={t("git.refresh")}
+          title={t('git.refresh')}
+          aria-label={t('git.refresh')}
         >
           <RefreshCw
             size={13}
@@ -243,7 +243,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
       <div className={styles.branchRow}>
         <GitBranch size={13} />
         <span>{status.branch}</span>
-        {status.detached ? <small>{t("git.detached")}</small> : null}
+        {status.detached ? <small>{t('git.detached')}</small> : null}
         <button
           type="button"
           className={styles.syncButton}
@@ -271,11 +271,11 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           onKeyDown={(event) => {
-            if ((event.ctrlKey || event.metaKey) && event.key === "Enter")
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter')
               void commit();
           }}
-          placeholder={t("git.commit.placeholder")}
-          aria-label={t("git.commit.placeholder")}
+          placeholder={t('git.commit.placeholder')}
+          aria-label={t('git.commit.placeholder')}
           rows={2}
         />
         <div className={styles.commitRow}>
@@ -286,7 +286,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
             onClick={() => void commit()}
           >
             <Check size={14} />
-            {busy ? t("git.commit.busy") : t("git.commit.action")}
+            {busy ? t('git.commit.busy') : t('git.commit.action')}
           </button>
           <button
             type="button"
@@ -299,7 +299,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
               size={13}
               className={busy ? styles.spinning : undefined}
             />
-            {t("git.sync.action")}
+            {t('git.sync.action')}
           </button>
         </div>
       </div>
@@ -307,21 +307,21 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
       <div className={styles.groups}>
         <ChangeGroup
           kind="staged"
-          label={t("git.group.staged")}
+          label={t('git.group.staged')}
           items={status.staged}
           disabled={busy}
           onPrimary={(paths) => run(() => gitUnstage(status.repoRoot, paths))}
         />
         <ChangeGroup
           kind="conflicts"
-          label={t("git.group.conflicts")}
+          label={t('git.group.conflicts')}
           items={status.conflicts}
           disabled={busy}
           onPrimary={(paths) => run(() => gitStage(status.repoRoot, paths))}
         />
         <ChangeGroup
           kind="changes"
-          label={t("git.group.changes")}
+          label={t('git.group.changes')}
           items={status.changes}
           disabled={busy}
           onPrimary={(paths) => run(() => gitStage(status.repoRoot, paths))}
@@ -331,7 +331,7 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
         />
         <ChangeGroup
           kind="untracked"
-          label={t("git.group.untracked")}
+          label={t('git.group.untracked')}
           items={status.untracked}
           disabled={busy}
           onPrimary={(paths) => run(() => gitStage(status.repoRoot, paths))}
@@ -342,8 +342,8 @@ export function GitControl({ cwd, ptyId, terminalName }: GitControlProps) {
         {total === 0 ? (
           <div className={styles.clean}>
             <Check size={18} />
-            <strong>{t("git.clean")}</strong>
-            <span>{t("git.cleanDesc")}</span>
+            <strong>{t('git.clean')}</strong>
+            <span>{t('git.cleanDesc')}</span>
           </div>
         ) : null}
       </div>
@@ -372,11 +372,11 @@ function ChangeGroup({
   if (items.length === 0) return null;
   const paths = uniquePaths(items);
   const primaryTitle =
-    kind === "staged" ? t("git.unstageAll") : t("git.stageAll");
+    kind === 'staged' ? t('git.unstageAll') : t('git.stageAll');
   const confirmDiscard = (selected: string[]) => {
     if (
       onDiscard &&
-      window.confirm(t("git.confirm.discard", { count: selected.length }))
+      window.confirm(t('git.confirm.discard', { count: selected.length }))
     )
       onDiscard(selected);
   };
@@ -397,8 +397,8 @@ function ChangeGroup({
             <button
               type="button"
               disabled={disabled}
-              title={t("git.discardAll")}
-              aria-label={t("git.discardAll")}
+              title={t('git.discardAll')}
+              aria-label={t('git.discardAll')}
               onClick={() => confirmDiscard(paths)}
             >
               <RotateCcw size={13} />
@@ -411,7 +411,7 @@ function ChangeGroup({
             aria-label={primaryTitle}
             onClick={() => onPrimary(paths)}
           >
-            {kind === "staged" ? <Minus size={14} /> : <Plus size={14} />}
+            {kind === 'staged' ? <Minus size={14} /> : <Plus size={14} />}
           </button>
         </div>
       </div>
@@ -420,7 +420,7 @@ function ChangeGroup({
           {tree.map((node) => (
             <TreeNodeView
               key={
-                node.type === "dir" ? `d:${node.path}` : `f:${node.change.path}`
+                node.type === 'dir' ? `d:${node.path}` : `f:${node.change.path}`
               }
               node={node}
               kind={kind}
@@ -455,9 +455,9 @@ function TreeNodeView({
   const [open, setOpen] = useState(true);
   const indent = { paddingLeft: 8 + depth * 12 };
 
-  if (node.type === "file") {
+  if (node.type === 'file') {
     const change = node.change;
-    const isStaged = kind === "staged";
+    const isStaged = kind === 'staged';
     return (
       <div
         className={styles.file}
@@ -479,8 +479,8 @@ function TreeNodeView({
             <button
               type="button"
               disabled={disabled}
-              title={t("git.discard")}
-              aria-label={t("git.discard")}
+              title={t('git.discard')}
+              aria-label={t('git.discard')}
               onClick={() => onDiscard([change.path])}
             >
               <RotateCcw size={12} />
@@ -489,8 +489,8 @@ function TreeNodeView({
           <button
             type="button"
             disabled={disabled}
-            title={isStaged ? t("git.unstage") : t("git.stage")}
-            aria-label={isStaged ? t("git.unstage") : t("git.stage")}
+            title={isStaged ? t('git.unstage') : t('git.stage')}
+            aria-label={isStaged ? t('git.unstage') : t('git.stage')}
             onClick={() => onPrimary([change.path])}
           >
             {isStaged ? <Minus size={13} /> : <Plus size={13} />}
@@ -501,7 +501,7 @@ function TreeNodeView({
   }
 
   const descendants = collectPaths(node);
-  const isStaged = kind === "staged";
+  const isStaged = kind === 'staged';
   return (
     <>
       <div className={styles.dir} style={indent}>
@@ -519,8 +519,8 @@ function TreeNodeView({
             <button
               type="button"
               disabled={disabled}
-              title={t("git.discardAll")}
-              aria-label={t("git.discardAll")}
+              title={t('git.discardAll')}
+              aria-label={t('git.discardAll')}
               onClick={() => onDiscard(descendants)}
             >
               <RotateCcw size={12} />
@@ -529,8 +529,8 @@ function TreeNodeView({
           <button
             type="button"
             disabled={disabled}
-            title={isStaged ? t("git.unstageAll") : t("git.stageAll")}
-            aria-label={isStaged ? t("git.unstageAll") : t("git.stageAll")}
+            title={isStaged ? t('git.unstageAll') : t('git.stageAll')}
+            aria-label={isStaged ? t('git.unstageAll') : t('git.stageAll')}
             onClick={() => onPrimary(descendants)}
           >
             {isStaged ? <Minus size={13} /> : <Plus size={13} />}
@@ -541,7 +541,7 @@ function TreeNodeView({
         ? node.children.map((child) => (
             <TreeNodeView
               key={
-                child.type === "dir"
+                child.type === 'dir'
                   ? `d:${child.path}`
                   : `f:${child.change.path}`
               }
@@ -580,46 +580,46 @@ function GitMessage({
 // ---- árvore de arquivos (estilo VSCode, com folder compression) ----
 
 type DirNode = {
-  type: "dir";
+  type: 'dir';
   name: string;
   path: string;
   children: TreeNode[];
 };
-type FileNode = { type: "file"; name: string; change: GitFileChange };
+type FileNode = { type: 'file'; name: string; change: GitFileChange };
 type TreeNode = DirNode | FileNode;
 
 function buildTree(items: GitFileChange[]): TreeNode[] {
-  const root: DirNode = { type: "dir", name: "", path: "", children: [] };
+  const root: DirNode = { type: 'dir', name: '', path: '', children: [] };
   for (const change of items) {
-    const parts = change.path.split("/");
+    const parts = change.path.split('/');
     const fileName = parts.pop() ?? change.path;
     let cursor = root;
-    let acc = "";
+    let acc = '';
     for (const part of parts) {
       acc = acc ? `${acc}/${part}` : part;
       let next = cursor.children.find(
         (child): child is DirNode =>
-          child.type === "dir" && child.name === part,
+          child.type === 'dir' && child.name === part,
       );
       if (!next) {
-        next = { type: "dir", name: part, path: acc, children: [] };
+        next = { type: 'dir', name: part, path: acc, children: [] };
         cursor.children.push(next);
       }
       cursor = next;
     }
-    cursor.children.push({ type: "file", name: fileName, change });
+    cursor.children.push({ type: 'file', name: fileName, change });
   }
   return root.children.map(compress).sort(compareNodes);
 }
 
 /** Comprime cadeias de pastas com filho único (a/b/c → "a/b/c"), como o VSCode. */
 function compress(node: TreeNode): TreeNode {
-  if (node.type === "file") return node;
+  if (node.type === 'file') return node;
   let current = node;
-  while (current.children.length === 1 && current.children[0].type === "dir") {
+  while (current.children.length === 1 && current.children[0].type === 'dir') {
     const only = current.children[0];
     current = {
-      type: "dir",
+      type: 'dir',
       name: `${current.name}/${only.name}`,
       path: only.path,
       children: only.children,
@@ -631,30 +631,30 @@ function compress(node: TreeNode): TreeNode {
 
 /** Pastas antes de arquivos, cada bloco em ordem alfabética. */
 function compareNodes(a: TreeNode, b: TreeNode): number {
-  if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+  if (a.type !== b.type) return a.type === 'dir' ? -1 : 1;
   return a.name.localeCompare(b.name);
 }
 
 function collectPaths(node: TreeNode): string[] {
-  if (node.type === "file") return [node.change.path];
+  if (node.type === 'file') return [node.change.path];
   return node.children.flatMap(collectPaths);
 }
 
 function statusClass(kind: GroupKind, status: string): string {
-  if (kind === "untracked") return styles.stAdded;
-  if (kind === "conflicts") return styles.stConflict;
-  const code = (status.trim()[0] ?? "").toUpperCase();
-  if (code === "A") return styles.stAdded;
-  if (code === "D") return styles.stDeleted;
-  if (code === "R" || code === "C") return styles.stRenamed;
-  if (code === "M") return styles.stModified;
+  if (kind === 'untracked') return styles.stAdded;
+  if (kind === 'conflicts') return styles.stConflict;
+  const code = (status.trim()[0] ?? '').toUpperCase();
+  if (code === 'A') return styles.stAdded;
+  if (code === 'D') return styles.stDeleted;
+  if (code === 'R' || code === 'C') return styles.stRenamed;
+  if (code === 'M') return styles.stModified;
   return styles.stOther;
 }
 
 function statusChar(kind: GroupKind, status: string): string {
-  if (kind === "untracked") return "U";
-  if (kind === "conflicts") return "!";
-  return (status.trim()[0] ?? "•").toUpperCase();
+  if (kind === 'untracked') return 'U';
+  if (kind === 'conflicts') return '!';
+  return (status.trim()[0] ?? '•').toUpperCase();
 }
 
 function uniquePaths(items: GitFileChange[]): string[] {
@@ -668,6 +668,6 @@ function errorCode(error: unknown): string {
 
 function readableError(error: unknown): string {
   const value = String(error);
-  const separator = value.indexOf(":");
+  const separator = value.indexOf(':');
   return separator >= 0 ? value.slice(separator + 1).trim() : value;
 }

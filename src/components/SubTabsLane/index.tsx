@@ -1,10 +1,10 @@
-import { Plus, X } from "lucide-react";
+import { Plus, X } from 'lucide-react';
 
-import { useT } from "../../lib/i18n";
-import { useProjectsStore } from "../../stores/projectsStore";
-import type { SubTab } from "../../lib/types";
-import { AgentIcon } from "../icons/AgentIcons";
-import styles from "./SubTabsLane.module.css";
+import { useT } from '../../lib/i18n';
+import { useProjectsStore } from '../../stores/projectsStore';
+import type { SubTab } from '../../lib/types';
+import { AgentIcon } from '../icons/AgentIcons';
+import styles from './SubTabsLane.module.css';
 
 export type SubTabsLaneProps = {
   tabs: SubTab[];
@@ -33,7 +33,7 @@ export function SubTabsLane({
         return (
           <div
             key={tab.id}
-            className={`${styles.itemWrap} ${isActive ? styles.active : ""}`}
+            className={`${styles.itemWrap} ${isActive ? styles.active : ''}`}
           >
             <button
               type="button"
@@ -46,7 +46,7 @@ export function SubTabsLane({
               {tab.completionUnread ? (
                 <span
                   className={styles.doneBadge}
-                  aria-label={t("ui.terminal.responseReady")}
+                  aria-label={t('ui.terminal.responseReady')}
                 >
                   !
                 </span>
@@ -60,15 +60,15 @@ export function SubTabsLane({
                   e.stopPropagation();
                   if (
                     window.confirm(
-                      t("ui.subtabs.confirmCloseTab", {
+                      t('ui.subtabs.confirmCloseTab', {
                         name: tab.name || tab.type,
                       }),
                     )
                   )
                     onClose(tab.id);
                 }}
-                title={t("ui.subtabs.closeTab")}
-                aria-label={t("ui.subtabs.closeTab")}
+                title={t('ui.subtabs.closeTab')}
+                aria-label={t('ui.subtabs.closeTab')}
               >
                 <X size={8} />
               </button>
@@ -80,8 +80,8 @@ export function SubTabsLane({
         type="button"
         className={styles.add}
         onClick={onAdd}
-        title={t("ui.subtabs.newTab")}
-        aria-label={t("ui.subtabs.newTab")}
+        title={t('ui.subtabs.newTab')}
+        aria-label={t('ui.subtabs.newTab')}
       >
         <Plus size={12} />
       </button>

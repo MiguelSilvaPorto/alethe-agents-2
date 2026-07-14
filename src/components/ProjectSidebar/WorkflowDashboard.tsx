@@ -5,16 +5,16 @@ import {
   Plus,
   RefreshCw,
   ChevronDown,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { useT } from "../../lib/i18n";
-import { useWorkflowStore } from "../../stores/workflowStore";
-import { useUiStore } from "../../stores/uiStore";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { gitDiff, gitRevParse } from "../../lib/tauri";
-import { EmptyState } from "../EmptyState/EmptyState";
-import styles from "./WorkflowDashboard.module.css";
+import { useT } from '../../lib/i18n';
+import { useWorkflowStore } from '../../stores/workflowStore';
+import { useUiStore } from '../../stores/uiStore';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { gitDiff, gitRevParse } from '../../lib/tauri';
+import { EmptyState } from '../EmptyState/EmptyState';
+import styles from './WorkflowDashboard.module.css';
 
 export function WorkflowDashboard() {
   const t = useT();
@@ -30,36 +30,36 @@ export function WorkflowDashboard() {
   const moveTask = useProjectsStore((s) => s.moveTask);
   const unblockTask = useProjectsStore((s) => s.unblockTask);
 
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("__all__");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('__all__');
 
   const selectedProject = useMemo(
     () => projects.find((p) => p.id === selectedProjectId),
     [projects, selectedProjectId],
   );
 
-  const activeSessions = sessions.filter((s) => s.status === "in_progress");
-  const completedSessions = sessions.filter((s) => s.status === "completed");
+  const activeSessions = sessions.filter((s) => s.status === 'in_progress');
+  const completedSessions = sessions.filter((s) => s.status === 'completed');
 
   // Tasks: do projeto selecionado ou de todos
   const tasks = useMemo(() => {
-    if (selectedProjectId === "__all__") {
+    if (selectedProjectId === '__all__') {
       return projects.flatMap((p) =>
         p.tasks.map((t) => ({ ...t, _projectName: p.name })),
       );
     }
     return (selectedProject?.tasks ?? []).map((t) => ({
       ...t,
-      _projectName: selectedProject?.name ?? "",
+      _projectName: selectedProject?.name ?? '',
     }));
   }, [projects, selectedProjectId, selectedProject]);
 
-  const implementingTasks = tasks.filter((t) => t.status === "implementing");
-  const reviewTasks = tasks.filter((t) => t.status === "review");
-  const pendingTasks = tasks.filter((t) => t.status === "pending");
-  const blockedTasks = tasks.filter((t) => t.status === "blocked");
-  const hasActiveTasks = tasks.some((t) => t.status !== "accepted");
+  const implementingTasks = tasks.filter((t) => t.status === 'implementing');
+  const reviewTasks = tasks.filter((t) => t.status === 'review');
+  const pendingTasks = tasks.filter((t) => t.status === 'pending');
+  const blockedTasks = tasks.filter((t) => t.status === 'blocked');
+  const hasActiveTasks = tasks.some((t) => t.status !== 'accepted');
   const historyTasks = tasks
-    .filter((t) => t.status === "accepted")
+    .filter((t) => t.status === 'accepted')
     .slice(-5)
     .reverse();
 
@@ -74,14 +74,14 @@ export function WorkflowDashboard() {
 
   useEffect(() => {
     // Auto-select se há apenas 1 projeto com tasks
-    if (projectsWithTasks.length === 1 && selectedProjectId === "__all__") {
+    if (projectsWithTasks.length === 1 && selectedProjectId === '__all__') {
       setSelectedProjectId(projectsWithTasks[0].id);
     }
   }, [projectsWithTasks]);
 
   function ageLabel(createdAt: number): string {
     const age = Date.now() - createdAt;
-    if (age < 60000) return "agora";
+    if (age < 60000) return 'agora';
     if (age < 3600000) return `${Math.floor(age / 60000)}m`;
     return `${Math.floor(age / 3600000)}h`;
   }
@@ -90,11 +90,11 @@ export function WorkflowDashboard() {
 
   function TaskCard({ task }: { task: TaskWithType }) {
     const statusLabel = {
-      implementing: t("task.status.implementing"),
-      review: t("task.status.review"),
-      pending: t("task.status.pending"),
-      blocked: t("task.status.blocked"),
-      accepted: t("task.status.accepted"),
+      implementing: t('task.status.implementing'),
+      review: t('task.status.review'),
+      pending: t('task.status.pending'),
+      blocked: t('task.status.blocked'),
+      accepted: t('task.status.accepted'),
     }[task.status];
 
     const badgeClass = {
@@ -105,7 +105,7 @@ export function WorkflowDashboard() {
       accepted: styles.badgePending,
     }[task.status];
 
-    if (task.status === "blocked") {
+    if (task.status === 'blocked') {
       return (
         <div className={`${styles.taskCard} ${styles.taskBlocked}`}>
           <div className={styles.taskHead}>
@@ -118,7 +118,7 @@ export function WorkflowDashboard() {
             <code className={styles.taskCommand}>{task.blockedCommand}</code>
           )}
           <p className={styles.taskMeta}>
-            {task.assignedTo ?? task.agentType ?? "—"} ·{" "}
+            {task.assignedTo ?? task.agentType ?? '—'} ·{' '}
             {ageLabel(task.createdAt)}
           </p>
           <div className={styles.taskActions}>
@@ -127,20 +127,20 @@ export function WorkflowDashboard() {
               className={styles.taskApproveBtn}
               onClick={() => {
                 unblockTask(task.id, true);
-                moveTask(task.id, "implementing");
+                moveTask(task.id, 'implementing');
               }}
             >
-              {t("task.approve")}
+              {t('task.approve')}
             </button>
             <button
               type="button"
               className={styles.taskRejectBtn}
               onClick={() => {
                 unblockTask(task.id, false);
-                moveTask(task.id, "implementing");
+                moveTask(task.id, 'implementing');
               }}
             >
-              {t("task.reject")}
+              {t('task.reject')}
             </button>
           </div>
         </div>
@@ -158,14 +158,14 @@ export function WorkflowDashboard() {
           )}
         </div>
         <p className={styles.taskTitle}>{task.title}</p>
-        {selectedProjectId === "__all__" && (task as any)._projectName && (
+        {selectedProjectId === '__all__' && (task as any)._projectName && (
           <p className={styles.taskProject}>{(task as any)._projectName}</p>
         )}
         <p className={styles.taskMeta}>
-          {task.assignedTo ?? task.agentType ?? "—"} ·{" "}
+          {task.assignedTo ?? task.agentType ?? '—'} ·{' '}
           {ageLabel(task.createdAt)}
         </p>
-        {task.status === "pending" && (
+        {task.status === 'pending' && (
           <div className={styles.taskActions}>
             <button
               type="button"
@@ -180,7 +180,7 @@ export function WorkflowDashboard() {
                   const repoRoot = project?.terminals?.[0]?.cwd;
                   if (repoRoot) {
                     const afterCommit = await gitRevParse(repoRoot);
-                    const beforeCommit = task.git?.beforeCommit || "";
+                    const beforeCommit = task.git?.beforeCommit || '';
                     if (beforeCommit && beforeCommit !== afterCommit) {
                       const diff = await gitDiff(
                         repoRoot,
@@ -205,7 +205,7 @@ export function WorkflowDashboard() {
                         ),
                         afterCommitShort: afterCommit.slice(0, 7),
                         changedFiles: [],
-                        diffStat: "",
+                        diffStat: '',
                       });
                     }
                   }
@@ -215,10 +215,10 @@ export function WorkflowDashboard() {
 
                 acceptTask(task.id);
                 pushToast({
-                  title: t("task.accepted"),
+                  title: t('task.accepted'),
                   body: task.title,
                   action: {
-                    label: t("common.undo"),
+                    label: t('common.undo'),
                     onClick: () =>
                       useProjectsStore.getState().undoAcceptTask(task.id),
                   },
@@ -227,19 +227,19 @@ export function WorkflowDashboard() {
                   const state = useProjectsStore.getState();
                   for (const p of state.projects) {
                     const tsk = p.tasks.find((t) => t.id === task.id);
-                    if (tsk?.status === "accepted") break;
+                    if (tsk?.status === 'accepted') break;
                   }
                 }, 30000);
               }}
             >
-              {t("task.accept")}
+              {t('task.accept')}
             </button>
             <button
               type="button"
               className={styles.taskRejectBtn}
-              onClick={() => openModal("taskReject", { taskId: task.id })}
+              onClick={() => openModal('taskReject', { taskId: task.id })}
             >
-              {t("task.reject")}
+              {t('task.reject')}
             </button>
           </div>
         )}
@@ -278,13 +278,13 @@ export function WorkflowDashboard() {
   return (
     <div className={styles.dashboard}>
       <header className={styles.header}>
-        <span className={styles.title}>{t("workflow.title")}</span>
+        <span className={styles.title}>{t('workflow.title')}</span>
         <div className={styles.headerActions}>
           <button
             type="button"
             className={styles.iconBtn}
             onClick={refresh}
-            title={t("context.refresh")}
+            title={t('context.refresh')}
           >
             {loading ? (
               <Loader2 size={14} className={styles.spin} />
@@ -295,8 +295,8 @@ export function WorkflowDashboard() {
           <button
             type="button"
             className={styles.iconBtn}
-            onClick={() => openModal("workflow")}
-            title={t("workflow.new")}
+            onClick={() => openModal('workflow')}
+            title={t('workflow.new')}
           >
             <Plus size={14} />
           </button>
@@ -312,7 +312,7 @@ export function WorkflowDashboard() {
             onChange={(e) => setSelectedProjectId(e.target.value)}
           >
             <option value="__all__">
-              {t("task.allProjects")} ({projects.length})
+              {t('task.allProjects')} ({projects.length})
             </option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
@@ -327,17 +327,17 @@ export function WorkflowDashboard() {
       {showKanban && (
         <div className={styles.kanban}>
           <Column
-            label={t("task.tab.implementing")}
+            label={t('task.tab.implementing')}
             count={implementingTasks.length}
             tasks={implementingTasks}
           />
           <Column
-            label={t("task.tab.review")}
+            label={t('task.tab.review')}
             count={reviewTasks.length}
             tasks={reviewTasks}
           />
           <Column
-            label={t("task.tab.pending")}
+            label={t('task.tab.pending')}
             count={pendingTasks.length}
             tasks={pendingTasks}
           />
@@ -347,7 +347,7 @@ export function WorkflowDashboard() {
       {blockedTasks.length > 0 && (
         <section className={styles.section}>
           <h4 className={styles.sectionTitle}>
-            ⚠ {t("task.tab.blocked")} ({blockedTasks.length})
+            ⚠ {t('task.tab.blocked')} ({blockedTasks.length})
           </h4>
           {blockedTasks.map((task) => (
             <TaskCard key={task.id} task={task} />
@@ -358,7 +358,7 @@ export function WorkflowDashboard() {
       {historyTasks.length > 0 && (
         <section className={styles.section}>
           <h4 className={styles.sectionTitle}>
-            {t("task.tab.history")} ({historyTasks.length})
+            {t('task.tab.history')} ({historyTasks.length})
           </h4>
           <div className={styles.historyRow}>
             {historyTasks.map((task) => (
@@ -375,27 +375,27 @@ export function WorkflowDashboard() {
         localWorkflows.length === 0 && (
           <EmptyState
             icon={<Layers size={24} />}
-            title={t("workflow.noActive")}
+            title={t('workflow.noActive')}
           />
         )}
 
       {activeSessions.length > 0 && (
         <section className={styles.section}>
           <h4 className={styles.sectionTitle}>
-            {t("workflow.active")} ({activeSessions.length})
+            {t('workflow.active')} ({activeSessions.length})
           </h4>
           {activeSessions.map((s) => (
             <button
               key={s.id}
               type="button"
               className={styles.workflowCard}
-              onClick={() => openModal("workflowDetail")}
+              onClick={() => openModal('workflowDetail')}
             >
               <div className={styles.cardHead}>
                 <span
-                  className={`${styles.badge} ${s.mode === "GIT" ? styles.badgeGit : styles.badgeLocal}`}
+                  className={`${styles.badge} ${s.mode === 'GIT' ? styles.badgeGit : styles.badgeLocal}`}
                 >
-                  {s.mode === "GIT" ? (
+                  {s.mode === 'GIT' ? (
                     <GitBranch size={10} />
                   ) : (
                     <Layers size={10} />
@@ -406,10 +406,10 @@ export function WorkflowDashboard() {
               </div>
               <p className={styles.cardTask}>{s.task}</p>
               <p className={styles.cardMeta}>
-                {t("workflow.agentPrefix", { agent: s.agentType })}
+                {t('workflow.agentPrefix', { agent: s.agentType })}
                 {s.branch
-                  ? ` · ${t("workflow.branch", { branch: s.branch })}`
-                  : ""}
+                  ? ` · ${t('workflow.branch', { branch: s.branch })}`
+                  : ''}
               </p>
             </button>
           ))}
@@ -430,7 +430,7 @@ export function WorkflowDashboard() {
               </div>
               <p className={styles.cardTask}>{w.task}</p>
               <p className={styles.cardMeta}>
-                {t("workflow.steps", { count: w.steps.length })}
+                {t('workflow.steps', { count: w.steps.length })}
               </p>
             </div>
           ))}
@@ -440,7 +440,7 @@ export function WorkflowDashboard() {
       {completedSessions.length > 0 && (
         <section className={styles.section}>
           <h4 className={styles.sectionTitle}>
-            {t("workflow.completed")} ({completedSessions.length})
+            {t('workflow.completed')} ({completedSessions.length})
           </h4>
           {completedSessions.slice(0, 5).map((s) => (
             <div

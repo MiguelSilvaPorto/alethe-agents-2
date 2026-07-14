@@ -6,10 +6,10 @@ import {
   Loader2,
   LogOut,
   Upload,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
-import { intlLocale, type MessageKey, useT } from "../../lib/i18n";
+import { intlLocale, type MessageKey, useT } from '../../lib/i18n';
 import {
   githubSyncLogout,
   githubSyncPull,
@@ -18,38 +18,38 @@ import {
   githubSyncStatus,
   openInBrowser,
   type GithubSyncStatus,
-} from "../../lib/tauri";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import { Modal } from "./Modal";
-import styles from "./SyncModal.module.css";
+} from '../../lib/tauri';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import { Modal } from './Modal';
+import styles from './SyncModal.module.css';
 
-const SPONSOR_URL = "https://github.com/sponsors/Kc1t";
+const SPONSOR_URL = 'https://github.com/sponsors/Kc1t';
 const CREATE_TOKEN_URL =
-  "https://github.com/settings/tokens/new?scopes=gist&description=Alethe%20Sync";
+  'https://github.com/settings/tokens/new?scopes=gist&description=Alethe%20Sync';
 
-type Busy = null | "connect" | "push" | "pull" | "logout";
+type Busy = null | 'connect' | 'push' | 'pull' | 'logout';
 
 // Códigos de erro que o backend (github_sync.rs) retorna e que têm tradução
 // dedicada; o resto cai no genérico com a mensagem crua.
 const KNOWN_ERRORS = new Set([
-  "empty_token",
-  "invalid_token",
-  "not_connected",
-  "no_remote",
-  "nothing_to_sync",
-  "remote_missing_projects",
+  'empty_token',
+  'invalid_token',
+  'not_connected',
+  'no_remote',
+  'nothing_to_sync',
+  'remote_missing_projects',
 ]);
 
 export function SyncModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "sync");
+  const open = useUiStore((s) => s.openModal === 'sync');
   const closeModal = useUiStore((s) => s.closeModal);
   const language = useProjectsStore((s) => s.preferences.language);
   const hydrate = useProjectsStore((s) => s.hydrate);
 
   const [status, setStatus] = useState<GithubSyncStatus | null>(null);
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState('');
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export function SyncModal() {
     setError(null);
     setNotice(null);
     setConfirmPull(false);
-    setToken("");
+    setToken('');
     githubSyncStatus()
       .then(setStatus)
       .catch(() => setStatus(null));
@@ -69,7 +69,7 @@ export function SyncModal() {
   const connected = status?.connected ?? false;
 
   const formatWhen = (ms: number | null | undefined): string => {
-    if (!ms) return t("sync.github.never");
+    if (!ms) return t('sync.github.never');
     try {
       return new Date(ms).toLocaleString(intlLocale(language));
     } catch {
@@ -79,26 +79,26 @@ export function SyncModal() {
 
   const mapError = (raw: unknown): string => {
     const msg =
-      typeof raw === "string"
+      typeof raw === 'string'
         ? raw
         : String((raw as { message?: string })?.message ?? raw);
     if (KNOWN_ERRORS.has(msg)) return t(`sync.error.${msg}` as MessageKey);
-    return t("sync.error.generic", { error: msg });
+    return t('sync.error.generic', { error: msg });
   };
 
   const onConnect = async () => {
     const value = token.trim();
     if (!value) {
-      setError(t("sync.error.empty_token"));
+      setError(t('sync.error.empty_token'));
       return;
     }
-    setBusy("connect");
+    setBusy('connect');
     setError(null);
     setNotice(null);
     try {
       const next = await githubSyncSetToken(value);
       setStatus(next);
-      setToken("");
+      setToken('');
     } catch (e) {
       setError(mapError(e));
     } finally {
@@ -107,13 +107,13 @@ export function SyncModal() {
   };
 
   const onPush = async () => {
-    setBusy("push");
+    setBusy('push');
     setError(null);
     setNotice(null);
     try {
       const next = await githubSyncPush();
       setStatus(next);
-      setNotice(t("sync.github.pushDone"));
+      setNotice(t('sync.github.pushDone'));
     } catch (e) {
       setError(mapError(e));
     } finally {
@@ -123,7 +123,7 @@ export function SyncModal() {
 
   const onPull = async () => {
     setConfirmPull(false);
-    setBusy("pull");
+    setBusy('pull');
     setError(null);
     setNotice(null);
     try {
@@ -132,7 +132,7 @@ export function SyncModal() {
       // Regrava projects.json/activity-stats.json em disco → re-hidrata o store
       // pra refletir sem reiniciar o app.
       await hydrate();
-      setNotice(t("sync.github.pullDone"));
+      setNotice(t('sync.github.pullDone'));
     } catch (e) {
       setError(mapError(e));
     } finally {
@@ -141,7 +141,7 @@ export function SyncModal() {
   };
 
   const onLogout = async () => {
-    setBusy("logout");
+    setBusy('logout');
     setError(null);
     setNotice(null);
     try {
@@ -156,8 +156,8 @@ export function SyncModal() {
   };
 
   return (
-    <Modal open={open} onClose={closeModal} title={t("sync.title")} width={580}>
-      <p className={styles.subtitle}>{t("sync.subtitle")}</p>
+    <Modal open={open} onClose={closeModal} title={t('sync.title')} width={580}>
+      <p className={styles.subtitle}>{t('sync.subtitle')}</p>
 
       <div className={styles.grid}>
         {/* ---- GitHub (funcional) ---- */}
@@ -167,16 +167,16 @@ export function SyncModal() {
               <Github size={18} />
             </span>
             <div className={styles.cardTitleWrap}>
-              <h3 className={styles.cardTitle}>{t("sync.github.title")}</h3>
+              <h3 className={styles.cardTitle}>{t('sync.github.title')}</h3>
               {connected ? (
                 <span className={styles.connected}>
                   <span className={styles.dot} />
-                  {t("sync.github.connectedAs", {
-                    login: status?.login ?? "—",
+                  {t('sync.github.connectedAs', {
+                    login: status?.login ?? '—',
                   })}
                 </span>
               ) : (
-                <p className={styles.cardDesc}>{t("sync.github.desc")}</p>
+                <p className={styles.cardDesc}>{t('sync.github.desc')}</p>
               )}
             </div>
           </header>
@@ -190,14 +190,14 @@ export function SyncModal() {
                   disabled={busy !== null}
                   onClick={onPush}
                 >
-                  {busy === "push" ? (
+                  {busy === 'push' ? (
                     <Loader2 size={14} className={styles.spin} />
                   ) : (
                     <Upload size={14} />
                   )}
-                  {busy === "push"
-                    ? t("sync.github.pushing")
-                    : t("sync.github.push")}
+                  {busy === 'push'
+                    ? t('sync.github.pushing')
+                    : t('sync.github.push')}
                 </button>
                 <button
                   type="button"
@@ -205,34 +205,34 @@ export function SyncModal() {
                   disabled={busy !== null}
                   onClick={() => setConfirmPull(true)}
                 >
-                  {busy === "pull" ? (
+                  {busy === 'pull' ? (
                     <Loader2 size={14} className={styles.spin} />
                   ) : (
                     <Download size={14} />
                   )}
-                  {busy === "pull"
-                    ? t("sync.github.pulling")
-                    : t("sync.github.pull")}
+                  {busy === 'pull'
+                    ? t('sync.github.pulling')
+                    : t('sync.github.pull')}
                 </button>
               </div>
 
               {confirmPull ? (
                 <div className={styles.confirm}>
-                  <p>{t("sync.github.confirmPull")}</p>
+                  <p>{t('sync.github.confirmPull')}</p>
                   <div className={styles.confirmActions}>
                     <button
                       type="button"
                       className={styles.btnGhost}
                       onClick={() => setConfirmPull(false)}
                     >
-                      {t("common.cancel")}
+                      {t('common.cancel')}
                     </button>
                     <button
                       type="button"
                       className={styles.btnPrimary}
                       onClick={onPull}
                     >
-                      {t("sync.github.pull")}
+                      {t('sync.github.pull')}
                     </button>
                   </div>
                 </div>
@@ -240,12 +240,12 @@ export function SyncModal() {
 
               <div className={styles.meta}>
                 <span>
-                  {t("sync.github.lastPush", {
+                  {t('sync.github.lastPush', {
                     when: formatWhen(status?.last_push_ms),
                   })}
                 </span>
                 <span>
-                  {t("sync.github.lastPull", {
+                  {t('sync.github.lastPull', {
                     when: formatWhen(status?.last_pull_ms),
                   })}
                 </span>
@@ -258,7 +258,7 @@ export function SyncModal() {
                     className={styles.link}
                     onClick={() => void openInBrowser(status.gist_url!)}
                   >
-                    {t("sync.github.openGist")}
+                    {t('sync.github.openGist')}
                   </button>
                 ) : null}
                 <button
@@ -268,7 +268,7 @@ export function SyncModal() {
                   onClick={onLogout}
                 >
                   <LogOut size={12} />
-                  {t("sync.github.disconnect")}
+                  {t('sync.github.disconnect')}
                 </button>
               </div>
             </>
@@ -279,11 +279,11 @@ export function SyncModal() {
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder={t("sync.github.tokenPlaceholder")}
+                placeholder={t('sync.github.tokenPlaceholder')}
                 spellCheck={false}
                 autoComplete="off"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") void onConnect();
+                  if (e.key === 'Enter') void onConnect();
                 }}
               />
               <button
@@ -292,21 +292,21 @@ export function SyncModal() {
                 disabled={busy !== null || !token.trim()}
                 onClick={onConnect}
               >
-                {busy === "connect" ? (
+                {busy === 'connect' ? (
                   <Loader2 size={14} className={styles.spin} />
                 ) : null}
-                {busy === "connect"
-                  ? t("sync.github.connecting")
-                  : t("sync.github.connect")}
+                {busy === 'connect'
+                  ? t('sync.github.connecting')
+                  : t('sync.github.connect')}
               </button>
               <p className={styles.hint}>
-                {t("sync.github.tokenHint")}{" "}
+                {t('sync.github.tokenHint')}{' '}
                 <button
                   type="button"
                   className={styles.link}
                   onClick={() => void openInBrowser(CREATE_TOKEN_URL)}
                 >
-                  {t("sync.github.createToken")}
+                  {t('sync.github.createToken')}
                 </button>
               </p>
             </div>
@@ -321,16 +321,16 @@ export function SyncModal() {
             </span>
             <div className={styles.cardTitleWrap}>
               <div className={styles.cloudTitleRow}>
-                <h3 className={styles.cardTitle}>{t("sync.cloud.title")}</h3>
-                <span className={styles.badge}>{t("sync.cloud.soon")}</span>
+                <h3 className={styles.cardTitle}>{t('sync.cloud.title')}</h3>
+                <span className={styles.badge}>{t('sync.cloud.soon')}</span>
               </div>
-              <p className={styles.cardDesc}>{t("sync.cloud.desc")}</p>
+              <p className={styles.cardDesc}>{t('sync.cloud.desc')}</p>
             </div>
           </header>
           <div className={styles.cloudFoot}>
-            <span className={styles.premium}>{t("sync.cloud.premium")}</span>
+            <span className={styles.premium}>{t('sync.cloud.premium')}</span>
             <button type="button" className={styles.btn} disabled>
-              {t("sync.cloud.cta")}
+              {t('sync.cloud.cta')}
             </button>
           </div>
         </section>
@@ -346,7 +346,7 @@ export function SyncModal() {
           onClick={() => void openInBrowser(SPONSOR_URL)}
         >
           <Heart size={15} />
-          {t("sync.sponsor")}
+          {t('sync.sponsor')}
         </button>
       </div>
     </Modal>

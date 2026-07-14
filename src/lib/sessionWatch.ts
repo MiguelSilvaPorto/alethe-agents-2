@@ -6,9 +6,9 @@
  * inexistente, watcher falhou), nada quebra.
  */
 
-import { listen } from "@tauri-apps/api/event";
+import { listen } from '@tauri-apps/api/event';
 
-type WatchAgent = "claude" | "codex" | "opencode";
+type WatchAgent = 'claude' | 'codex' | 'opencode';
 
 const waiters: Record<WatchAgent, Array<() => void>> = {
   claude: [],
@@ -20,9 +20,9 @@ let started = false;
 function ensureStarted(): void {
   if (started) return;
   started = true;
-  void listen<{ agent?: string }>("session://new", (event) => {
+  void listen<{ agent?: string }>('session://new', (event) => {
     const agent = event.payload?.agent;
-    if (agent !== "claude" && agent !== "codex" && agent !== "opencode") return;
+    if (agent !== 'claude' && agent !== 'codex' && agent !== 'opencode') return;
     const pending = waiters[agent as WatchAgent];
     waiters[agent as WatchAgent] = [];
     for (const resolve of pending) resolve();

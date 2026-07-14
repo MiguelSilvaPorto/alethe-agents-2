@@ -1,23 +1,23 @@
-import mermaid from "mermaid";
-import { memo, useEffect, useId, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
+import mermaid from 'mermaid';
+import { memo, useEffect, useId, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-import styles from "./MarkdownPane.module.css";
+import styles from './MarkdownPane.module.css';
 
-let mermaidTheme: "dark" | "default" | null = null;
+let mermaidTheme: 'dark' | 'default' | null = null;
 
 /** Inicializa o mermaid uma vez (ou re-inicializa se o tema mudou). */
 function ensureMermaid(dark: boolean) {
-  const theme = dark ? "dark" : "default";
+  const theme = dark ? 'dark' : 'default';
   if (mermaidTheme === theme) return;
   mermaidTheme = theme;
   mermaid.initialize({
     startOnLoad: false,
     theme,
-    securityLevel: "strict",
-    fontFamily: "inherit",
+    securityLevel: 'strict',
+    fontFamily: 'inherit',
   });
 }
 
@@ -30,7 +30,7 @@ function MermaidDiagram({ code, dark }: { code: string; dark: boolean }) {
     let cancelled = false;
     ensureMermaid(dark);
     // id do mermaid não pode ter ':' (gerado pelo useId), então sanitiza.
-    const renderId = `mmd-${reactId.replace(/[^a-zA-Z0-9]/g, "")}`;
+    const renderId = `mmd-${reactId.replace(/[^a-zA-Z0-9]/g, '')}`;
     mermaid
       .render(renderId, code)
       .then(({ svg }) => {
@@ -69,12 +69,12 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
 }: MarkdownRendererProps) {
   const components: Components = {
     code({ className, children, ...props }) {
-      const match = /language-(\w+)/.exec(className ?? "");
+      const match = /language-(\w+)/.exec(className ?? '');
       const lang = match?.[1];
-      if (lang === "mermaid") {
+      if (lang === 'mermaid') {
         return (
           <MermaidDiagram
-            code={String(children).replace(/\n$/, "")}
+            code={String(children).replace(/\n$/, '')}
             dark={dark}
           />
         );

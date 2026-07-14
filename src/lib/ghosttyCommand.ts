@@ -1,4 +1,4 @@
-import type { AgentType } from "./types";
+import type { AgentType } from './types';
 
 /**
  * Monta a linha de comando que o Ghostty executa no shell de login da surface
@@ -15,9 +15,9 @@ export function buildGhosttyCommand(
   type: AgentType,
   extraArgs?: string[],
 ): string | undefined {
-  if (type === "shell") return undefined;
+  if (type === 'shell') return undefined;
   const parts = [type, ...(extraArgs ?? []).map(shellQuote)];
-  return parts.join(" ");
+  return parts.join(' ');
 }
 
 function shellQuote(arg: string): string {

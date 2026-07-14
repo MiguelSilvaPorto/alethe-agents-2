@@ -1,15 +1,15 @@
-import { Loader2, RefreshCw } from "lucide-react";
-import { useEffect } from "react";
+import { Loader2, RefreshCw } from 'lucide-react';
+import { useEffect } from 'react';
 
-import { useT } from "../../lib/i18n";
-import { useContextStore } from "../../stores/contextStore";
-import { useUiStore } from "../../stores/uiStore";
-import { Modal } from "./Modal";
-import styles from "./ContextModal.module.css";
+import { useT } from '../../lib/i18n';
+import { useContextStore } from '../../stores/contextStore';
+import { useUiStore } from '../../stores/uiStore';
+import { Modal } from './Modal';
+import styles from './ContextModal.module.css';
 
 export function ContextModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "context");
+  const open = useUiStore((s) => s.openModal === 'context');
   const closeModal = useUiStore((s) => s.closeModal);
   const report = useContextStore((s) => s.report);
   const state = useContextStore((s) => s.state);
@@ -24,7 +24,7 @@ export function ContextModal() {
     <Modal
       open={open}
       onClose={closeModal}
-      title={t("context.title")}
+      title={t('context.title')}
       width={620}
     >
       <div className={styles.header}>
@@ -39,11 +39,11 @@ export function ContextModal() {
           ) : (
             <RefreshCw size={14} />
           )}
-          {loading ? t("context.refreshing") : t("context.refresh")}
+          {loading ? t('context.refreshing') : t('context.refresh')}
         </button>
         {report && (
           <span className={styles.updated}>
-            {t("context.reportUpdated", {
+            {t('context.reportUpdated', {
               when: new Date(report.updatedAt).toLocaleTimeString(),
             })}
           </span>
@@ -52,14 +52,14 @@ export function ContextModal() {
 
       <div className={styles.grid}>
         <section className={styles.card}>
-          <h3 className={styles.cardTitle}>{t("context.objectives")}</h3>
+          <h3 className={styles.cardTitle}>{t('context.objectives')}</h3>
           {report && (
             <p className={styles.statRow}>
               <span className={styles.stat}>
-                {t("context.objectiveCount", { count: report.objectiveCount })}
+                {t('context.objectiveCount', { count: report.objectiveCount })}
               </span>
               <span className={styles.stat}>
-                {t("context.completedCount", { count: report.completedCount })}
+                {t('context.completedCount', { count: report.completedCount })}
               </span>
             </p>
           )}
@@ -80,20 +80,20 @@ export function ContextModal() {
               )}
             </ul>
           ) : (
-            <p className={styles.empty}>{t("context.noObjectives")}</p>
+            <p className={styles.empty}>{t('context.noObjectives')}</p>
           )}
         </section>
 
         <section className={styles.card}>
-          <h3 className={styles.cardTitle}>{t("context.decisions")}</h3>
-          <p className={styles.empty}>{t("context.noDecisions")}</p>
+          <h3 className={styles.cardTitle}>{t('context.decisions')}</h3>
+          <p className={styles.empty}>{t('context.noDecisions')}</p>
         </section>
       </div>
 
       {report?.contextMd && (
         <details className={styles.markdown}>
           <summary className={styles.markdownSummary}>
-            {t("context.markdown")}
+            {t('context.markdown')}
           </summary>
           <pre className={styles.markdownPre}>{report.contextMd}</pre>
         </details>

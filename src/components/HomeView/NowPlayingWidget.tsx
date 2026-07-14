@@ -1,8 +1,8 @@
-import { Music } from "lucide-react";
+import { Music } from 'lucide-react';
 
-import { useNowPlaying } from "../../hooks/useNowPlaying";
-import { useT } from "../../lib/i18n";
-import styles from "./HomeView.module.css";
+import { useNowPlaying } from '../../hooks/useNowPlaying';
+import { useT } from '../../lib/i18n';
+import styles from './HomeView.module.css';
 
 type Props = {
   /** Hint pro hook se a Home está visível (controla polling). */
@@ -23,7 +23,7 @@ export function NowPlayingWidget({ enabled }: Props) {
         onClick={() => void connect()}
         disabled={loading}
       >
-        {loading ? t("widget.authorizing") : `▶ ${t("widget.connectSpotify")}`}
+        {loading ? t('widget.authorizing') : `▶ ${t('widget.connectSpotify')}`}
       </button>
     );
   }
@@ -36,7 +36,7 @@ export function NowPlayingWidget({ enabled }: Props) {
       type="button"
       className={styles.nowPlaying}
       aria-label={
-        current.playing ? t("widget.nowPlaying") : t("widget.lastTrack")
+        current.playing ? t('widget.nowPlaying') : t('widget.lastTrack')
       }
     >
       <div className={styles.nowPlayingCover}>
@@ -46,7 +46,7 @@ export function NowPlayingWidget({ enabled }: Props) {
             alt=""
             draggable={false}
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+              (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
             }}
           />
         ) : (
@@ -60,7 +60,7 @@ export function NowPlayingWidget({ enabled }: Props) {
           {current.playing ? (
             <Equalizer />
           ) : (
-            <span className={styles.nowPlayingIdle}>{t("widget.last")}</span>
+            <span className={styles.nowPlayingIdle}>{t('widget.last')}</span>
           )}
         </div>
       </div>

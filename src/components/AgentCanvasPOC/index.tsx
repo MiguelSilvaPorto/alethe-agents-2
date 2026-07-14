@@ -7,9 +7,9 @@ import {
   useDroppable,
   useSensor,
   useSensors,
-} from "@dnd-kit/core";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+} from '@dnd-kit/core';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import {
   ArrowLeft,
   Bot,
@@ -38,7 +38,7 @@ import {
   ZoomIn,
   ZoomOut,
   type LucideIcon,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   useCallback,
   useEffect,
@@ -47,13 +47,13 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-} from "react";
+} from 'react';
 
-import { AGENT_LIBRARY, type AgentTemplate } from "../../lib/agentLibrary";
-import { getCachedClaudeUsage } from "../../lib/claudeUsageCache";
-import { getCachedCodexUsage } from "../../lib/codexUsageCache";
-import { costLevel, fmtTokens, fmtUsd, shortModel } from "../../lib/costFormat";
-import { useT } from "../../lib/i18n";
+import { AGENT_LIBRARY, type AgentTemplate } from '../../lib/agentLibrary';
+import { getCachedClaudeUsage } from '../../lib/claudeUsageCache';
+import { getCachedCodexUsage } from '../../lib/codexUsageCache';
+import { costLevel, fmtTokens, fmtUsd, shortModel } from '../../lib/costFormat';
+import { useT } from '../../lib/i18n';
 import {
   attachPty,
   getModelPricing,
@@ -66,25 +66,25 @@ import {
   type CodexUsage,
   type ModelRate,
   type SessionCost,
-} from "../../lib/tauri";
-import { useAgentCostStore } from "../../stores/agentCostStore";
+} from '../../lib/tauri';
+import { useAgentCostStore } from '../../stores/agentCostStore';
 import {
   useAgentCanvasStore,
   type AgentHookPayload,
   type AgentNode,
-} from "../../stores/agentCanvasStore";
+} from '../../stores/agentCanvasStore';
 import {
   useNodeCostStore,
   selectNodeCostTotals,
-} from "../../stores/nodeCostStore";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import type { AgentType } from "../../lib/types";
-import { AgentIcon, CodexIcon } from "../icons/AgentIcons";
-import { XTermView } from "../XTermView";
-import { AgentModal } from "./AgentModal";
-import { UsageDropdown, type UsageTab } from "./UsageDropdown";
-import styles from "./AgentCanvasPOC.module.css";
+} from '../../stores/nodeCostStore';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import type { AgentType } from '../../lib/types';
+import { AgentIcon, CodexIcon } from '../icons/AgentIcons';
+import { XTermView } from '../XTermView';
+import { AgentModal } from './AgentModal';
+import { UsageDropdown, type UsageTab } from './UsageDropdown';
+import styles from './AgentCanvasPOC.module.css';
 
 /**
  * Fases 2–4 do agent canvas.
@@ -99,14 +99,14 @@ import styles from "./AgentCanvasPOC.module.css";
  */
 
 const AGENT_COLORS: Record<string, string> = {
-  explore: "var(--agent-codex)",
-  plan: "#a78bfa",
-  "general-purpose": "var(--agent-claude)",
+  explore: 'var(--agent-codex)',
+  plan: '#a78bfa',
+  'general-purpose': 'var(--agent-claude)',
 };
 
 const TEST_PROMPT =
-  "Analise esta codebase com 3 subagents Explore em paralelo: um pro código-fonte principal, " +
-  "um pra configs/build e um pra docs/testes. Cada um mapeia os arquivos do seu escopo e devolve um resumo curto.";
+  'Analise esta codebase com 3 subagents Explore em paralelo: um pro código-fonte principal, ' +
+  'um pra configs/build e um pra docs/testes. Cada um mapeia os arquivos do seu escopo e devolve um resumo curto.';
 
 const MINI_FEED_SIZE = 3;
 
@@ -114,8 +114,8 @@ const MINI_FEED_SIZE = 3;
 // claude não se atualizar no meio da sessão (um update interrompido renomeia o
 // binário pra claude.exe.old e derruba o control plane — já aconteceu).
 const PTY_ENV = {
-  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1",
-  DISABLE_AUTOUPDATER: "1",
+  CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
+  DISABLE_AUTOUPDATER: '1',
 };
 
 /** Acima deste % de uso da janela de 5h do Claude, liga o fallback codex. */
@@ -138,10 +138,10 @@ const ZOOM_STEP = 0.1;
  */
 const MAX_LIVE_WORKERS = 3;
 
-function formatReset(resetsAt: string, nowLabel = "agora"): string {
-  if (!resetsAt) return "—";
+function formatReset(resetsAt: string, nowLabel = 'agora'): string {
+  if (!resetsAt) return '—';
   const diff = new Date(resetsAt).getTime() - Date.now();
-  if (Number.isNaN(diff)) return "—";
+  if (Number.isNaN(diff)) return '—';
   if (diff <= 0) return nowLabel;
   const h = Math.floor(diff / 3_600_000);
   const m = Math.floor((diff % 3_600_000) / 60_000);
@@ -160,14 +160,14 @@ function orchestrationRules(agentEndpoint: string, budgetUsd?: number | null) {
   const budget =
     budgetUsd && budgetUsd > 0
       ? ` Budget ceiling for this session is about ${budgetUsd} US dollars; prefer cheap routing and pause to ask the user before exceeding it.`
-      : "";
+      : '';
   return (
-    "You are the autonomous control plane and brain of an Alethe agent canvas session. The user gives you a high level goal in this terminal and you drive it to done by distributing the work across AIs, watching their results, and deciding each next action yourself. Work autonomously but with checkpoints. Rules: " +
-    "(1) For a small task just do it solo; spawning agents has overhead. " +
-    "(2) For a large goal such as building a feature or a small app, FIRST consult the orchestrator agent if it exists (Agent tool, subagent_type orchestrator) to get a plan: parallel streams for front, back, qa and docs, plus a task list with dependencies and a suggested agent per task; if no orchestrator agent is available, draft that plan yourself. Present the plan to the user and wait for approval before executing. " +
-    "(3) After approval, create a SMALL agent team (2 to 4 teammates, never more) and give each teammate distinct file paths so two never edit the same file; put full context in each spawn prompt; break the work into tasks with dependencies; then coordinate and wait for your teammates instead of implementing everything yourself. " +
-    "(4) Route by cost: if cheap workers exist in .claude/agents, use haiku-resumidor for bulk reading and summarizing, haiku-mecanico for well specified mechanical edits, codex-executor for long noisy execution; keep architecture and ambiguous work on capable models; never route ambiguous work to cheap workers; prefer offloading to a codex worker when Claude usage is high. " +
-    "(5) Checkpoints: pause and ask the user at big milestones such as the end of an epic, before destructive or irreversible steps, and whenever spending approaches the budget ceiling; never exceed the ceiling without asking. Integrate the streams and run qa before declaring done. " +
+    'You are the autonomous control plane and brain of an Alethe agent canvas session. The user gives you a high level goal in this terminal and you drive it to done by distributing the work across AIs, watching their results, and deciding each next action yourself. Work autonomously but with checkpoints. Rules: ' +
+    '(1) For a small task just do it solo; spawning agents has overhead. ' +
+    '(2) For a large goal such as building a feature or a small app, FIRST consult the orchestrator agent if it exists (Agent tool, subagent_type orchestrator) to get a plan: parallel streams for front, back, qa and docs, plus a task list with dependencies and a suggested agent per task; if no orchestrator agent is available, draft that plan yourself. Present the plan to the user and wait for approval before executing. ' +
+    '(3) After approval, create a SMALL agent team (2 to 4 teammates, never more) and give each teammate distinct file paths so two never edit the same file; put full context in each spawn prompt; break the work into tasks with dependencies; then coordinate and wait for your teammates instead of implementing everything yourself. ' +
+    '(4) Route by cost: if cheap workers exist in .claude/agents, use haiku-resumidor for bulk reading and summarizing, haiku-mecanico for well specified mechanical edits, codex-executor for long noisy execution; keep architecture and ambiguous work on capable models; never route ambiguous work to cheap workers; prefer offloading to a codex worker when Claude usage is high. ' +
+    '(5) Checkpoints: pause and ask the user at big milestones such as the end of an epic, before destructive or irreversible steps, and whenever spending approaches the budget ceiling; never exceed the ceiling without asking. Integrate the streams and run qa before declaring done. ' +
     `(6) Real workers are EXPENSIVE: each spawn is a full separate process using hundreds of megabytes of RAM, so prefer in-process subagents and teammates for almost everything, spawn AT MOST two real workers at a time, reuse them instead of respawning, and prefer a codex worker over a claude worker because codex is far lighter. To spawn one, POST JSON to ${agentEndpoint}/spawn with body {agent, task, mode}: agent is claude, codex or opencode; task is one self contained English instruction; mode is exec for one shot fire and forget or interactive. Use curl -s -X POST with the -d flag and single quoted JSON. It is fire and forget: you do not get the output back, so use it only for offloadable work, not results you must read.` +
     budget
   );
@@ -175,7 +175,7 @@ function orchestrationRules(agentEndpoint: string, budgetUsd?: number | null) {
 
 /** Normaliza paths Windows pra comparar cwd de eventos com a pasta da sessão. */
 function normalizePath(p: string): string {
-  return p.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+  return p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
 }
 
 type InstalledAgent = { name: string; from_alethe: boolean };
@@ -237,15 +237,15 @@ type CodexWorker = {
 function tailSummary(raw: string, max = 320): string {
   const clean = raw
     // CSI: ESC [ ... letra final
-    .replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "")
+    .replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')
     // OSC: ESC ] ... (BEL ou ESC backslash)
-    .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, "")
+    .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')
     // outros escapes ESC de 1 char
-    .replace(/\x1b[@-Z\\-_]/g, "")
+    .replace(/\x1b[@-Z\\-_]/g, '')
     // bytes de controle restantes (preserva \n e \t)
-    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, "")
-    .replace(/[^\S\n]+/g, " ")
-    .replace(/\n{2,}/g, "\n")
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n{2,}/g, '\n')
     .trim();
   return clean.length > max ? `…${clean.slice(-max)}` : clean;
 }
@@ -253,29 +253,29 @@ function tailSummary(raw: string, max = 320): string {
 /** Monta os extraArgs one-shot por agente pra rodar uma task sem depender da TUI. */
 function execArgsFor(agent: AgentType, task: string): string[] | undefined {
   switch (agent) {
-    case "codex":
-      return ["exec", "--skip-git-repo-check", task];
-    case "claude":
+    case 'codex':
+      return ['exec', '--skip-git-repo-check', task];
+    case 'claude':
       // headless: -p roda a task e sai; sem permissões pra não travar no prompt.
-      return ["-p", task, "--dangerously-skip-permissions"];
-    case "opencode":
-      return ["run", task];
+      return ['-p', task, '--dangerously-skip-permissions'];
+    case 'opencode':
+      return ['run', task];
     default:
       return undefined;
   }
 }
 
-function statusBadgeClass(status: AgentNode["status"]): string {
-  if (status === "running") return styles.statusRunning;
-  if (status === "idle") return styles.statusIdle;
+function statusBadgeClass(status: AgentNode['status']): string {
+  if (status === 'running') return styles.statusRunning;
+  if (status === 'idle') return styles.statusIdle;
   return styles.statusDone;
 }
 
 /** Faixa de gasto (USD) → classe de cor do canvas (tokens do tema). */
 function costClassFor(usd: number): string {
   const level = costLevel(usd);
-  if (level === "high") return styles.costHigh;
-  if (level === "mid") return styles.costMid;
+  if (level === 'high') return styles.costHigh;
+  if (level === 'mid') return styles.costMid;
   return styles.costLow;
 }
 
@@ -324,15 +324,15 @@ function estimateRoutingSavings(
 
 function personaIconFor(agentName: string): LucideIcon {
   const name = agentName.toLowerCase();
-  if (name.includes("orchestr") || name.includes("tech-lead"))
+  if (name.includes('orchestr') || name.includes('tech-lead'))
     return LayoutTemplate;
-  if (name.includes("frontend")) return Paintbrush;
-  if (name.includes("backend")) return Server;
-  if (name.includes("qa") || name.includes("review")) return ShieldCheck;
-  if (name.includes("docs") || name.includes("writer")) return PenLine;
-  if (name.includes("codex") || name.includes("executor"))
+  if (name.includes('frontend')) return Paintbrush;
+  if (name.includes('backend')) return Server;
+  if (name.includes('qa') || name.includes('review')) return ShieldCheck;
+  if (name.includes('docs') || name.includes('writer')) return PenLine;
+  if (name.includes('codex') || name.includes('executor'))
     return TerminalSquare;
-  if (name.includes("plan")) return LayoutTemplate;
+  if (name.includes('plan')) return LayoutTemplate;
   return Bot;
 }
 
@@ -342,16 +342,16 @@ function personaIconFor(agentName: string): LucideIcon {
  * sessão (best-effort; nunca sobrescreve agent externo de mesmo nome).
  */
 const CORE_AGENTS = [
-  "orchestrator",
-  "frontend-dev",
-  "backend-dev",
-  "qa-reviewer",
-  "docs-writer",
+  'orchestrator',
+  'frontend-dev',
+  'backend-dev',
+  'qa-reviewer',
+  'docs-writer',
 ];
 
 type AgentChipProps = {
   name: string;
-  cost?: AgentTemplate["cost"];
+  cost?: AgentTemplate['cost'];
   summary?: string;
   installed?: boolean;
   foreign?: boolean;
@@ -374,19 +374,19 @@ function AgentChip({
 }: AgentChipProps) {
   const t = useT();
   const Icon = personaIconFor(name);
-  const costClass = cost === "barato" ? styles.costCheap : styles.costExpensive;
+  const costClass = cost === 'barato' ? styles.costCheap : styles.costExpensive;
   return (
     <div
       className={[
         styles.agentChip,
-        installed ? styles.agentChipInstalled : "",
-        draggable ? styles.agentChipDraggable : "",
-        ghost ? styles.agentChipGhost : "",
+        installed ? styles.agentChipInstalled : '',
+        draggable ? styles.agentChipDraggable : '',
+        ghost ? styles.agentChipGhost : '',
       ]
         .filter(Boolean)
-        .join(" ")}
+        .join(' ')}
       style={{
-        ["--agent-color" as string]: colorFor(name),
+        ['--agent-color' as string]: colorFor(name),
         opacity: dragging ? 0.35 : undefined,
       }}
       title={summary}
@@ -397,7 +397,7 @@ function AgentChip({
       <span className={styles.agentChipName}>{name}</span>
       {cost ? <span className={costClass}>{cost}</span> : null}
       {foreign ? (
-        <span className={styles.chipForeign}>{t("ws.external")}</span>
+        <span className={styles.chipForeign}>{t('ws.external')}</span>
       ) : null}
       <span className={styles.agentChipAction}>{action}</span>
     </div>
@@ -440,7 +440,7 @@ function LibraryItem({
         action={
           installed ? (
             <span className={styles.libraryInstalledTag}>
-              {t("ws.installed")}
+              {t('ws.installed')}
             </span>
           ) : (
             <button
@@ -448,8 +448,8 @@ function LibraryItem({
               className={styles.chipAction}
               onPointerDown={(e) => e.stopPropagation()}
               onClick={onInstall}
-              title={t("ws.installAgent")}
-              aria-label={t("ws.installAgentName", { name: template.name })}
+              title={t('ws.installAgent')}
+              aria-label={t('ws.installAgentName', { name: template.name })}
             >
               <UserPlus size={13} />
             </button>
@@ -469,7 +469,7 @@ export function AgentCanvasPOC() {
     <DndContext
       sensors={sensors}
       onDragStart={(e) =>
-        setDraggingAgent(String(e.active.id).replace(/^lib:/, ""))
+        setDraggingAgent(String(e.active.id).replace(/^lib:/, ''))
       }
       onDragEnd={() => setDraggingAgent(null)}
       onDragCancel={() => setDraggingAgent(null)}
@@ -546,7 +546,7 @@ function AgentCanvasInner() {
   const [usage, setUsage] = useState<ClaudeUsage | null>(null);
   const [codexUsage, setCodexUsage] = useState<CodexUsage | null>(null);
   const [usageOpen, setUsageOpen] = useState(false);
-  const [usageTab, setUsageTab] = useState<UsageTab>("claude");
+  const [usageTab, setUsageTab] = useState<UsageTab>('claude');
   const [fallbackActive, setFallbackActive] = useState(false);
   const fallbackActiveRef = useRef(false);
   const leadNotifiedRef = useRef(false);
@@ -562,10 +562,10 @@ function AgentCanvasInner() {
   }, [session]);
 
   const { setNodeRef: setDropRef, isOver: dragOver } = useDroppable({
-    id: "agent-canvas-drop",
+    id: 'agent-canvas-drop',
   });
   const { setNodeRef: setPlaneDropRef, isOver: planeDragOver } = useDroppable({
-    id: "agent-control-plane",
+    id: 'agent-control-plane',
   });
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -578,7 +578,7 @@ function AgentCanvasInner() {
   const startPaletteDrag = (event: ReactPointerEvent<HTMLElement>) => {
     if (event.button !== 0) return;
     const target = event.target as HTMLElement;
-    if (target.closest("button") && target !== event.currentTarget) return;
+    if (target.closest('button') && target !== event.currentTarget) return;
     const originX = event.clientX;
     const originY = event.clientY;
     const start = palettePosition;
@@ -591,13 +591,13 @@ function AgentCanvasInner() {
       });
     };
     const onEnd = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onEnd);
-      window.removeEventListener("pointercancel", onEnd);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onEnd);
+      window.removeEventListener('pointercancel', onEnd);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onEnd);
-    window.addEventListener("pointercancel", onEnd);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onEnd);
+    window.addEventListener('pointercancel', onEnd);
   };
 
   // Cria um worker REAL de um agente (claude/codex/opencode). O PTY sobe JÁ em
@@ -615,12 +615,12 @@ function AgentCanvasInner() {
       const ptyId = `${agent}-worker-${Date.now()}`;
       const args = opts.task ? execArgsFor(agent, opts.task) : undefined;
       console.log(
-        "[AgentCanvasPOC] criando worker",
+        '[AgentCanvasPOC] criando worker',
         agent,
         ptyId,
-        "· task=",
+        '· task=',
         !!opts.task,
-        "·",
+        '·',
         title,
       );
       setCodexWorkers((prev) => [
@@ -650,7 +650,7 @@ function AgentCanvasInner() {
           void listenPtyExit(ptyId, (code) => {
             unlistenExit?.();
             workerExitUnlistenersRef.current.delete(ptyId);
-            console.log("[AgentCanvasPOC] worker", ptyId, "saiu, code", code);
+            console.log('[AgentCanvasPOC] worker', ptyId, 'saiu, code', code);
             setCodexWorkers((prev) =>
               prev.map((w) =>
                 w.ptyId === ptyId ? { ...w, exitedCode: code ?? 0 } : w,
@@ -675,7 +675,7 @@ function AgentCanvasInner() {
             .catch(() => {});
         })
         .catch((err) =>
-          console.error("[AgentCanvasPOC] falha spawnando PTY do worker:", err),
+          console.error('[AgentCanvasPOC] falha spawnando PTY do worker:', err),
         );
       if (opts.open) setExpandedCodexId(ptyId);
       return ptyId;
@@ -688,12 +688,12 @@ function AgentCanvasInner() {
     (
       title: string,
       opts: { open?: boolean; task?: string } = {},
-    ): string | null => spawnAgentWorker("codex", title, opts),
+    ): string | null => spawnAgentWorker('codex', title, opts),
     [spawnAgentWorker],
   );
 
   const killCodexWorker = useCallback((ptyId: string) => {
-    console.log("[AgentCanvasPOC] matando worker", ptyId);
+    console.log('[AgentCanvasPOC] matando worker', ptyId);
     workerExitUnlistenersRef.current.get(ptyId)?.();
     workerExitUnlistenersRef.current.delete(ptyId);
     void killPty(ptyId).catch(() => {});
@@ -707,17 +707,17 @@ function AgentCanvasInner() {
   const dispatchToAgent = useCallback(
     (payload: { agent?: string; task?: string; mode?: string }) => {
       const agent = payload.agent as AgentType | undefined;
-      if (agent !== "claude" && agent !== "codex" && agent !== "opencode")
+      if (agent !== 'claude' && agent !== 'codex' && agent !== 'opencode')
         return;
-      const rawTask = payload.task ?? "";
+      const rawTask = payload.task ?? '';
       // A task vira arg via PowerShell -> *.cmd (batch). Aspas duplas e newlines
       // quebram o batch — então sanitiza: aspas duplas viram simples (o
       // command_builder escapa simples com segurança) e newlines viram espaço.
       const safe = rawTask
         .replace(/"/g, "'")
-        .replace(/\s*[\r\n]+\s*/g, " ")
+        .replace(/\s*[\r\n]+\s*/g, ' ')
         .trim();
-      const interactive = payload.mode === "interactive" || !safe;
+      const interactive = payload.mode === 'interactive' || !safe;
       // Teto de workers vivos: cada um é um processo pesado. Acima disso, recusa
       // (lê do ref pra não pegar contagem velha do closure) — evita a IA estourar
       // a RAM spawnando dezenas de claude/codex.
@@ -726,19 +726,19 @@ function AgentCanvasInner() {
       ).length;
       if (liveWorkers >= MAX_LIVE_WORKERS) {
         console.warn(
-          "[AgentCanvasPOC] teto de workers vivos atingido, recusando spawn:",
+          '[AgentCanvasPOC] teto de workers vivos atingido, recusando spawn:',
           agent,
         );
         useUiStore.getState().pushToast({
-          title: t("ws.workerCapTitle"),
-          body: t("ws.workerCapBody", { max: MAX_LIVE_WORKERS }),
+          title: t('ws.workerCapTitle'),
+          body: t('ws.workerCapBody', { max: MAX_LIVE_WORKERS }),
         });
         return;
       }
       console.log(
-        "[AgentCanvasPOC] dispatch",
+        '[AgentCanvasPOC] dispatch',
         agent,
-        interactive ? "(interativo)" : safe.slice(0, 80),
+        interactive ? '(interativo)' : safe.slice(0, 80),
       );
       const title = safe
         ? safe.length > 60
@@ -755,16 +755,16 @@ function AgentCanvasInner() {
   );
 
   useEffect(() => {
-    const unlistenPromise = listen("agent-spawn", (event) => {
+    const unlistenPromise = listen('agent-spawn', (event) => {
       const payload = event.payload as {
         agent?: string;
         task?: string;
         mode?: string;
       };
       console.log(
-        "[AgentCanvasPOC] agent-spawn:",
+        '[AgentCanvasPOC] agent-spawn:',
         payload?.agent,
-        String(payload?.task ?? "").slice(0, 60),
+        String(payload?.task ?? '').slice(0, 60),
       );
       dispatchToAgent(payload);
     });
@@ -775,18 +775,18 @@ function AgentCanvasInner() {
 
   const refreshInstalled = useCallback(() => {
     if (!session) return;
-    invoke<InstalledAgent[]>("list_installed_agents", {
+    invoke<InstalledAgent[]>('list_installed_agents', {
       folder: session.folder,
     })
       .then((list) => {
         console.log(
-          "[AgentCanvasPOC] agents instalados:",
-          list.map((a) => a.name).join(", ") || "(nenhum)",
+          '[AgentCanvasPOC] agents instalados:',
+          list.map((a) => a.name).join(', ') || '(nenhum)',
         );
         setInstalled(list);
       })
       .catch((err) =>
-        console.error("[AgentCanvasPOC] falha listando agents:", err),
+        console.error('[AgentCanvasPOC] falha listando agents:', err),
       );
   }, [session]);
 
@@ -794,17 +794,17 @@ function AgentCanvasInner() {
   // monta quando o path existe, senão a sessão nasceria sem hooks.
   useEffect(() => {
     Promise.all([
-      invoke<string>("agent_hooks_endpoint"),
-      invoke<string>("agent_hooks_settings_path"),
+      invoke<string>('agent_hooks_endpoint'),
+      invoke<string>('agent_hooks_settings_path'),
     ])
       .then(([endpoint, path]) => {
-        console.log("[AgentCanvasPOC] hooks endpoint:", endpoint);
-        console.log("[AgentCanvasPOC] hooks settings pronto em:", path);
+        console.log('[AgentCanvasPOC] hooks endpoint:', endpoint);
+        console.log('[AgentCanvasPOC] hooks settings pronto em:', path);
         setHooksEndpoint(endpoint);
         setHooksSettingsPath(path);
       })
       .catch((err) =>
-        console.error("[AgentCanvasPOC] falha gerando hooks settings:", err),
+        console.error('[AgentCanvasPOC] falha gerando hooks settings:', err),
       );
   }, []);
 
@@ -818,7 +818,7 @@ function AgentCanvasInner() {
   // Estado inicial: modo economia + agents instalados na pasta.
   useEffect(() => {
     if (!session) return;
-    invoke<boolean>("economy_agents_enabled", { folder: session.folder })
+    invoke<boolean>('economy_agents_enabled', { folder: session.folder })
       .then(setEconomyOn)
       .catch(() => {});
     refreshInstalled();
@@ -836,7 +836,7 @@ function AgentCanvasInner() {
       CORE_AGENTS.map((name) => {
         const tpl = AGENT_LIBRARY.find((a) => a.name === name);
         if (!tpl) return Promise.resolve(null);
-        return invoke("install_agent", {
+        return invoke('install_agent', {
           folder,
           name: tpl.name,
           content: tpl.content,
@@ -844,7 +844,7 @@ function AgentCanvasInner() {
         });
       }),
     ).then(() => {
-      console.log("[AgentCanvasPOC] core agents garantidos na pasta");
+      console.log('[AgentCanvasPOC] core agents garantidos na pasta');
       setCoreAgentsReady(true);
       refreshInstalled();
     });
@@ -853,13 +853,13 @@ function AgentCanvasInner() {
   const toggleEconomy = () => {
     if (!session) return;
     const next = !economyOn;
-    invoke<string[]>("set_economy_agents", {
+    invoke<string[]>('set_economy_agents', {
       folder: session.folder,
       enabled: next,
     })
       .then((touched) => {
         console.log(
-          `[AgentCanvasPOC] modo economia ${next ? "ON" : "OFF"}, arquivos:`,
+          `[AgentCanvasPOC] modo economia ${next ? 'ON' : 'OFF'}, arquivos:`,
           touched,
         );
         setEconomyOn(next);
@@ -867,14 +867,14 @@ function AgentCanvasInner() {
         refreshInstalled();
       })
       .catch((err) =>
-        console.error("[AgentCanvasPOC] falha togglando modo economia:", err),
+        console.error('[AgentCanvasPOC] falha togglando modo economia:', err),
       );
   };
 
   const restartClaude = () => {
     if (!session) return;
     console.log(
-      "[AgentCanvasPOC] reiniciando claude — matando PTY",
+      '[AgentCanvasPOC] reiniciando claude — matando PTY',
       session.ptyId,
     );
     void killPty(session.ptyId).catch(() => {
@@ -894,46 +894,46 @@ function AgentCanvasInner() {
     if (!session) return;
     const template = AGENT_LIBRARY.find((item) => item.name === name);
     if (!template) return;
-    invoke<string>("install_agent", {
+    invoke<string>('install_agent', {
       folder: session.folder,
       name: template.name,
       content: template.content,
       force,
     })
       .then((path) => {
-        console.log("[AgentCanvasPOC] agent instalado:", path);
+        console.log('[AgentCanvasPOC] agent instalado:', path);
         setRestartHint(true);
         refreshInstalled();
       })
       .catch((err) => {
-        if (String(err) === "conflict") {
-          if (window.confirm(t("ws.confirmOverwriteForeignAgent", { name }))) {
+        if (String(err) === 'conflict') {
+          if (window.confirm(t('ws.confirmOverwriteForeignAgent', { name }))) {
             installAgent(name, true);
           }
           return;
         }
-        console.error("[AgentCanvasPOC] falha instalando agent:", err);
+        console.error('[AgentCanvasPOC] falha instalando agent:', err);
       });
   };
 
   const uninstallAgent = (agent: InstalledAgent) => {
     if (!session) return;
     const msg = agent.from_alethe
-      ? t("ws.confirmRemoveAgent", { name: agent.name })
-      : t("ws.confirmRemoveForeignAgent", { name: agent.name });
+      ? t('ws.confirmRemoveAgent', { name: agent.name })
+      : t('ws.confirmRemoveForeignAgent', { name: agent.name });
     if (!window.confirm(msg)) return;
-    invoke("uninstall_agent", {
+    invoke('uninstall_agent', {
       folder: session.folder,
       name: agent.name,
       force: true,
     })
       .then(() => {
-        console.log("[AgentCanvasPOC] agent removido:", agent.name);
+        console.log('[AgentCanvasPOC] agent removido:', agent.name);
         setRestartHint(true);
         refreshInstalled();
       })
       .catch((err) =>
-        console.error("[AgentCanvasPOC] falha removendo agent:", err),
+        console.error('[AgentCanvasPOC] falha removendo agent:', err),
       );
   };
 
@@ -942,19 +942,19 @@ function AgentCanvasInner() {
     onDragEnd: (e) => {
       const activeId = String(e.active.id);
       if (
-        (e.over?.id === "agent-canvas-drop" ||
-          e.over?.id === "agent-control-plane") &&
-        activeId.startsWith("lib:")
+        (e.over?.id === 'agent-canvas-drop' ||
+          e.over?.id === 'agent-control-plane') &&
+        activeId.startsWith('lib:')
       ) {
         const name = activeId.slice(4);
-        console.log("[AgentCanvasPOC] drop da biblioteca:", name);
+        console.log('[AgentCanvasPOC] drop da biblioteca:', name);
         installAgent(name);
       }
     },
   });
 
   useEffect(() => {
-    const unlistenPromise = listen<AgentHookPayload>("agent-hook", (event) => {
+    const unlistenPromise = listen<AgentHookPayload>('agent-hook', (event) => {
       // Qualquer sessão claude com hooks (outros projetos, testes headless)
       // posta na :9123 — o canvas só ingere eventos da SUA pasta.
       const cwd = (event.payload as { cwd?: string }).cwd;
@@ -964,13 +964,13 @@ function AgentCanvasInner() {
         normalizePath(cwd) !== normalizePath(session.folder)
       ) {
         console.log(
-          "[AgentCanvasPOC] evento de outra sessão ignorado (cwd):",
+          '[AgentCanvasPOC] evento de outra sessão ignorado (cwd):',
           cwd,
         );
         return;
       }
       console.log(
-        "[AgentCanvasPOC] agent-hook:",
+        '[AgentCanvasPOC] agent-hook:',
         event.payload.hook_event_name,
         event.payload,
       );
@@ -993,14 +993,14 @@ function AgentCanvasInner() {
       setFallbackActive(true);
       const pct = u ? Math.round(u.five_hour.utilization) : 0;
       console.log(
-        `[AgentCanvasPOC] FALLBACK codex ON${forced ? " (forçado)" : ""} — 5h ${pct}%`,
+        `[AgentCanvasPOC] FALLBACK codex ON${forced ? ' (forçado)' : ''} — 5h ${pct}%`,
       );
       if (!leadNotifiedRef.current && sessionRef.current) {
         leadNotifiedRef.current = true;
-        const reset = u ? formatReset(u.five_hour.resets_at) : "—";
+        const reset = u ? formatReset(u.five_hour.resets_at) : '—';
         // Instrução acionável e sem ambiguidade: despache via a ponte HTTP. Sem
         // \r — o usuário confirma. (Requer sessão iniciada após esta regra existir.)
-        const endpoint = hooksEndpoint ?? "http://127.0.0.1:9123";
+        const endpoint = hooksEndpoint ?? 'http://127.0.0.1:9123';
         const note = `[Alethe] Claude 5h usage at ${pct}% (resets in ${reset}). Conserve Claude tokens: from now on, offload heavy/long/mechanical work to the codex terminal by running: curl -s -X POST ${endpoint}/codex -d "<task as one self-contained English instruction>". It runs in the codex terminal worker shown in the canvas. `;
         void writePty(sessionRef.current.ptyId, note).catch(() => {});
       }
@@ -1026,12 +1026,12 @@ function AgentCanvasInner() {
           fallbackActiveRef.current = false;
           setFallbackActive(false);
           console.log(
-            "[AgentCanvasPOC] fallback codex OFF — usage voltou a",
+            '[AgentCanvasPOC] fallback codex OFF — usage voltou a',
             util,
           );
         }
       } catch (err) {
-        console.warn("[AgentCanvasPOC] usage indisponível (sem token?):", err);
+        console.warn('[AgentCanvasPOC] usage indisponível (sem token?):', err);
       }
       // Codex em separado (pode não estar logado — não derruba o do Claude).
       try {
@@ -1062,22 +1062,22 @@ function AgentCanvasInner() {
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setUsageOpen(false);
+      if (e.key === 'Escape') setUsageOpen(false);
     };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
     };
   }, [usageOpen]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPaletteOpen(false);
+      if (event.key === 'Escape') setPaletteOpen(false);
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   // Ao desmontar a view, mata todos os codex workers (PTYs órfãos senão ficam
@@ -1110,12 +1110,12 @@ function AgentCanvasInner() {
       // Árvore: o lead ramifica em teammates, workers e UMA área por tipo de
       // subagent (frontend-dev, backend-dev, …). Uma aresta por ramo (grupo),
       // não por card — assim cresce pra baixo sem virar uma teia.
-      const subs = nodes.filter((n) => n.kind === "subagent");
+      const subs = nodes.filter((n) => n.kind === 'subagent');
       const groupTypes = [...new Set(subs.map((n) => n.agentType))];
       const targets = [
         ...nodes
-          .filter((n) => n.kind === "teammate")
-          .map((n) => ({ id: n.id, done: n.status === "done" })),
+          .filter((n) => n.kind === 'teammate')
+          .map((n) => ({ id: n.id, done: n.status === 'done' })),
         ...codexWorkers.map((w) => ({
           id: w.ptyId,
           done: w.exitedCode !== null,
@@ -1123,7 +1123,7 @@ function AgentCanvasInner() {
         ...groupTypes.map((type) => ({
           id: `group:${type}`,
           done: !subs.some(
-            (n) => n.agentType === type && n.status === "running",
+            (n) => n.agentType === type && n.status === 'running',
           ),
         })),
       ];
@@ -1160,7 +1160,7 @@ function AgentCanvasInner() {
             y1: (srcRect.bottom - sRect.top) / k,
             x2: (tr.left + tr.width / 2 - sRect.left) / k,
             y2: (tr.top - sRect.top) / k,
-            done: task.status === "completed",
+            done: task.status === 'completed',
           },
         ];
       });
@@ -1178,12 +1178,12 @@ function AgentCanvasInner() {
       // array de nodes, e aí os edges ficariam parados.
       cardRefs.current.forEach((el) => observer.observe(el));
       taskRefs.current.forEach((el) => observer.observe(el));
-      container.addEventListener("scroll", recompute, { passive: true });
+      container.addEventListener('scroll', recompute, { passive: true });
     }
     return () => {
       cancelAnimationFrame(raf);
       observer.disconnect();
-      container?.removeEventListener("scroll", recompute);
+      container?.removeEventListener('scroll', recompute);
     };
   }, [nodes, codexWorkers, tasks, zoom]);
 
@@ -1206,7 +1206,7 @@ function AgentCanvasInner() {
 
   const exitCanvas = () => {
     if (session) {
-      console.log("[AgentCanvasPOC] saindo — matando PTY", session.ptyId);
+      console.log('[AgentCanvasPOC] saindo — matando PTY', session.ptyId);
       void killPty(session.ptyId).catch(() => {
         /* PTY pode já ter morrido */
       });
@@ -1223,13 +1223,13 @@ function AgentCanvasInner() {
     useNodeCostStore.getState().clear();
     useUiStore.getState().setAgentCanvasBudget(null);
     useUiStore.getState().setAgentCanvasSession(null);
-    setActiveView("home");
+    setActiveView('home');
   };
 
   useEffect(() => {
-    window.addEventListener("alethe:agent-canvas-exit", exitCanvas);
+    window.addEventListener('alethe:agent-canvas-exit', exitCanvas);
     return () =>
-      window.removeEventListener("alethe:agent-canvas-exit", exitCanvas);
+      window.removeEventListener('alethe:agent-canvas-exit', exitCanvas);
   });
 
   const clearCanvas = () => {
@@ -1272,8 +1272,8 @@ function AgentCanvasInner() {
       e.preventDefault();
       setZoom((z) => clampZoom(z * (e.deltaY < 0 ? 1.1 : 1 / 1.1)));
     };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1331,10 +1331,10 @@ function AgentCanvasInner() {
       .catch(() => navigator.clipboard?.writeText(TEST_PROMPT));
   };
 
-  const teammates = nodes.filter((n) => n.kind === "teammate");
-  const subagents = nodes.filter((n) => n.kind === "subagent");
-  const running = nodes.filter((n) => n.status === "running").length;
-  const done = nodes.filter((n) => n.status === "done").length;
+  const teammates = nodes.filter((n) => n.kind === 'teammate');
+  const subagents = nodes.filter((n) => n.kind === 'subagent');
+  const running = nodes.filter((n) => n.status === 'running').length;
+  const done = nodes.filter((n) => n.status === 'done').length;
   const taskList = Object.values(tasks);
 
   // Agrupa subagents por tipo (frontend-dev, backend-dev, …) — cada tipo vira
@@ -1381,33 +1381,33 @@ function AgentCanvasInner() {
         }}
         className={[
           styles.card,
-          node.kind === "teammate" ? styles.cardTeammate : "",
-          node.status === "done" ? styles.cardDone : "",
+          node.kind === 'teammate' ? styles.cardTeammate : '',
+          node.status === 'done' ? styles.cardDone : '',
         ]
           .filter(Boolean)
-          .join(" ")}
-        style={{ ["--agent-color" as string]: colorFor(node.agentType) }}
+          .join(' ')}
+        style={{ ['--agent-color' as string]: colorFor(node.agentType) }}
         onClick={() => select(node.id)}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") select(node.id);
+          if (e.key === 'Enter' || e.key === ' ') select(node.id);
         }}
       >
         <div className={styles.cardHeader}>
           <span className={styles.cardType}>
-            {node.kind === "teammate" ? <Users size={12} /> : null}
+            {node.kind === 'teammate' ? <Users size={12} /> : null}
             {node.agentType}
           </span>
           <span className={statusBadgeClass(node.status)}>
-            {node.status === "done"
-              ? (durationLabel(node) ?? "done")
+            {node.status === 'done'
+              ? (durationLabel(node) ?? 'done')
               : node.status}
           </span>
         </div>
-        {node.kind === "teammate" ? (
+        {node.kind === 'teammate' ? (
           <div className={styles.teammateMeta}>
-            {node.team} · {t("ws.turns", { count: node.turns })}
+            {node.team} · {t('ws.turns', { count: node.turns })}
           </div>
         ) : null}
         {node.prompt ? (
@@ -1423,14 +1423,14 @@ function AgentCanvasInner() {
             ))}
             {node.feed.length > MINI_FEED_SIZE ? (
               <div className={styles.feedMore}>
-                {t("ws.moreToolCalls", {
+                {t('ws.moreToolCalls', {
                   count: node.feed.length - MINI_FEED_SIZE,
                 })}
               </div>
             ) : null}
           </div>
         ) : null}
-        {node.status !== "running" && node.result ? (
+        {node.status !== 'running' && node.result ? (
           <div className={styles.cardPrompt}>{node.result}</div>
         ) : null}
         {cost ? (
@@ -1439,7 +1439,7 @@ function AgentCanvasInner() {
               <span className={styles.cardCostModel}>{model}</span>
             ) : null}
             <span className={styles.cardCostTokens}>
-              {fmtTokens(cost.total_tokens)} {t("ws.tokens")}
+              {fmtTokens(cost.total_tokens)} {t('ws.tokens')}
             </span>
             {cost.cost_usd != null ? (
               <span
@@ -1461,11 +1461,11 @@ function AgentCanvasInner() {
         <div
           className={[
             styles.canvas,
-            dragOver ? styles.canvasDragOver : "",
-            panning ? styles.canvasPanning : "",
+            dragOver ? styles.canvasDragOver : '',
+            panning ? styles.canvasPanning : '',
           ]
             .filter(Boolean)
-            .join(" ")}
+            .join(' ')}
           ref={(el) => {
             containerRef.current = el;
             setDropRef(el);
@@ -1482,9 +1482,9 @@ function AgentCanvasInner() {
               onClick={exitCanvas}
             >
               <ArrowLeft size={14} />
-              {t("ws.back")}
+              {t('ws.back')}
             </button>
-            <span className={styles.title}>{t("ws.agentCanvasPoc")}</span>
+            <span className={styles.title}>{t('ws.agentCanvasPoc')}</span>
             <div className={styles.topRight}>
               <div className={styles.zoomControls}>
                 <button
@@ -1492,7 +1492,7 @@ function AgentCanvasInner() {
                   className={styles.clearButton}
                   onClick={() => zoomBy(-ZOOM_STEP)}
                   disabled={zoom <= ZOOM_MIN}
-                  title={t("ws.zoomOut")}
+                  title={t('ws.zoomOut')}
                 >
                   <ZoomOut size={14} />
                 </button>
@@ -1504,7 +1504,7 @@ function AgentCanvasInner() {
                   className={styles.clearButton}
                   onClick={() => zoomBy(ZOOM_STEP)}
                   disabled={zoom >= ZOOM_MAX}
-                  title={t("ws.zoomIn")}
+                  title={t('ws.zoomIn')}
                 >
                   <ZoomIn size={14} />
                 </button>
@@ -1512,7 +1512,7 @@ function AgentCanvasInner() {
                   type="button"
                   className={styles.clearButton}
                   onClick={fitZoom}
-                  title={t("ws.zoomFit")}
+                  title={t('ws.zoomFit')}
                 >
                   <Frame size={14} />
                 </button>
@@ -1533,15 +1533,15 @@ function AgentCanvasInner() {
                         ? `${styles.usagePill} ${styles.usagePillCrit}`
                         : styles.usagePill
                     }
-                    title={t("ws.usagePanelOpen")}
+                    title={t('ws.usagePanelOpen')}
                     onClick={() => setUsageOpen((o) => !o)}
                     aria-expanded={usageOpen}
                   >
                     {usage
-                      ? t("ws.claude5h", {
+                      ? t('ws.claude5h', {
                           pct: Math.round(usage.five_hour.utilization),
                         })
-                      : t("ws.codex5h", {
+                      : t('ws.codex5h', {
                           pct: Math.round(codexUsage!.primary.used_percent),
                         })}
                   </button>
@@ -1563,7 +1563,7 @@ function AgentCanvasInner() {
               {hasCost ? (
                 <span
                   className={styles.costPill}
-                  title={t("ws.sessionCostTitle", {
+                  title={t('ws.sessionCostTitle', {
                     tokens: fmtTokens(sessionTokens),
                   })}
                 >
@@ -1576,15 +1576,15 @@ function AgentCanvasInner() {
               {routingSavings > 0 ? (
                 <span
                   className={styles.savingsPill}
-                  title={t("ws.savingsTitle")}
+                  title={t('ws.savingsTitle')}
                 >
                   <PiggyBank size={12} />
-                  {t("ws.savedRouting", { usd: fmtUsd(routingSavings) })}
+                  {t('ws.savedRouting', { usd: fmtUsd(routingSavings) })}
                 </span>
               ) : null}
               <label
                 className={styles.budgetControl}
-                title={t("ws.budgetTitle")}
+                title={t('ws.budgetTitle')}
               >
                 <Wallet size={12} />
                 <input
@@ -1593,27 +1593,27 @@ function AgentCanvasInner() {
                   step={1}
                   inputMode="decimal"
                   className={styles.budgetInput}
-                  value={budgetUsd ?? ""}
-                  placeholder={t("ws.budgetPlaceholder")}
+                  value={budgetUsd ?? ''}
+                  placeholder={t('ws.budgetPlaceholder')}
                   onChange={(e) => {
                     const v = e.target.value;
-                    setBudget(v === "" ? null : Math.max(0, Number(v)));
+                    setBudget(v === '' ? null : Math.max(0, Number(v)));
                   }}
                 />
               </label>
               <span className={styles.counter}>
-                {t("ws.runningDone", { running, done })}
+                {t('ws.runningDone', { running, done })}
                 {lastEventAt
-                  ? ""
-                  : ` · ${t("ws.waitingHooks", { endpoint: hooksEndpoint?.replace("http://127.0.0.1", ":") ?? "..." })}`}
+                  ? ''
+                  : ` · ${t('ws.waitingHooks', { endpoint: hooksEndpoint?.replace('http://127.0.0.1', ':') ?? '...' })}`}
               </span>
               <button
                 type="button"
                 className={styles.clearButton}
                 onClick={() =>
-                  spawnCodexWorker(t("ws.workerManual"), { open: true })
+                  spawnCodexWorker(t('ws.workerManual'), { open: true })
                 }
-                title={t("ws.openNewCodexTerminal")}
+                title={t('ws.openNewCodexTerminal')}
               >
                 <Plus size={13} />
                 <CodexIcon size={14} />
@@ -1623,7 +1623,7 @@ function AgentCanvasInner() {
                 className={styles.clearButton}
                 onClick={clearCanvas}
                 disabled={nodes.length === 0 && taskList.length === 0}
-                title={t("ws.clearCanvas")}
+                title={t('ws.clearCanvas')}
               >
                 <Trash2 size={14} />
               </button>
@@ -1647,7 +1647,7 @@ function AgentCanvasInner() {
                   onPointerDown={startPaletteDrag}
                 >
                   <span className={styles.libraryTitle}>
-                    <Grip size={13} /> {t("ws.library")}
+                    <Grip size={13} /> {t('ws.library')}
                   </span>
                   <span className={styles.paletteCount}>
                     {AGENT_LIBRARY.length}
@@ -1656,13 +1656,13 @@ function AgentCanvasInner() {
                     type="button"
                     className={styles.chipAction}
                     onClick={() => setPaletteOpen(false)}
-                    title={t("ws.collapseLibrary")}
-                    aria-label={t("ws.collapseLibrary")}
+                    title={t('ws.collapseLibrary')}
+                    aria-label={t('ws.collapseLibrary')}
                   >
                     <X size={13} />
                   </button>
                 </div>
-                <div className={styles.libraryHint}>{t("ws.libraryHint")}</div>
+                <div className={styles.libraryHint}>{t('ws.libraryHint')}</div>
                 <div className={styles.paletteGrid}>
                   {AGENT_LIBRARY.map((tpl) => (
                     <LibraryItem
@@ -1680,10 +1680,10 @@ function AgentCanvasInner() {
                 className={styles.paletteLauncher}
                 onClick={() => setPaletteOpen(true)}
                 onPointerDown={startPaletteDrag}
-                title={t("ws.openAgentLibrary")}
+                title={t('ws.openAgentLibrary')}
               >
                 <Library size={14} />
-                {t("ws.library")}
+                {t('ws.library')}
                 <span className={styles.paletteCount}>
                   {AGENT_LIBRARY.length}
                 </span>
@@ -1695,16 +1695,16 @@ function AgentCanvasInner() {
             <div className={styles.fallbackBanner}>
               <span className={styles.fallbackDot} />
               <span className={styles.fallbackText}>
-                {t("ws.fallbackBanner", {
+                {t('ws.fallbackBanner', {
                   pct: Math.round(usage.five_hour.utilization),
-                  reset: formatReset(usage.five_hour.resets_at, t("ws.now")),
+                  reset: formatReset(usage.five_hour.resets_at, t('ws.now')),
                 })}
               </span>
               <button
                 type="button"
                 className={styles.bannerButton}
                 onClick={() =>
-                  spawnCodexWorker(t("ws.workerFallbackManual"), { open: true })
+                  spawnCodexWorker(t('ws.workerFallbackManual'), { open: true })
                 }
               >
                 <Plus size={12} /> codex
@@ -1722,7 +1722,7 @@ function AgentCanvasInner() {
             >
               <span className={styles.fallbackDot} />
               <span className={styles.fallbackText}>
-                {t("ws.budgetBanner", {
+                {t('ws.budgetBanner', {
                   spent: fmtUsd(sessionCostUsd),
                   cap: fmtUsd(budgetUsd),
                   pct: Math.round(budgetRatio * 100),
@@ -1763,11 +1763,11 @@ function AgentCanvasInner() {
               <div>
                 <div className={styles.planeTitle}>
                   {teamName
-                    ? t("ws.leadTeam", { team: teamName })
-                    : t("ws.controlPlane")}
+                    ? t('ws.leadTeam', { team: teamName })
+                    : t('ws.controlPlane')}
                 </div>
                 <div className={styles.planeSubtitle}>
-                  {session ? session.folder : t("ws.claudeMainSession")}
+                  {session ? session.folder : t('ws.claudeMainSession')}
                 </div>
                 {leadCost ? (
                   <div className={styles.cardCost}>
@@ -1777,7 +1777,7 @@ function AgentCanvasInner() {
                       </span>
                     ) : null}
                     <span className={styles.cardCostTokens}>
-                      {fmtTokens(leadCost.total_tokens)} {t("ws.tokens")}
+                      {fmtTokens(leadCost.total_tokens)} {t('ws.tokens')}
                     </span>
                     {leadCost.cost_usd != null ? (
                       <span
@@ -1809,9 +1809,9 @@ function AgentCanvasInner() {
                       <button
                         type="button"
                         className={styles.chipAction}
-                        title={t("ws.removeFromProject")}
+                        title={t('ws.removeFromProject')}
                         onClick={() => uninstallAgent(agent)}
-                        aria-label={t("ws.removeAgent", { name: agent.name })}
+                        aria-label={t('ws.removeAgent', { name: agent.name })}
                       >
                         <X size={13} />
                       </button>
@@ -1836,7 +1836,7 @@ function AgentCanvasInner() {
                     tabIndex={0}
                     onClick={() => setExpandedCodexId(w.ptyId)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ")
+                      if (e.key === 'Enter' || e.key === ' ')
                         setExpandedCodexId(w.ptyId);
                     }}
                   >
@@ -1853,7 +1853,7 @@ function AgentCanvasInner() {
                       >
                         {w.exitedCode !== null
                           ? `exit ${w.exitedCode}`
-                          : "running"}
+                          : 'running'}
                       </span>
                     </div>
                     <div className={styles.cardPrompt}>{w.title}</div>
@@ -1863,7 +1863,7 @@ function AgentCanvasInner() {
                     <div className={styles.codexCardFooter}>
                       <span className={styles.cardId}>{w.ptyId}</span>
                       <span className={styles.codexExpandHint}>
-                        <Maximize2 size={11} /> {t("ws.openTerminal")}
+                        <Maximize2 size={11} /> {t('ws.openTerminal')}
                       </span>
                     </div>
                   </div>
@@ -1880,7 +1880,7 @@ function AgentCanvasInner() {
             <div className={styles.cardsArea}>
               {nodes.length === 0 ? (
                 <div className={styles.empty}>
-                  <div>{t("ws.noSubagentYet")}</div>
+                  <div>{t('ws.noSubagentYet')}</div>
                   <div className={styles.testPrompt}>
                     <code>{TEST_PROMPT}</code>
                     <button
@@ -1889,7 +1889,7 @@ function AgentCanvasInner() {
                       onClick={copyTestPrompt}
                     >
                       <ClipboardCopy size={13} />
-                      {copied ? t("ws.copied") : t("ws.copy")}
+                      {copied ? t('ws.copied') : t('ws.copy')}
                     </button>
                   </div>
                 </div>
@@ -1900,7 +1900,7 @@ function AgentCanvasInner() {
                     <div
                       key={type}
                       className={styles.agentGroup}
-                      style={{ ["--agent-color" as string]: colorFor(type) }}
+                      style={{ ['--agent-color' as string]: colorFor(type) }}
                     >
                       <div
                         className={styles.agentGroupHeader}
@@ -1928,8 +1928,8 @@ function AgentCanvasInner() {
             {taskList.length > 0 ? (
               <div className={styles.tasksLayer}>
                 <div className={styles.tasksLayerTitle}>
-                  <ListTodo size={13} /> {t("ws.tasksTitle")}
-                  {teamName ? ` · ${teamName}` : ""}
+                  <ListTodo size={13} /> {t('ws.tasksTitle')}
+                  {teamName ? ` · ${teamName}` : ''}
                 </div>
                 <div className={styles.tasksLayerGrid}>
                   {taskList.map((task) => (
@@ -1940,7 +1940,7 @@ function AgentCanvasInner() {
                         else taskRefs.current.delete(task.id);
                       }}
                       className={
-                        task.status === "completed"
+                        task.status === 'completed'
                           ? `${styles.taskNode} ${styles.taskNodeDone}`
                           : styles.taskNode
                       }
@@ -1948,9 +1948,9 @@ function AgentCanvasInner() {
                       <div className={styles.taskNodeHead}>
                         <span
                           className={
-                            task.status === "completed"
+                            task.status === 'completed'
                               ? styles.taskDotDone
-                              : task.status === "in_progress"
+                              : task.status === 'in_progress'
                                 ? styles.taskDotActive
                                 : styles.taskDot
                           }
@@ -1961,12 +1961,12 @@ function AgentCanvasInner() {
                       </div>
                       <div className={styles.taskNodeMeta}>
                         #{task.id}
-                        {task.owner ? ` · ${task.owner}` : ""} ·{" "}
-                        {task.status === "completed"
-                          ? t("ws.taskCompleted")
-                          : task.status === "in_progress"
-                            ? t("ws.taskInProgress")
-                            : t("ws.taskPending")}
+                        {task.owner ? ` · ${task.owner}` : ''} ·{' '}
+                        {task.status === 'completed'
+                          ? t('ws.taskCompleted')
+                          : task.status === 'in_progress'
+                            ? t('ws.taskInProgress')
+                            : t('ws.taskPending')}
                       </div>
                     </div>
                   ))}
@@ -1986,12 +1986,12 @@ function AgentCanvasInner() {
             <span className={styles.terminalCwd}>{session.folder}</span>
             {restartHint ? (
               <span className={styles.economyHint}>
-                {t("ws.agentsChangedRestart")}
+                {t('ws.agentsChangedRestart')}
               </span>
             ) : null}
             {claudeExited !== null ? (
               <span className={styles.terminalExited}>
-                {t("ws.exitedCode", { code: claudeExited })}
+                {t('ws.exitedCode', { code: claudeExited })}
               </span>
             ) : null}
             <button
@@ -2002,16 +2002,16 @@ function AgentCanvasInner() {
                   : styles.clearButton
               }
               onClick={toggleEconomy}
-              title={t("ws.economyModeTitle")}
+              title={t('ws.economyModeTitle')}
             >
               <PiggyBank size={14} />
-              {t("ws.economy")} {economyOn ? t("ws.on") : t("ws.off")}
+              {t('ws.economy')} {economyOn ? t('ws.on') : t('ws.off')}
             </button>
             <button
               type="button"
               className={styles.clearButton}
               onClick={restartClaude}
-              title={t("ws.restartClaudeTitle")}
+              title={t('ws.restartClaudeTitle')}
             >
               <RotateCcw size={14} />
             </button>
@@ -2023,25 +2023,25 @@ function AgentCanvasInner() {
                 command="claude"
                 cwd={session.folder}
                 extraArgs={[
-                  "--dangerously-skip-permissions",
-                  "--settings",
+                  '--dangerously-skip-permissions',
+                  '--settings',
                   hooksSettingsPath,
-                  "--append-system-prompt",
+                  '--append-system-prompt',
                   orchestrationRules(hooksEndpoint, budgetUsd),
                 ]}
                 env={PTY_ENV}
                 terminalTheme={terminalTheme}
                 onSpawned={(id) =>
-                  console.log("[AgentCanvasPOC] claude spawnado, pty:", id)
+                  console.log('[AgentCanvasPOC] claude spawnado, pty:', id)
                 }
                 onExit={(code) => {
-                  console.log("[AgentCanvasPOC] claude saiu, code:", code);
+                  console.log('[AgentCanvasPOC] claude saiu, code:', code);
                   setClaudeExited(code);
                 }}
               />
             ) : (
               <div className={styles.empty}>
-                {t("ws.generatingHooksSettings")}
+                {t('ws.generatingHooksSettings')}
               </div>
             )}
           </div>
@@ -2064,20 +2064,20 @@ function AgentCanvasInner() {
             >
               <div className={styles.terminalHeader}>
                 <span className={styles.codexType}>
-                  <AgentIcon type={w.agent} size={16} theme={uiTheme} />{" "}
-                  {t("ws.codexWorker")}
+                  <AgentIcon type={w.agent} size={16} theme={uiTheme} />{' '}
+                  {t('ws.codexWorker')}
                 </span>
                 <span className={styles.terminalCwd}>{w.title}</span>
                 {w.exitedCode !== null ? (
                   <span className={styles.terminalExited}>
-                    {t("ws.exitedCode", { code: w.exitedCode })}
+                    {t('ws.exitedCode', { code: w.exitedCode })}
                   </span>
                 ) : null}
                 <button
                   type="button"
                   className={styles.clearButton}
                   onClick={() => killCodexWorker(w.ptyId)}
-                  title={t("ws.killCodexWorker")}
+                  title={t('ws.killCodexWorker')}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -2085,7 +2085,7 @@ function AgentCanvasInner() {
                   type="button"
                   className={styles.clearButton}
                   onClick={() => setExpandedCodexId(null)}
-                  title={t("ws.closeKeepCodexRunning")}
+                  title={t('ws.closeKeepCodexRunning')}
                 >
                   <X size={14} />
                 </button>
@@ -2099,13 +2099,13 @@ function AgentCanvasInner() {
                   terminalTheme={terminalTheme}
                   onSpawned={(id) =>
                     console.log(
-                      "[AgentCanvasPOC] codex worker spawnado, pty:",
+                      '[AgentCanvasPOC] codex worker spawnado, pty:',
                       id,
                     )
                   }
                   onExit={(code) => {
                     console.log(
-                      "[AgentCanvasPOC] codex worker saiu, code:",
+                      '[AgentCanvasPOC] codex worker saiu, code:',
                       code,
                     );
                     setCodexWorkers((prev) =>

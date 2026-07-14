@@ -6,7 +6,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   ChevronDown,
   ChevronRight,
@@ -24,41 +24,41 @@ import {
   Plus,
   Sidebar as SidebarIcon,
   type LucideIcon,
-} from "lucide-react";
-import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
-import { useEffect, useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
+} from 'lucide-react';
+import { open as openFileDialog } from '@tauri-apps/plugin-dialog';
+import { useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 
 import {
   selectActiveContainer,
   selectActiveProject,
   useProjectsStore,
-} from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import { useT } from "../../lib/i18n";
+} from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import { useT } from '../../lib/i18n';
 import type {
   AgentType,
   Group,
   LayoutMode,
   Project,
   Terminal,
-} from "../../lib/types";
-import { EmptyState } from "../EmptyState/EmptyState";
-import { FileExplorer } from "./FileExplorer";
-import { GitControl } from "./GitControl";
-import { WorkflowDashboard } from "./WorkflowDashboard";
-import { AgentIcon } from "../icons/AgentIcons";
-import { SidebarNowPlaying } from "../SidebarNowPlaying";
-import { UserProfile } from "../UserProfile";
-import { ContextMenu, type MenuItem } from "./ContextMenu";
-import { SidebarUpdate } from "./SidebarUpdate";
-import styles from "./ProjectSidebar.module.css";
+} from '../../lib/types';
+import { EmptyState } from '../EmptyState/EmptyState';
+import { FileExplorer } from './FileExplorer';
+import { GitControl } from './GitControl';
+import { WorkflowDashboard } from './WorkflowDashboard';
+import { AgentIcon } from '../icons/AgentIcons';
+import { SidebarNowPlaying } from '../SidebarNowPlaying';
+import { UserProfile } from '../UserProfile';
+import { ContextMenu, type MenuItem } from './ContextMenu';
+import { SidebarUpdate } from './SidebarUpdate';
+import styles from './ProjectSidebar.module.css';
 
 const LAYOUTS: { id: LayoutMode; label: string; Icon: LucideIcon }[] = [
-  { id: "auto", label: "Auto", Icon: LayoutGrid },
-  { id: "spotlight", label: "Spotlight", Icon: Layout },
-  { id: "sidebar", label: "Sidebar", Icon: SidebarIcon },
-  { id: "grid", label: "Grid", Icon: Grid3x3 },
+  { id: 'auto', label: 'Auto', Icon: LayoutGrid },
+  { id: 'spotlight', label: 'Spotlight', Icon: Layout },
+  { id: 'sidebar', label: 'Sidebar', Icon: SidebarIcon },
+  { id: 'grid', label: 'Grid', Icon: Grid3x3 },
 ];
 
 type ContextMenuState = { x: number; y: number; items: MenuItem[] } | null;
@@ -116,27 +116,27 @@ export function ProjectSidebar() {
   const setActiveTerminal = useUiStore((s) => s.setActiveTerminal);
   const [menu, setMenu] = useState<ContextMenuState>(null);
   const [sidebarTab, setSidebarTab] = useState<
-    "files" | "git" | "projects" | "workflows"
-  >("projects");
-  const keepHome = activeView === "home";
+    'files' | 'git' | 'projects' | 'workflows'
+  >('projects');
+  const keepHome = activeView === 'home';
 
   useEffect(() => {
-    if (!showGitControl && sidebarTab === "git") setSidebarTab("projects");
+    if (!showGitControl && sidebarTab === 'git') setSidebarTab('projects');
   }, [showGitControl, sidebarTab]);
 
   const onAddMarkdownViewer = async () => {
     if (!activeProjectId) {
       useUiStore.getState().pushToast({
-        title: t("ui.markdown.title"),
-        body: t("ui.markdown.noActiveProject"),
+        title: t('ui.markdown.title'),
+        body: t('ui.markdown.noActiveProject'),
       });
       return;
     }
     const selected = await openFileDialog({
       multiple: false,
-      filters: [{ name: "Markdown", extensions: ["md", "markdown"] }],
+      filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }],
     });
-    if (typeof selected !== "string") return;
+    if (typeof selected !== 'string') return;
     actions.createMarkdownPane(activeProjectId, { filePath: selected });
   };
 
@@ -152,7 +152,7 @@ export function ProjectSidebar() {
     [projects],
   );
   const activeProject = useMemo(
-    () => projectsById.get(activeProjectId ?? "") ?? projects[0] ?? null,
+    () => projectsById.get(activeProjectId ?? '') ?? projects[0] ?? null,
     [activeProjectId, projects, projectsById],
   );
   const selectedTerminal = useMemo(() => {
@@ -190,9 +190,9 @@ export function ProjectSidebar() {
     if (dragged === target) return;
 
     // term:<projectId>:<terminalId>  →  proj:<projectId> = move terminal entre projetos
-    if (dragged.startsWith("term:") && target.startsWith("proj:")) {
-      const [, fromProject, terminalId] = dragged.split(":");
-      const [, toProject] = target.split(":");
+    if (dragged.startsWith('term:') && target.startsWith('proj:')) {
+      const [, fromProject, terminalId] = dragged.split(':');
+      const [, toProject] = target.split(':');
       if (fromProject !== toProject)
         actions.moveTerminal(fromProject, terminalId, toProject);
       return;
@@ -200,9 +200,9 @@ export function ProjectSidebar() {
 
     // proj:<id>  →  proj:<id>  = REORDENA dentro do mesmo pai (grupo OU Solto).
     // Se o destino tá em outro grupo, move pra esse grupo na posição do alvo.
-    if (dragged.startsWith("proj:") && target.startsWith("proj:")) {
-      const fromId = dragged.slice("proj:".length);
-      const toId = target.slice("proj:".length);
+    if (dragged.startsWith('proj:') && target.startsWith('proj:')) {
+      const fromId = dragged.slice('proj:'.length);
+      const toId = target.slice('proj:'.length);
       const from = projectsById.get(fromId);
       const to = projectsById.get(toId);
       if (!from || !to) return;
@@ -246,20 +246,20 @@ export function ProjectSidebar() {
     }
 
     // proj:<projectId>  →  group:<groupId>  (groupId pode ser "ungrouped")
-    if (dragged.startsWith("proj:") && target.startsWith("group:")) {
-      const [, projectId] = dragged.split(":");
-      const [, groupId] = target.split(":");
+    if (dragged.startsWith('proj:') && target.startsWith('group:')) {
+      const [, projectId] = dragged.split(':');
+      const [, groupId] = target.split(':');
       actions.moveProjectToGroup(
         projectId,
-        groupId === "ungrouped" ? null : groupId,
+        groupId === 'ungrouped' ? null : groupId,
       );
       return;
     }
 
     // grp:<id>  →  grp:<id>  = REORDENA grupos (mesmo nível raiz)
-    if (dragged.startsWith("grp:") && target.startsWith("grp:")) {
-      const fromId = dragged.slice("grp:".length);
-      const toId = target.slice("grp:".length);
+    if (dragged.startsWith('grp:') && target.startsWith('grp:')) {
+      const fromId = dragged.slice('grp:'.length);
+      const toId = target.slice('grp:'.length);
       const all = useProjectsStore.getState().groups;
       const fi = all.findIndex((g) => g.id === fromId);
       const ti = all.findIndex((g) => g.id === toId);
@@ -268,12 +268,12 @@ export function ProjectSidebar() {
     }
 
     // grp:<groupId>  →  group:<groupId>|"ungrouped" = nest/unnest grupo
-    if (dragged.startsWith("grp:") && target.startsWith("group:")) {
-      const [, srcGroupId] = dragged.split(":");
-      const [, parentId] = target.split(":");
+    if (dragged.startsWith('grp:') && target.startsWith('group:')) {
+      const [, srcGroupId] = dragged.split(':');
+      const [, parentId] = target.split(':');
       actions.moveGroupToParent(
         srcGroupId,
-        parentId === "ungrouped" ? null : parentId,
+        parentId === 'ungrouped' ? null : parentId,
       );
       return;
     }
@@ -281,66 +281,66 @@ export function ProjectSidebar() {
 
   const projectMenu = (project: Project): MenuItem[] => [
     {
-      kind: "item",
-      label: t("ui.workspace.openIndividually"),
+      kind: 'item',
+      label: t('ui.workspace.openIndividually'),
       onClick: () => {
         actions.openProjectWorkspace(project.id);
-        setActiveView("workspace");
+        setActiveView('workspace');
       },
     },
     {
-      kind: "item",
-      label: t("ui.workspace.addToCurrent"),
+      kind: 'item',
+      label: t('ui.workspace.addToCurrent'),
       onClick: () => {
         actions.addProjectToWorkspace(project.id);
-        setActiveView("workspace");
+        setActiveView('workspace');
       },
     },
-    { kind: "separator" },
+    { kind: 'separator' },
     {
-      kind: "item",
-      label: t("ui.sidebar.editNameColor"),
-      onClick: () => openModal("editProject", { projectId: project.id }),
+      kind: 'item',
+      label: t('ui.sidebar.editNameColor'),
+      onClick: () => openModal('editProject', { projectId: project.id }),
     },
     {
-      kind: "item",
-      label: t("ui.sidebar.quickRename"),
+      kind: 'item',
+      label: t('ui.sidebar.quickRename'),
       onClick: () => {
         const name = window
-          .prompt(t("ui.sidebar.newNamePrompt"), project.name)
+          .prompt(t('ui.sidebar.newNamePrompt'), project.name)
           ?.trim();
         if (name) actions.renameProject(project.id, name);
       },
     },
     {
-      kind: "item",
-      label: t("ui.sidebar.newTerminalHere"),
-      onClick: () => openModal("newTerminal", { projectId: project.id }),
+      kind: 'item',
+      label: t('ui.sidebar.newTerminalHere'),
+      onClick: () => openModal('newTerminal', { projectId: project.id }),
     },
     {
-      kind: "item",
-      label: t("ui.sidebar.designLayout"),
+      kind: 'item',
+      label: t('ui.sidebar.designLayout'),
       onClick: () =>
-        openModal("layoutDesigner", { kind: "project", id: project.id }),
+        openModal('layoutDesigner', { kind: 'project', id: project.id }),
     },
     {
-      kind: "item",
+      kind: 'item',
       label: project.groupId
-        ? t("ui.sidebar.removeFromGroup")
-        : t("ui.sidebar.moveToGroup"),
+        ? t('ui.sidebar.removeFromGroup')
+        : t('ui.sidebar.moveToGroup'),
       onClick: () => {
         if (project.groupId) {
           actions.moveProjectToGroup(project.id, null);
         } else if (groups.length === 0) {
-          window.alert(t("ui.sidebar.createGroupFirst"));
+          window.alert(t('ui.sidebar.createGroupFirst'));
         } else {
-          const list = groups.map((g, i) => `${i + 1}. ${g.name}`).join("\n");
+          const list = groups.map((g, i) => `${i + 1}. ${g.name}`).join('\n');
           const pick = window.prompt(
-            t("ui.sidebar.moveProjectToWhichGroup", {
+            t('ui.sidebar.moveProjectToWhichGroup', {
               name: project.name,
               list,
             }),
-            "1",
+            '1',
           );
           const idx = pick ? Number(pick) - 1 : -1;
           if (idx >= 0 && idx < groups.length) {
@@ -350,12 +350,12 @@ export function ProjectSidebar() {
       },
     },
     {
-      kind: "item",
+      kind: 'item',
       label:
         project.terminals.length > 0 &&
         project.terminals.every((term) => term.disabled)
-          ? t("ui.sidebar.reactivateProject")
-          : t("ui.sidebar.disableProject"),
+          ? t('ui.sidebar.reactivateProject')
+          : t('ui.sidebar.disableProject'),
       onClick: () => {
         const allDisabled =
           project.terminals.length > 0 &&
@@ -363,15 +363,15 @@ export function ProjectSidebar() {
         actions.setProjectDisabled(project.id, !allDisabled);
       },
     },
-    { kind: "separator" },
+    { kind: 'separator' },
     {
-      kind: "item",
-      label: t("ui.sidebar.deleteProject"),
+      kind: 'item',
+      label: t('ui.sidebar.deleteProject'),
       danger: true,
       onClick: () => {
         if (
           window.confirm(
-            t("ui.sidebar.confirmDeleteProject", {
+            t('ui.sidebar.confirmDeleteProject', {
               name: project.name,
               count: project.terminals.length,
             }),
@@ -385,53 +385,53 @@ export function ProjectSidebar() {
 
   const groupMenu = (group: Group): MenuItem[] => [
     {
-      kind: "item",
-      label: t("ui.workspace.openIndividually"),
+      kind: 'item',
+      label: t('ui.workspace.openIndividually'),
       onClick: () => {
-        actions.openGroupWorkspace(group.id, "only");
-        setActiveView("workspace");
+        actions.openGroupWorkspace(group.id, 'only');
+        setActiveView('workspace');
       },
     },
     {
-      kind: "item",
-      label: t("ui.workspace.addToCurrent"),
+      kind: 'item',
+      label: t('ui.workspace.addToCurrent'),
       onClick: () => {
-        actions.openGroupWorkspace(group.id, "append");
-        setActiveView("workspace");
+        actions.openGroupWorkspace(group.id, 'append');
+        setActiveView('workspace');
       },
     },
-    { kind: "separator" },
+    { kind: 'separator' },
     {
-      kind: "item",
-      label: t("ui.sidebar.editNameColor"),
-      onClick: () => openModal("editGroup", { groupId: group.id }),
+      kind: 'item',
+      label: t('ui.sidebar.editNameColor'),
+      onClick: () => openModal('editGroup', { groupId: group.id }),
     },
     {
-      kind: "item",
-      label: t("ui.sidebar.quickRename"),
+      kind: 'item',
+      label: t('ui.sidebar.quickRename'),
       onClick: () => {
         const name = window
-          .prompt(t("ui.sidebar.newNamePrompt"), group.name)
+          .prompt(t('ui.sidebar.newNamePrompt'), group.name)
           ?.trim();
         if (name) actions.renameGroup(group.id, name);
       },
     },
     {
-      kind: "item",
-      label: t("ui.sidebar.createSubgroupHere"),
-      onClick: () => openModal("newGroup", { parentGroupId: group.id }),
+      kind: 'item',
+      label: t('ui.sidebar.createSubgroupHere'),
+      onClick: () => openModal('newGroup', { parentGroupId: group.id }),
     },
     {
-      kind: "item",
-      label: t("ui.sidebar.designLayout"),
+      kind: 'item',
+      label: t('ui.sidebar.designLayout'),
       onClick: () =>
-        openModal("layoutDesigner", { kind: "group", id: group.id }),
+        openModal('layoutDesigner', { kind: 'group', id: group.id }),
     },
     {
-      kind: "item",
+      kind: 'item',
       label: group.parentGroupId
-        ? t("ui.sidebar.makeRootGroup")
-        : t("ui.sidebar.moveToOtherGroup"),
+        ? t('ui.sidebar.makeRootGroup')
+        : t('ui.sidebar.moveToOtherGroup'),
       onClick: () => {
         if (group.parentGroupId) {
           actions.moveGroupToParent(group.id, null);
@@ -443,15 +443,15 @@ export function ProjectSidebar() {
             (g) => g.id !== group.id && !descendants.has(g.id),
           );
           if (candidates.length === 0) {
-            window.alert(t("ui.sidebar.noEligibleParentGroups"));
+            window.alert(t('ui.sidebar.noEligibleParentGroups'));
             return;
           }
           const list = candidates
             .map((g, i) => `${i + 1}. ${g.name}`)
-            .join("\n");
+            .join('\n');
           const pick = window.prompt(
-            t("ui.sidebar.moveGroupAsSubgroupOf", { name: group.name, list }),
-            "1",
+            t('ui.sidebar.moveGroupAsSubgroupOf', { name: group.name, list }),
+            '1',
           );
           const idx = pick ? Number(pick) - 1 : -1;
           if (idx >= 0 && idx < candidates.length) {
@@ -461,45 +461,45 @@ export function ProjectSidebar() {
       },
     },
     {
-      kind: "item",
+      kind: 'item',
       label: group.collapsed
-        ? t("ui.sidebar.expand")
-        : t("ui.sidebar.collapse"),
+        ? t('ui.sidebar.expand')
+        : t('ui.sidebar.collapse'),
       onClick: () => actions.toggleGroupCollapsed(group.id),
     },
     {
-      kind: "item",
+      kind: 'item',
       label: group.suspended
-        ? t("ui.sidebar.reactivateGroup")
-        : t("ui.sidebar.suspendGroup"),
+        ? t('ui.sidebar.reactivateGroup')
+        : t('ui.sidebar.suspendGroup'),
       onClick: () => {
         if (group.suspended) {
           actions.resumeGroup(group.id);
         } else {
-          openModal("suspendGroup", { groupId: group.id });
+          openModal('suspendGroup', { groupId: group.id });
         }
       },
     },
-    { kind: "separator" },
+    { kind: 'separator' },
     {
-      kind: "item",
-      label: t("ui.sidebar.deleteGroupKeepProjects"),
-      onClick: () => actions.deleteGroup(group.id, "unassign"),
+      kind: 'item',
+      label: t('ui.sidebar.deleteGroupKeepProjects'),
+      onClick: () => actions.deleteGroup(group.id, 'unassign'),
     },
     {
-      kind: "item",
-      label: t("ui.sidebar.deleteGroupAndProjects"),
+      kind: 'item',
+      label: t('ui.sidebar.deleteGroupAndProjects'),
       danger: true,
       onClick: () => {
         if (
           window.confirm(
-            t("ui.sidebar.confirmDeleteGroupCascade", {
+            t('ui.sidebar.confirmDeleteGroupCascade', {
               name: group.name,
               count: group.projectIds.length,
             }),
           )
         ) {
-          actions.deleteGroup(group.id, "cascade");
+          actions.deleteGroup(group.id, 'cascade');
         }
       },
     },
@@ -509,61 +509,61 @@ export function ProjectSidebar() {
     const inSplit = openPaneSets[projectId]?.has(term.id) ?? false;
     return [
       {
-        kind: "item",
-        label: t("ui.workspace.openIndividually"),
+        kind: 'item',
+        label: t('ui.workspace.openIndividually'),
         onClick: () => {
           actions.openTerminalWorkspace(projectId, term.id);
-          setActiveView("workspace");
+          setActiveView('workspace');
         },
       },
       {
-        kind: "item",
-        label: t("ui.workspace.addToCurrent"),
+        kind: 'item',
+        label: t('ui.workspace.addToCurrent'),
         onClick: () => {
           actions.addTerminalToWorkspace(projectId, term.id);
-          setActiveView("workspace");
+          setActiveView('workspace');
         },
       },
-      { kind: "separator" },
+      { kind: 'separator' },
       {
-        kind: "item",
-        label: t("ui.sidebar.rename"),
+        kind: 'item',
+        label: t('ui.sidebar.rename'),
         onClick: () => {
           const name = window
-            .prompt(t("ui.sidebar.newNamePrompt"), term.name)
+            .prompt(t('ui.sidebar.newNamePrompt'), term.name)
             ?.trim();
           if (name) actions.renameTerminal(projectId, term.id, name);
         },
       },
       {
-        kind: "item",
+        kind: 'item',
         label: inSplit
-          ? t("ui.sidebar.hideFromSplit")
-          : t("ui.sidebar.showInSplit"),
+          ? t('ui.sidebar.hideFromSplit')
+          : t('ui.sidebar.showInSplit'),
         onClick: () => actions.togglePane(projectId, term.id),
       },
       {
-        kind: "item",
+        kind: 'item',
         label: term.disabled
-          ? t("ui.sidebar.reactivate")
-          : t("ui.sidebar.disable"),
+          ? t('ui.sidebar.reactivate')
+          : t('ui.sidebar.disable'),
         onClick: () =>
           actions.setTerminalDisabled(projectId, term.id, !term.disabled),
       },
       {
-        kind: "item",
-        label: t("ui.sidebar.killTerminal"),
+        kind: 'item',
+        label: t('ui.sidebar.killTerminal'),
         onClick: () => actions.killTerminal(projectId, term.id),
       },
-      { kind: "separator" },
+      { kind: 'separator' },
       {
-        kind: "item",
-        label: t("ui.sidebar.deleteTerminal"),
+        kind: 'item',
+        label: t('ui.sidebar.deleteTerminal'),
         danger: true,
         onClick: () => {
           if (
             window.confirm(
-              t("ui.sidebar.confirmDeleteTerminal", { name: term.name }),
+              t('ui.sidebar.confirmDeleteTerminal', { name: term.name }),
             )
           ) {
             actions.deleteTerminal(projectId, term.id);
@@ -575,11 +575,11 @@ export function ProjectSidebar() {
 
   const activateProject = (
     project: Project,
-    mode: "open" | "focus" = "focus",
+    mode: 'open' | 'focus' = 'focus',
   ) => {
     void mode;
     actions.openProjectWorkspace(project.id);
-    setActiveView("workspace");
+    setActiveView('workspace');
   };
 
   const renderProject = (p: Project) => (
@@ -601,13 +601,13 @@ export function ProjectSidebar() {
           actions.setSubTabCompletionUnread(p.id, t.id, activeTab.id, false);
         }
         requestPaneFocus(t.id);
-        setActiveView("workspace");
+        setActiveView('workspace');
       }}
       onTerminalDoubleClick={(t) => {
         actions.openTerminalWorkspace(p.id, t.id);
         setActiveTerminal(p.id, t.id);
         requestPaneFocus(t.id);
-        setActiveView("workspace");
+        setActiveView('workspace');
       }}
       onProjectMenu={(e) =>
         setMenu({ x: e.clientX, y: e.clientY, items: projectMenu(p) })
@@ -615,7 +615,7 @@ export function ProjectSidebar() {
       onTerminalMenu={(t, e) =>
         setMenu({ x: e.clientX, y: e.clientY, items: terminalMenu(p.id, t) })
       }
-      onAddTerminal={() => openModal("newTerminal", { projectId: p.id })}
+      onAddTerminal={() => openModal('newTerminal', { projectId: p.id })}
     />
   );
 
@@ -634,9 +634,9 @@ export function ProjectSidebar() {
     return map;
   }, [groups]);
 
-  const onGroupOpenAll = (g: Group, mode: "append" | "only" = "append") => {
+  const onGroupOpenAll = (g: Group, mode: 'append' | 'only' = 'append') => {
     actions.openGroupWorkspace(g.id, mode);
-    setActiveView("workspace");
+    setActiveView('workspace');
   };
 
   const renderGroup = (g: Group): React.ReactNode => {
@@ -655,10 +655,10 @@ export function ProjectSidebar() {
         onMenu={(e) =>
           setMenu({ x: e.clientX, y: e.clientY, items: groupMenu(g) })
         }
-        onAddProject={() => openModal("newProject", { groupId: g.id })}
+        onAddProject={() => openModal('newProject', { groupId: g.id })}
         onToggle={() => actions.toggleGroupCollapsed(g.id)}
         onOpenAll={() => onGroupOpenAll(g)}
-        onOpenOnly={() => onGroupOpenAll(g, "only")}
+        onOpenOnly={() => onGroupOpenAll(g, 'only')}
       />
     );
   };
@@ -668,35 +668,35 @@ export function ProjectSidebar() {
       <div className={styles.homeRow}>
         <button
           type="button"
-          className={`${styles.homeBtn} ${activeView === "home" ? styles.homeBtnActive : ""}`}
+          className={`${styles.homeBtn} ${activeView === 'home' ? styles.homeBtnActive : ''}`}
           onClick={() => {
-            if (activeView !== "home") {
-              setActiveView("home");
+            if (activeView !== 'home') {
+              setActiveView('home');
             }
           }}
-          title={t("ui.sidebar.homeTitle", { shortcut: "Ctrl+Shift+H" })}
-          aria-label={t("ui.sidebar.home")}
+          title={t('ui.sidebar.homeTitle', { shortcut: 'Ctrl+Shift+H' })}
+          aria-label={t('ui.sidebar.home')}
         >
           <Home size={14} />
-          <span>{t("ui.sidebar.home")}</span>
+          <span>{t('ui.sidebar.home')}</span>
         </button>
       </div>
 
       <div
         className={styles.sidebarTabs}
         role="tablist"
-        aria-label={t("ui.sidebar.navigation")}
+        aria-label={t('ui.sidebar.navigation')}
       >
         <button
           type="button"
           role="tab"
-          aria-selected={sidebarTab === "projects"}
-          aria-label={t("ui.sidebar.projects")}
-          title={t("ui.sidebar.projects")}
-          className={`${styles.sidebarTab} ${sidebarTab === "projects" ? styles.sidebarTabActive : ""}`}
+          aria-selected={sidebarTab === 'projects'}
+          aria-label={t('ui.sidebar.projects')}
+          title={t('ui.sidebar.projects')}
+          className={`${styles.sidebarTab} ${sidebarTab === 'projects' ? styles.sidebarTabActive : ''}`}
           onClick={() => {
-            setSidebarTab("projects");
-            if (!keepHome) setActiveView("workspace");
+            setSidebarTab('projects');
+            if (!keepHome) setActiveView('workspace');
           }}
         >
           <Grid3x3 size={14} />
@@ -704,13 +704,13 @@ export function ProjectSidebar() {
         <button
           type="button"
           role="tab"
-          aria-selected={sidebarTab === "files"}
-          aria-label={t("ui.sidebar.files")}
-          title={t("ui.sidebar.files")}
-          className={`${styles.sidebarTab} ${sidebarTab === "files" ? styles.sidebarTabActive : ""}`}
+          aria-selected={sidebarTab === 'files'}
+          aria-label={t('ui.sidebar.files')}
+          title={t('ui.sidebar.files')}
+          className={`${styles.sidebarTab} ${sidebarTab === 'files' ? styles.sidebarTabActive : ''}`}
           onClick={() => {
-            setSidebarTab("files");
-            if (!keepHome) setActiveView("workspace");
+            setSidebarTab('files');
+            if (!keepHome) setActiveView('workspace');
           }}
         >
           <Folder size={14} />
@@ -719,13 +719,13 @@ export function ProjectSidebar() {
           <button
             type="button"
             role="tab"
-            aria-selected={sidebarTab === "git"}
-            aria-label={t("ui.sidebar.git")}
-            title={t("ui.sidebar.git")}
-            className={`${styles.sidebarTab} ${sidebarTab === "git" ? styles.sidebarTabActive : ""}`}
+            aria-selected={sidebarTab === 'git'}
+            aria-label={t('ui.sidebar.git')}
+            title={t('ui.sidebar.git')}
+            className={`${styles.sidebarTab} ${sidebarTab === 'git' ? styles.sidebarTabActive : ''}`}
             onClick={() => {
-              setSidebarTab("git");
-              if (!keepHome) setActiveView("workspace");
+              setSidebarTab('git');
+              if (!keepHome) setActiveView('workspace');
             }}
           >
             <GitBranch size={14} />
@@ -734,58 +734,58 @@ export function ProjectSidebar() {
         <button
           type="button"
           role="tab"
-          aria-selected={sidebarTab === "workflows"}
-          aria-label={t("workflow.sidebarTab")}
-          title={t("workflow.sidebarTab")}
-          className={`${styles.sidebarTab} ${sidebarTab === "workflows" ? styles.sidebarTabActive : ""}`}
+          aria-selected={sidebarTab === 'workflows'}
+          aria-label={t('workflow.sidebarTab')}
+          title={t('workflow.sidebarTab')}
+          className={`${styles.sidebarTab} ${sidebarTab === 'workflows' ? styles.sidebarTabActive : ''}`}
           onClick={() => {
-            setSidebarTab("workflows");
-            if (!keepHome) setActiveView("workspace");
+            setSidebarTab('workflows');
+            if (!keepHome) setActiveView('workspace');
           }}
         >
           <Layers size={14} />
         </button>
       </div>
 
-      {sidebarTab === "workflows" ? (
+      {sidebarTab === 'workflows' ? (
         <section className={styles.explorerPanel}>
           <WorkflowDashboard />
         </section>
       ) : null}
 
-      {sidebarTab === "projects" ? (
+      {sidebarTab === 'projects' ? (
         <header className={styles.header}>
-          <span className={styles.title}>{t("ui.sidebar.projects")}</span>
+          <span className={styles.title}>{t('ui.sidebar.projects')}</span>
           <div className={styles.headerActions}>
             <button
               type="button"
               className={styles.iconBtn}
               onClick={() => void onAddMarkdownViewer()}
               disabled={!activeProjectId}
-              title={t("ui.markdown.addViewerTitle")}
-              aria-label={t("ui.markdown.addViewer")}
+              title={t('ui.markdown.addViewerTitle')}
+              aria-label={t('ui.markdown.addViewer')}
             >
               <FileText size={14} />
             </button>
             <button
               type="button"
               className={styles.iconBtn}
-              onClick={() => openModal("newGroup")}
-              title={t("ui.sidebar.newGroupTitle", {
-                shortcut: "Ctrl+Shift+G",
+              onClick={() => openModal('newGroup')}
+              title={t('ui.sidebar.newGroupTitle', {
+                shortcut: 'Ctrl+Shift+G',
               })}
-              aria-label={t("ui.sidebar.newGroup")}
+              aria-label={t('ui.sidebar.newGroup')}
             >
               <FolderPlus size={14} />
             </button>
             <button
               type="button"
               className={styles.iconBtn}
-              onClick={() => openModal("newProject")}
-              title={t("ui.sidebar.newProjectTitle", {
-                shortcut: "Ctrl+Shift+P",
+              onClick={() => openModal('newProject')}
+              title={t('ui.sidebar.newProjectTitle', {
+                shortcut: 'Ctrl+Shift+P',
               })}
-              aria-label={t("ui.sidebar.newProject")}
+              aria-label={t('ui.sidebar.newProject')}
             >
               <Plus size={14} />
             </button>
@@ -793,11 +793,11 @@ export function ProjectSidebar() {
         </header>
       ) : null}
 
-      {sidebarTab === "files" ? (
+      {sidebarTab === 'files' ? (
         <section className={styles.explorerPanel}>
           <div className={styles.explorerHeader}>
             <span className={styles.explorerLabel}>
-              {t("ui.sidebar.explorer")}
+              {t('ui.sidebar.explorer')}
             </span>
             <MoreHorizontal size={14} />
           </div>
@@ -812,11 +812,11 @@ export function ProjectSidebar() {
               <EmptyState
                 compact
                 icon={<FolderPlus size={18} />}
-                title={t("ui.sidebar.emptyTitle")}
-                description={t("ui.sidebar.emptyDesc")}
+                title={t('ui.sidebar.emptyTitle')}
+                description={t('ui.sidebar.emptyDesc')}
                 primaryAction={{
-                  label: t("ui.sidebar.emptyAction"),
-                  onClick: () => openModal("newProject"),
+                  label: t('ui.sidebar.emptyAction'),
+                  onClick: () => openModal('newProject'),
                 }}
               />
             </div>
@@ -824,11 +824,11 @@ export function ProjectSidebar() {
         </section>
       ) : null}
 
-      {sidebarTab === "git" ? (
+      {sidebarTab === 'git' ? (
         <section className={styles.explorerPanel}>
           <div className={styles.explorerHeader}>
             <span className={styles.explorerLabel}>
-              {t("ui.sidebar.sourceControl")}
+              {t('ui.sidebar.sourceControl')}
             </span>
           </div>
           {selectedTerminal && selectedSubTab ? (
@@ -842,11 +842,11 @@ export function ProjectSidebar() {
               <EmptyState
                 compact
                 icon={<GitBranch size={18} />}
-                title={t("git.empty.noTerminal")}
-                description={t("git.empty.noTerminalDesc")}
+                title={t('git.empty.noTerminal')}
+                description={t('git.empty.noTerminalDesc')}
                 primaryAction={{
-                  label: t("ui.sidebar.emptyAction"),
-                  onClick: () => openModal("newProject"),
+                  label: t('ui.sidebar.emptyAction'),
+                  onClick: () => openModal('newProject'),
                 }}
               />
             </div>
@@ -854,7 +854,7 @@ export function ProjectSidebar() {
         </section>
       ) : null}
 
-      {sidebarTab === "projects" ? (
+      {sidebarTab === 'projects' ? (
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
           <div className={styles.list}>
             {projects.length === 0 && groups.length === 0 ? (
@@ -862,11 +862,11 @@ export function ProjectSidebar() {
                 <EmptyState
                   compact
                   icon={<FolderPlus size={18} />}
-                  title={t("ui.sidebar.emptyTitle")}
-                  description={t("ui.sidebar.emptyDesc")}
+                  title={t('ui.sidebar.emptyTitle')}
+                  description={t('ui.sidebar.emptyDesc')}
                   primaryAction={{
-                    label: t("ui.sidebar.emptyAction"),
-                    onClick: () => openModal("newProject"),
+                    label: t('ui.sidebar.emptyAction'),
+                    onClick: () => openModal('newProject'),
                   }}
                 />
               </div>
@@ -921,15 +921,15 @@ function WorkspaceLayoutFooter({
       <span className={styles.layoutLabel}>Workspace</span>
       <button
         type="button"
-        className={`${styles.layoutBtn} ${hasCustom ? styles.layoutBtnActive : ""}`}
-        onClick={() => openModal("layoutDesigner", { kind: "workspace" })}
-        title={t("ui.sidebar.designWorkspaceLayout")}
-        aria-label={t("ui.sidebar.designLayoutShort")}
-        style={{ width: "auto", padding: "0 10px", fontSize: 11, gap: 6 }}
+        className={`${styles.layoutBtn} ${hasCustom ? styles.layoutBtnActive : ''}`}
+        onClick={() => openModal('layoutDesigner', { kind: 'workspace' })}
+        title={t('ui.sidebar.designWorkspaceLayout')}
+        aria-label={t('ui.sidebar.designLayoutShort')}
+        style={{ width: 'auto', padding: '0 10px', fontSize: 11, gap: 6 }}
       >
         <Grid3x3 size={12} />
         <span>
-          {hasCustom ? t("ui.sidebar.editGrid") : t("ui.sidebar.drawGrid")}
+          {hasCustom ? t('ui.sidebar.editGrid') : t('ui.sidebar.drawGrid')}
         </span>
       </button>
     </div>
@@ -944,7 +944,7 @@ function LayoutFooter() {
   if (!project || !container || container.paneIds.length < 2) return null;
   return (
     <div className={styles.layoutFooter}>
-      <span className={styles.layoutLabel}>{t("ui.sidebar.organization")}</span>
+      <span className={styles.layoutLabel}>{t('ui.sidebar.organization')}</span>
       <div className={styles.layoutSwitch}>
         {LAYOUTS.map((opt) => {
           const Icon = opt.Icon;
@@ -953,7 +953,7 @@ function LayoutFooter() {
             <button
               key={opt.id}
               type="button"
-              className={`${styles.layoutBtn} ${active ? styles.layoutBtnActive : ""}`}
+              className={`${styles.layoutBtn} ${active ? styles.layoutBtnActive : ''}`}
               onClick={() => setLayoutMode(project.id, opt.id)}
               title={opt.label}
               aria-label={opt.label}
@@ -1033,7 +1033,7 @@ function GroupNode({
   // Click no nome do grupo (ou bullet) → onOpenAll. Não dispara em chevron/+.
   const onTagClick = (e: React.MouseEvent) => {
     const tgt = e.target as HTMLElement;
-    if (tgt.closest("button")) return; // chevron/+ tratam o próprio click
+    if (tgt.closest('button')) return; // chevron/+ tratam o próprio click
     onOpenAll();
   };
 
@@ -1043,7 +1043,7 @@ function GroupNode({
         ref={setRefs}
         {...draggable.attributes}
         {...draggable.listeners}
-        className={`${styles.groupCollapsed} ${isOver ? styles.groupDropTarget : ""}`}
+        className={`${styles.groupCollapsed} ${isOver ? styles.groupDropTarget : ''}`}
         onClick={() => {
           onToggle();
           onOpenAll();
@@ -1056,7 +1056,7 @@ function GroupNode({
           e.preventDefault();
           onMenu(e);
         }}
-        title={t("ui.sidebar.openAllGroupProjects")}
+        title={t('ui.sidebar.openAllGroupProjects')}
       >
         <ChevronRight size={12} className={styles.groupChevron} />
         <GroupBadge iconUrl={group.iconUrl} color={group.color} />
@@ -1066,10 +1066,10 @@ function GroupNode({
         )}
         <span className={styles.groupCount}>
           {group.projectIds.length === 1
-            ? t("ui.sidebar.projectCountOne", {
+            ? t('ui.sidebar.projectCountOne', {
                 count: group.projectIds.length,
               })
-            : t("ui.sidebar.projectCountOther", {
+            : t('ui.sidebar.projectCountOther', {
                 count: group.projectIds.length,
               })}
         </span>
@@ -1080,12 +1080,12 @@ function GroupNode({
   return (
     <div
       ref={setRefs}
-      className={`${styles.groupBox} ${isOver ? styles.groupDropTarget : ""} ${group.suspended ? styles.groupSuspended : ""}`}
+      className={`${styles.groupBox} ${isOver ? styles.groupDropTarget : ''} ${group.suspended ? styles.groupSuspended : ''}`}
       onContextMenu={(e) => {
         e.preventDefault();
         onMenu(e);
       }}
-      style={{ ["--group-color" as string]: group.color }}
+      style={{ ['--group-color' as string]: group.color }}
     >
       <div
         className={styles.groupTag}
@@ -1096,8 +1096,8 @@ function GroupNode({
         }}
         title={
           group.suspended
-            ? t("ui.sidebar.groupSuspendedHint")
-            : t("ui.sidebar.openAllGroupProjects")
+            ? t('ui.sidebar.groupSuspendedHint')
+            : t('ui.sidebar.openAllGroupProjects')
         }
         {...draggable.attributes}
         {...draggable.listeners}
@@ -1109,7 +1109,7 @@ function GroupNode({
             e.stopPropagation();
             onToggle();
           }}
-          aria-label={t("ui.sidebar.collapse")}
+          aria-label={t('ui.sidebar.collapse')}
         >
           <ChevronDown size={11} />
         </button>
@@ -1125,8 +1125,8 @@ function GroupNode({
             e.stopPropagation();
             onAddProject();
           }}
-          title={t("ui.sidebar.newProjectInGroup")}
-          aria-label={t("ui.sidebar.newProjectInGroup")}
+          title={t('ui.sidebar.newProjectInGroup')}
+          aria-label={t('ui.sidebar.newProjectInGroup')}
         >
           <Plus size={11} />
         </button>
@@ -1134,7 +1134,7 @@ function GroupNode({
       <div className={styles.groupBody}>
         {childGroups.map((cg) => renderChildGroup(cg))}
         {projects.length === 0 && childGroups.length === 0 ? (
-          <div className={styles.groupEmpty}>{t("ui.sidebar.groupEmpty")}</div>
+          <div className={styles.groupEmpty}>{t('ui.sidebar.groupEmpty')}</div>
         ) : (
           projects.map((p) => renderProject(p))
         )}
@@ -1167,13 +1167,13 @@ function UngroupedSection({
   renderProject: (p: Project) => React.ReactNode;
 }) {
   const t = useT();
-  const { setNodeRef, isOver } = useDroppable({ id: "group:ungrouped" });
+  const { setNodeRef, isOver } = useDroppable({ id: 'group:ungrouped' });
   return (
     <div
       ref={setNodeRef}
-      className={`${styles.ungroupedSection} ${isOver ? styles.groupDropTarget : ""}`}
+      className={`${styles.ungroupedSection} ${isOver ? styles.groupDropTarget : ''}`}
     >
-      <div className={styles.ungroupedHeader}>{t("ui.sidebar.ungrouped")}</div>
+      <div className={styles.ungroupedHeader}>{t('ui.sidebar.ungrouped')}</div>
       <div className={styles.ungroupedBody}>
         {projects.map((p) => renderProject(p))}
       </div>
@@ -1224,12 +1224,12 @@ function ProjectNode({
 
   return (
     <div
-      className={`${styles.projectNode} ${allDisabled ? styles.projectDisabled : ""}`}
+      className={`${styles.projectNode} ${allDisabled ? styles.projectDisabled : ''}`}
       ref={setRefs}
     >
       <div
-        className={`${styles.projectRow} ${isActive ? styles.projectActive : ""} ${
-          isOver ? styles.projectDropTarget : ""
+        className={`${styles.projectRow} ${isActive ? styles.projectActive : ''} ${
+          isOver ? styles.projectDropTarget : ''
         }`}
         onClick={onActivate}
         onContextMenu={(e) => {
@@ -1249,8 +1249,8 @@ function ProjectNode({
           }}
           aria-label={
             project.collapsed
-              ? t("ui.sidebar.expand")
-              : t("ui.sidebar.collapse")
+              ? t('ui.sidebar.expand')
+              : t('ui.sidebar.collapse')
           }
         >
           {project.collapsed ? (
@@ -1272,8 +1272,8 @@ function ProjectNode({
             e.stopPropagation();
             onAddTerminal();
           }}
-          title={t("ui.sidebar.newTerminal")}
-          aria-label={t("ui.sidebar.newTerminal")}
+          title={t('ui.sidebar.newTerminal')}
+          aria-label={t('ui.sidebar.newTerminal')}
         >
           <Plus size={12} />
         </button>
@@ -1345,9 +1345,9 @@ function TerminalNode({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`${styles.terminalRow} ${!selected ? styles.terminalHidden : ""} ${
-        terminal.disabled ? styles.terminalDisabled : ""
-      } ${isDragging ? styles.dragging : ""}`}
+      className={`${styles.terminalRow} ${!selected ? styles.terminalHidden : ''} ${
+        terminal.disabled ? styles.terminalDisabled : ''
+      } ${isDragging ? styles.dragging : ''}`}
       onClick={() => onClick()}
       onDoubleClick={(event) => {
         event.stopPropagation();
@@ -1361,7 +1361,7 @@ function TerminalNode({
       title={terminal.filePath || terminal.cwd || terminal.name}
     >
       <span className={styles.agentStack}>
-        {terminal.kind === "markdown" ? (
+        {terminal.kind === 'markdown' ? (
           <span className={styles.agentIcon}>
             <FileText size={14} />
           </span>
@@ -1384,7 +1384,7 @@ function TerminalNode({
       {hasUnreadCompletion ? (
         <span
           className={styles.doneBadge}
-          title={t("ui.terminal.responseReady")}
+          title={t('ui.terminal.responseReady')}
         >
           !
         </span>

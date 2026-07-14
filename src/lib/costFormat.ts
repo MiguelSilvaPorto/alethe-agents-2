@@ -17,21 +17,21 @@ export function fmtTokens(n: number): string {
   return String(n);
 }
 
-export type CostLevel = "low" | "mid" | "high";
+export type CostLevel = 'low' | 'mid' | 'high';
 
 /** Faixa de gasto (USD) → nível, pro componente escolher a cor do token. */
 export function costLevel(v: number): CostLevel {
-  if (v >= 5) return "high";
-  if (v >= 1) return "mid";
-  return "low";
+  if (v >= 5) return 'high';
+  if (v >= 1) return 'mid';
+  return 'low';
 }
 
 /** Família curta do model id (opus/sonnet/haiku/…), pros badges. */
 export function shortModel(model: string | null): string | null {
   if (!model) return null;
   const m = model.toLowerCase();
-  if (m.includes("opus")) return "opus";
-  if (m.includes("sonnet")) return "sonnet";
-  if (m.includes("haiku")) return "haiku";
+  if (m.includes('opus')) return 'opus';
+  if (m.includes('sonnet')) return 'sonnet';
+  if (m.includes('haiku')) return 'haiku';
   return model;
 }

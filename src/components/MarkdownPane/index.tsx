@@ -1,4 +1,4 @@
-import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import {
   FileCode,
   FileText,
@@ -8,26 +8,26 @@ import {
   Minimize2,
   RefreshCw,
   Trash2,
-} from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+} from 'lucide-react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
-import { useGridResize } from "../../hooks/useGridResize";
-import { useT } from "../../lib/i18n";
+import { useGridResize } from '../../hooks/useGridResize';
+import { useT } from '../../lib/i18n';
 import {
   listenFileChanged,
   openInFileExplorer,
   readTextFile,
   unwatchFile,
   watchFile,
-} from "../../lib/tauri";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import type { Terminal as TerminalEntry } from "../../lib/types";
-import { MarkdownRenderer } from "./MarkdownRenderer";
-import styles from "./MarkdownPane.module.css";
+} from '../../lib/tauri';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import type { Terminal as TerminalEntry } from '../../lib/types';
+import { MarkdownRenderer } from './MarkdownRenderer';
+import styles from './MarkdownPane.module.css';
 
 /** Temas claros conhecidos — o resto é tratado como escuro (mermaid). */
-const LIGHT_THEMES = new Set(["light", "min-light"]);
+const LIGHT_THEMES = new Set(['light', 'min-light']);
 
 export type MarkdownPaneProps = {
   projectId: string;
@@ -43,7 +43,7 @@ export const MarkdownPane = memo(function MarkdownPane({
   preview = false,
 }: MarkdownPaneProps) {
   const t = useT();
-  const filePath = terminal.filePath ?? "";
+  const filePath = terminal.filePath ?? '';
   const [content, setContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -75,7 +75,7 @@ export const MarkdownPane = memo(function MarkdownPane({
 
   const reload = useCallback(async () => {
     if (!filePath) {
-      setError("no file");
+      setError('no file');
       return;
     }
     try {
@@ -106,16 +106,16 @@ export const MarkdownPane = memo(function MarkdownPane({
   useEffect(() => {
     if (!focusReq || focusReq.terminalId !== terminal.id) return;
     paneRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "nearest",
-      inline: "nearest",
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'nearest',
     });
   }, [focusReq, terminal.id]);
 
   // Resize de span no grid do PROJETO (quando project.layoutMode === 'grid').
   const projectGrid = useProjectsStore((s) => {
     const p = s.projects.find((p) => p.id === projectId);
-    if (!p || p.layoutMode !== "grid" || !p.gridLayout) return null;
+    if (!p || p.layoutMode !== 'grid' || !p.gridLayout) return null;
     return p.gridLayout;
   });
   const showGridResize = Boolean(projectGrid) && !isFocusMode && !preview;
@@ -125,7 +125,7 @@ export const MarkdownPane = memo(function MarkdownPane({
 
   const onDelete = () => {
     if (
-      window.confirm(t("ui.markdown.confirmClose", { name: terminal.name }))
+      window.confirm(t('ui.markdown.confirmClose', { name: terminal.name }))
     ) {
       deleteTerminal(projectId, terminal.id);
       if (isFocusMode) setFocusedTerminal(null);
@@ -140,7 +140,7 @@ export const MarkdownPane = memo(function MarkdownPane({
       ref={setRefs}
       data-pane-box="1"
       onPointerDown={() => setActiveTerminal(projectId, terminal.id)}
-      className={`${styles.pane} ${isFocusMode ? styles.paneFocus : ""} ${dragging ? styles.dragging : ""} ${dropTarget ? styles.dropTarget : ""}`}
+      className={`${styles.pane} ${isFocusMode ? styles.paneFocus : ''} ${dragging ? styles.dragging : ''} ${dropTarget ? styles.dropTarget : ''}`}
     >
       <header className={styles.header}>
         <div className={styles.headLeft}>
@@ -150,14 +150,14 @@ export const MarkdownPane = memo(function MarkdownPane({
               className={`${styles.action} ${styles.gripBtn}`}
               {...draggable.attributes}
               {...draggable.listeners}
-              title={t("ui.terminal.dragToReorder")}
-              aria-label={t("ui.terminal.dragToReorder")}
+              title={t('ui.terminal.dragToReorder')}
+              aria-label={t('ui.terminal.dragToReorder')}
             >
               <GripVertical size={12} />
             </button>
           ) : null}
           <span className={styles.iconWrap}>
-            {terminal.kind === "file" ? (
+            {terminal.kind === 'file' ? (
               <FileCode size={16} />
             ) : (
               <FileText size={16} />
@@ -182,8 +182,8 @@ export const MarkdownPane = memo(function MarkdownPane({
                 type="button"
                 className={styles.action}
                 onClick={() => void reload()}
-                title={t("ui.markdown.refresh")}
-                aria-label={t("ui.markdown.refresh")}
+                title={t('ui.markdown.refresh')}
+                aria-label={t('ui.markdown.refresh')}
               >
                 <RefreshCw size={12} />
               </button>
@@ -192,8 +192,8 @@ export const MarkdownPane = memo(function MarkdownPane({
                 className={styles.action}
                 onClick={() => void openInFileExplorer(parentDir(filePath))}
                 disabled={!filePath}
-                title={t("ui.terminal.openInExplorer")}
-                aria-label={t("ui.terminal.openInExplorer")}
+                title={t('ui.terminal.openInExplorer')}
+                aria-label={t('ui.terminal.openInExplorer')}
               >
                 <FolderOpen size={12} />
               </button>
@@ -202,8 +202,8 @@ export const MarkdownPane = memo(function MarkdownPane({
                   type="button"
                   className={styles.action}
                   onClick={() => setFocusedTerminal(null)}
-                  title={t("ui.terminal.exitFocusModeEsc")}
-                  aria-label={t("ui.terminal.exitFocusMode")}
+                  title={t('ui.terminal.exitFocusModeEsc')}
+                  aria-label={t('ui.terminal.exitFocusMode')}
                 >
                   <Minimize2 size={12} />
                 </button>
@@ -212,8 +212,8 @@ export const MarkdownPane = memo(function MarkdownPane({
                   type="button"
                   className={styles.action}
                   onClick={() => setFocusedTerminal(terminal.id)}
-                  title={t("ui.terminal.focusModeFullscreen")}
-                  aria-label={t("ui.terminal.focusMode")}
+                  title={t('ui.terminal.focusModeFullscreen')}
+                  aria-label={t('ui.terminal.focusMode')}
                 >
                   <Maximize2 size={12} />
                 </button>
@@ -222,8 +222,8 @@ export const MarkdownPane = memo(function MarkdownPane({
                 type="button"
                 className={`${styles.action} ${styles.danger}`}
                 onClick={onDelete}
-                title={t("ui.markdown.close")}
-                aria-label={t("ui.markdown.close")}
+                title={t('ui.markdown.close')}
+                aria-label={t('ui.markdown.close')}
               >
                 <Trash2 size={12} />
               </button>
@@ -236,20 +236,20 @@ export const MarkdownPane = memo(function MarkdownPane({
         {error ? (
           <div className={styles.empty}>
             <FileText size={20} />
-            <span>{t("ui.markdown.loadError", { path: filePath })}</span>
+            <span>{t('ui.markdown.loadError', { path: filePath })}</span>
             <button
               type="button"
               className={styles.retryBtn}
               onClick={() => void reload()}
             >
-              {t("ui.markdown.refresh")}
+              {t('ui.markdown.refresh')}
             </button>
           </div>
         ) : content === null ? (
           <div className={styles.empty}>
-            <span>{t("ui.markdown.loading")}</span>
+            <span>{t('ui.markdown.loading')}</span>
           </div>
-        ) : terminal.kind === "file" ? (
+        ) : terminal.kind === 'file' ? (
           <div className={styles.scroll}>
             <pre className={styles.textView}>{content}</pre>
           </div>
@@ -264,7 +264,7 @@ export const MarkdownPane = memo(function MarkdownPane({
         <div
           className={styles.gridResize}
           onPointerDown={startGridResize}
-          title={t("ui.terminal.dragToResizeSpan")}
+          title={t('ui.terminal.dragToResizeSpan')}
         />
       ) : null}
     </div>
@@ -272,14 +272,14 @@ export const MarkdownPane = memo(function MarkdownPane({
 });
 
 function shortPath(path: string): string {
-  const cleaned = path.replace(/[\\/]+$/, "");
+  const cleaned = path.replace(/[\\/]+$/, '');
   const parts = cleaned.split(/[\\/]/).filter(Boolean);
   if (parts.length <= 2) return cleaned;
   return `…/${parts[parts.length - 2]}/${parts[parts.length - 1]}`;
 }
 
 function parentDir(path: string): string {
-  const cleaned = path.replace(/[\\/]+$/, "");
-  const idx = Math.max(cleaned.lastIndexOf("/"), cleaned.lastIndexOf("\\"));
+  const cleaned = path.replace(/[\\/]+$/, '');
+  const idx = Math.max(cleaned.lastIndexOf('/'), cleaned.lastIndexOf('\\'));
   return idx > 0 ? cleaned.slice(0, idx) : cleaned;
 }

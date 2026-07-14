@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 import {
   ghosttyKill,
@@ -6,8 +6,8 @@ import {
   ghosttySpawn,
   ghosttySyncFrame,
   type WebRect,
-} from "../../lib/tauri";
-import { webRectsEqual } from "../../lib/webRect";
+} from '../../lib/tauri';
+import { webRectsEqual } from '../../lib/webRect';
 
 // Kills pendentes (deferidos) por surfaceId. O StrictMode (dev) desmonta e
 // remonta o componente imediatamente; se matássemos a surface no unmount, o
@@ -105,7 +105,7 @@ export function GhosttySurface({
         onSpawnedRef.current?.(res.id);
         scheduleFrame();
       } catch (err) {
-        console.error("ghostty_spawn falhou", err);
+        console.error('ghostty_spawn falhou', err);
       }
     };
     void start();
@@ -114,15 +114,15 @@ export function GhosttySurface({
     // placeholder (separadores, troca de layout) e resize da janela.
     const ro = new ResizeObserver(scheduleFrame);
     ro.observe(node);
-    window.addEventListener("resize", scheduleFrame);
+    window.addEventListener('resize', scheduleFrame);
     // Scroll de qualquer ancestral também move o rect na tela.
-    window.addEventListener("scroll", scheduleFrame, true);
+    window.addEventListener('scroll', scheduleFrame, true);
 
     return () => {
       disposed = true;
       ro.disconnect();
-      window.removeEventListener("resize", scheduleFrame);
-      window.removeEventListener("scroll", scheduleFrame, true);
+      window.removeEventListener('resize', scheduleFrame);
+      window.removeEventListener('scroll', scheduleFrame, true);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       // Kill DEFERIDO: se for só um ciclo do StrictMode, o próximo mount cancela
       // isto antes de disparar. Num unmount real, o timeout mata a surface.
@@ -175,7 +175,7 @@ export function GhosttySurface({
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-state"],
+      attributeFilter: ['data-state'],
     });
 
     return () => {
@@ -188,7 +188,7 @@ export function GhosttySurface({
   return (
     <div
       ref={placeholderRef}
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: '100%', height: '100%' }}
       data-ghostty-surface={surfaceId}
     />
   );

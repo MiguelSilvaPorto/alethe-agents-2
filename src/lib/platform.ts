@@ -7,7 +7,7 @@
  * user-agent da WKWebView no macOS é estável e suficiente para essa decisão.
  */
 export function isMacOS(): boolean {
-  if (typeof navigator === "undefined") return false;
+  if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent;
   // WKWebView no macOS sempre traz "Macintosh" / "Mac OS X" no UA.
   return /Macintosh|Mac OS X/i.test(ua);

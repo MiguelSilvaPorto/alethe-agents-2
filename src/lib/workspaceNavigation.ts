@@ -6,7 +6,7 @@ import type {
   WorkspaceHistoryEntry,
   WorkspaceTab,
   WorkspaceViewSnapshot,
-} from "./types";
+} from './types';
 
 export const MAX_WORKSPACE_TABS = 10;
 export const MAX_WORKSPACE_HISTORY = 50;
@@ -113,7 +113,7 @@ export function compositionLabel(
         projects.find((project) => project.id === container.projectId)?.name,
     )
     .filter((name): name is string => Boolean(name));
-  if (names.length === 0) return "Workspace";
+  if (names.length === 0) return 'Workspace';
   if (names.length === 1) {
     const paneCount = snapshot.containers[0]?.paneIds.length ?? 0;
     return paneCount > 1 ? `${names[0]} + ${paneCount - 1}` : names[0];

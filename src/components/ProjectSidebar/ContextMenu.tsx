@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
-import styles from "./ContextMenu.module.css";
+import styles from './ContextMenu.module.css';
 
 export type MenuItem =
-  | { kind: "item"; label: string; onClick: () => void; danger?: boolean }
-  | { kind: "separator" };
+  | { kind: 'item'; label: string; onClick: () => void; danger?: boolean }
+  | { kind: 'separator' };
 
 type Props = {
   x: number;
@@ -21,13 +21,13 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
       if (!ref.current?.contains(e.target as Node)) onClose();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose();
     };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
     return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
     };
   }, [onClose]);
 
@@ -43,14 +43,14 @@ export function ContextMenu({ x, y, items, onClose }: Props) {
       role="menu"
     >
       {items.map((item, i) =>
-        item.kind === "separator" ? (
+        item.kind === 'separator' ? (
           <div key={i} className={styles.separator} />
         ) : (
           <button
             key={i}
             type="button"
             role="menuitem"
-            className={`${styles.item} ${item.danger ? styles.danger : ""}`}
+            className={`${styles.item} ${item.danger ? styles.danger : ''}`}
             onClick={() => {
               item.onClick();
               onClose();

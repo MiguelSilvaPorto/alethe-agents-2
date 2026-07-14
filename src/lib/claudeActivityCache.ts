@@ -1,4 +1,4 @@
-import { getClaudeActivity, type ActivityDay } from "./tauri";
+import { getClaudeActivity, type ActivityDay } from './tauri';
 
 const TTL_MS = 5 * 60_000;
 

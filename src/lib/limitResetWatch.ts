@@ -9,13 +9,13 @@
  * `resets_at` mais à frente (janela rolou) — o que acontece primeiro. A flag
  * `notified` garante exatamente um aviso por rolagem.
  */
-import { useProjectsStore } from "../stores/projectsStore";
-import { getLocale, translate } from "./i18n";
-import { notifyLimitReset } from "./notifications";
-import type { ClaudeUsage, CodexUsage } from "./tauri";
-import type { AgentType } from "./types";
+import { useProjectsStore } from '../stores/projectsStore';
+import { getLocale, translate } from './i18n';
+import { notifyLimitReset } from './notifications';
+import type { ClaudeUsage, CodexUsage } from './tauri';
+import type { AgentType } from './types';
 
-type WindowKind = "5h" | "week" | "opus";
+type WindowKind = '5h' | 'week' | 'opus';
 type Entry = {
   resetsAt: number;
   notified: boolean;
@@ -28,11 +28,11 @@ const HEARTBEAT_MS = 60_000;
 let heartbeat: number | null = null;
 
 function agentLabel(agent: AgentType): string {
-  return agent === "codex" ? "Codex" : "Claude";
+  return agent === 'codex' ? 'Codex' : 'Claude';
 }
 
 function windowLabel(kind: WindowKind): string {
-  if (kind === "week") return translate(getLocale(), "widget.week");
+  if (kind === 'week') return translate(getLocale(), 'widget.week');
   return kind; // '5h' | 'opus'
 }
 
@@ -40,8 +40,8 @@ function fire(entry: Entry): void {
   if (!useProjectsStore.getState().preferences.notifyOnLimitReset) return;
   const locale = getLocale();
   void notifyLimitReset(
-    translate(locale, "notif.limitResetTitle"),
-    translate(locale, "notif.limitResetBody", {
+    translate(locale, 'notif.limitResetTitle'),
+    translate(locale, 'notif.limitResetBody', {
       agent: agentLabel(entry.agent),
       window: windowLabel(entry.kind),
     }),
@@ -92,17 +92,17 @@ function parseIso(iso: string): number {
 }
 
 export function observeClaudeReset(usage: ClaudeUsage): void {
-  observe("claude:5h", "claude", "5h", parseIso(usage.five_hour.resets_at));
-  observe("claude:week", "claude", "week", parseIso(usage.seven_day.resets_at));
+  observe('claude:5h', 'claude', '5h', parseIso(usage.five_hour.resets_at));
+  observe('claude:week', 'claude', 'week', parseIso(usage.seven_day.resets_at));
   observe(
-    "claude:opus",
-    "claude",
-    "opus",
+    'claude:opus',
+    'claude',
+    'opus',
     parseIso(usage.seven_day_opus.resets_at),
   );
 }
 
 export function observeCodexReset(usage: CodexUsage): void {
-  observe("codex:5h", "codex", "5h", usage.primary.resets_at_ms);
-  observe("codex:week", "codex", "week", usage.secondary.resets_at_ms);
+  observe('codex:5h', 'codex', '5h', usage.primary.resets_at_ms);
+  observe('codex:week', 'codex', 'week', usage.secondary.resets_at_ms);
 }

@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
-import { useUiStore } from "../../stores/uiStore";
-import styles from "./FocusOverlay.module.css";
+import { useUiStore } from '../../stores/uiStore';
+import styles from './FocusOverlay.module.css';
 
 /**
  * Backdrop do focus mode. O TerminalPane original entra em position: fixed;
@@ -14,13 +14,13 @@ export function FocusOverlay() {
   useEffect(() => {
     if (!focusedTerminalId) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         setFocusedTerminal(null);
       }
     };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
   }, [focusedTerminalId, setFocusedTerminal]);
 
   if (!focusedTerminalId) return null;

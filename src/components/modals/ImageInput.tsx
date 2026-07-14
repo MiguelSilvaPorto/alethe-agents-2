@@ -1,8 +1,8 @@
-import { Upload, X } from "lucide-react";
-import { useRef } from "react";
+import { Upload, X } from 'lucide-react';
+import { useRef } from 'react';
 
-import { useT } from "../../lib/i18n";
-import controls from "./controls.module.css";
+import { useT } from '../../lib/i18n';
+import controls from './controls.module.css';
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
@@ -30,18 +30,18 @@ export function ImageInput({
 
   const onFileChange = async (file: File | undefined) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      window.alert(t("image.mustBeImage"));
+    if (!file.type.startsWith('image/')) {
+      window.alert(t('image.mustBeImage'));
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      window.alert(t("image.tooLarge"));
+      window.alert(t('image.tooLarge'));
       return;
     }
 
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result ?? ""));
+      reader.onload = () => resolve(String(reader.result ?? ''));
       reader.onerror = () => reject(reader.error);
       reader.readAsDataURL(file);
     });
@@ -56,15 +56,15 @@ export function ImageInput({
           className={controls.input}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder ?? t("image.placeholder")}
-          onKeyDown={(e) => e.key === "Enter" && onEnter?.()}
+          placeholder={placeholder ?? t('image.placeholder')}
+          onKeyDown={(e) => e.key === 'Enter' && onEnter?.()}
         />
         <button
           type="button"
           className={controls.iconBtn}
           onClick={pickImage}
-          title={t("image.pickLocal")}
-          aria-label={t("image.pickLocal")}
+          title={t('image.pickLocal')}
+          aria-label={t('image.pickLocal')}
         >
           <Upload size={14} />
         </button>
@@ -72,9 +72,9 @@ export function ImageInput({
           <button
             type="button"
             className={controls.iconBtn}
-            onClick={() => onChange("")}
-            title={t("image.remove")}
-            aria-label={t("image.remove")}
+            onClick={() => onChange('')}
+            title={t('image.remove')}
+            aria-label={t('image.remove')}
           >
             <X size={14} />
           </button>
@@ -84,10 +84,10 @@ export function ImageInput({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        style={{ display: "none" }}
+        style={{ display: 'none' }}
         onChange={(e) => {
           void onFileChange(e.target.files?.[0]);
-          e.currentTarget.value = "";
+          e.currentTarget.value = '';
         }}
       />
       {hint ? <span className={controls.hint}>{hint}</span> : null}

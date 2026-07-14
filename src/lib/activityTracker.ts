@@ -1,14 +1,14 @@
-import { AgentCompletionMonitor } from "./agentCompletionMonitor";
+import { AgentCompletionMonitor } from './agentCompletionMonitor';
 import {
   listenPtyData,
   recordActivitySamples,
   type ActivityAgentSample,
   type ActivitySample,
-} from "./tauri";
-import type { AgentType } from "./types";
-import { useProjectsStore } from "../stores/projectsStore";
-import { useTerminalsStore } from "../stores/terminalsStore";
-import { useUiStore } from "../stores/uiStore";
+} from './tauri';
+import type { AgentType } from './types';
+import { useProjectsStore } from '../stores/projectsStore';
+import { useTerminalsStore } from '../stores/terminalsStore';
+import { useUiStore } from '../stores/uiStore';
 
 const SAMPLE_MS = 5_000;
 const FLUSH_MS = 30_000;
@@ -16,7 +16,7 @@ const IDLE_MS = 5 * 60_000;
 const MAX_DELTA_MS = 15_000;
 
 type AgentMeta = {
-  agent: Exclude<AgentType, "shell">;
+  agent: Exclude<AgentType, 'shell'>;
   projectId: string | null;
   terminalId: string | null;
   cwd: string;
@@ -37,8 +37,8 @@ let lastSampleAt = Date.now();
 function localDate(timestamp = Date.now()): string {
   const date = new Date(timestamp);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -47,7 +47,7 @@ function agentMetadata(): Map<string, AgentMeta> {
   for (const project of useProjectsStore.getState().projects) {
     for (const terminal of project.terminals) {
       for (const tab of terminal.tabs) {
-        if (!tab.ptyId || tab.type === "shell") continue;
+        if (!tab.ptyId || tab.type === 'shell') continue;
         result.set(tab.ptyId, {
           agent: tab.type,
           projectId: project.id,
@@ -60,8 +60,8 @@ function agentMetadata(): Map<string, AgentMeta> {
   const canvas = useUiStore.getState().agentCanvasSession;
   if (canvas && !result.has(canvas.ptyId)) {
     result.set(canvas.ptyId, {
-      agent: "claude",
-      projectId: "__agent_canvas__",
+      agent: 'claude',
+      projectId: '__agent_canvas__',
       terminalId: null,
       cwd: canvas.folder,
     });
@@ -134,9 +134,9 @@ function currentAgents(): ActivityAgentSample[] {
         projectId: meta.projectId,
         terminalId: meta.terminalId,
         state:
-          runtime.status === "working"
-            ? ("working" as const)
-            : ("waiting" as const),
+          runtime.status === 'working'
+            ? ('working' as const)
+            : ('waiting' as const),
       },
     ];
   });
@@ -153,16 +153,16 @@ function sample(): void {
   pending.push({
     date: localDate(now),
     durationMs,
-    appFocused: document.hasFocus() && document.visibilityState === "visible",
+    appFocused: document.hasFocus() && document.visibilityState === 'visible',
     userActive: now - lastInteractionAt < IDLE_MS,
     activeProjectId:
-      ui.activeView === "workspace"
+      ui.activeView === 'workspace'
         ? projects.activeProjectId
-        : ui.activeView === "agentCanvas"
-          ? "__agent_canvas__"
+        : ui.activeView === 'agentCanvas'
+          ? '__agent_canvas__'
           : null,
     activeTerminalId:
-      ui.activeView === "workspace"
+      ui.activeView === 'workspace'
         ? (ui.activeTerminal?.terminalId ?? null)
         : null,
     agents: currentAgents(),
@@ -178,7 +178,7 @@ async function flush(): Promise<void> {
       await recordActivitySamples(batch);
     } catch (error) {
       pending = [...batch, ...pending].slice(-360);
-      console.error("Failed to persist activity metrics", error);
+      console.error('Failed to persist activity metrics', error);
     }
   });
   return flushChain;
@@ -196,11 +196,11 @@ export function startActivityTracker(): () => void {
     lastInteractionAt = Date.now();
   };
   const events: (keyof WindowEventMap)[] = [
-    "keydown",
-    "pointerdown",
-    "pointermove",
-    "wheel",
-    "touchstart",
+    'keydown',
+    'pointerdown',
+    'pointermove',
+    'wheel',
+    'touchstart',
   ];
   events.forEach((event) =>
     window.addEventListener(event, markInteraction, {
@@ -219,9 +219,9 @@ export function startActivityTracker(): () => void {
     sample();
     void flush();
   };
-  window.addEventListener("blur", flushOnHide);
-  window.addEventListener("beforeunload", flushOnHide);
-  document.addEventListener("visibilitychange", flushOnHide);
+  window.addEventListener('blur', flushOnHide);
+  window.addEventListener('beforeunload', flushOnHide);
+  document.addEventListener('visibilitychange', flushOnHide);
 
   return () => {
     sample();
@@ -236,9 +236,9 @@ export function startActivityTracker(): () => void {
     events.forEach((event) =>
       window.removeEventListener(event, markInteraction, true),
     );
-    window.removeEventListener("blur", flushOnHide);
-    window.removeEventListener("beforeunload", flushOnHide);
-    document.removeEventListener("visibilitychange", flushOnHide);
+    window.removeEventListener('blur', flushOnHide);
+    window.removeEventListener('beforeunload', flushOnHide);
+    document.removeEventListener('visibilitychange', flushOnHide);
     unsubTerminals();
     unsubProjects();
     unsubUi();

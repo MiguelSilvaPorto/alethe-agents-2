@@ -1,14 +1,14 @@
-import { useMemo } from "react";
+import { useMemo } from 'react';
 
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import { useT } from "../../lib/i18n";
-import { Modal } from "./Modal";
-import controls from "./controls.module.css";
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import { useT } from '../../lib/i18n';
+import { Modal } from './Modal';
+import controls from './controls.module.css';
 
 export function SuspendGroupModal() {
   const t = useT();
-  const open = useUiStore((s) => s.openModal === "suspendGroup");
+  const open = useUiStore((s) => s.openModal === 'suspendGroup');
   const context = useUiStore((s) => s.modalContext) as {
     groupId?: string;
   } | null;
@@ -53,18 +53,18 @@ export function SuspendGroupModal() {
     <Modal
       open={open}
       onClose={closeModal}
-      title={t("term.suspendGroupTitle")}
+      title={t('term.suspendGroupTitle')}
       footer={
         <>
           <button type="button" className={controls.btn} onClick={closeModal}>
-            {t("term.cancel")}
+            {t('term.cancel')}
           </button>
           <button
             type="button"
             className={`${controls.btn} ${controls.btnDanger}`}
             onClick={onConfirm}
           >
-            {t("term.suspend")}
+            {t('term.suspend')}
           </button>
         </>
       }
@@ -72,24 +72,24 @@ export function SuspendGroupModal() {
       <p
         style={{
           fontSize: 13,
-          color: "var(--fg)",
+          color: 'var(--fg)',
           lineHeight: 1.5,
-          margin: "0 0 12px",
+          margin: '0 0 12px',
         }}
       >
-        {t("term.suspendConfirmBefore")}{" "}
+        {t('term.suspendConfirmBefore')}{' '}
         <strong style={{ color: group.color }}>{group.name}</strong>
-        {t("term.suspendConfirmAfter")}
+        {t('term.suspendConfirmAfter')}
       </p>
       <p
         style={{
           fontSize: 12,
-          color: "var(--fg-muted)",
+          color: 'var(--fg-muted)',
           lineHeight: 1.5,
           margin: 0,
         }}
       >
-        {t("term.suspendDetail", { count: activeCount, total: terminalCount })}
+        {t('term.suspendDetail', { count: activeCount, total: terminalCount })}
       </p>
     </Modal>
   );

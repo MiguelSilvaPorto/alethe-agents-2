@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 /**
  * Fase 2 do agent canvas — estado compartilhado entre canvas e modal.
@@ -51,14 +51,14 @@ export type AgentNode = {
    * teammate encarna como um subagent com agent_type = NOME do teammate e um
    * agent_id novo — o node é um só, agregando as encarnações.
    */
-  kind: "subagent" | "teammate";
+  kind: 'subagent' | 'teammate';
   /** Nome do time (só teammates). */
   team: string | null;
   /** Quantas encarnações (turnos) já rodaram (só teammates). */
   turns: number;
   /** description do Agent tool call que (provavelmente) spawnou este node. */
   prompt: string | null;
-  status: "running" | "idle" | "done";
+  status: 'running' | 'idle' | 'done';
   startedAt: number;
   endedAt: number | null;
   result: string | null;
@@ -70,17 +70,17 @@ export type TeamTask = {
   id: string;
   subject: string;
   description: string;
-  status: "pending" | "in_progress" | "completed";
+  status: 'pending' | 'in_progress' | 'completed';
   owner: string | null;
 };
 
 /** Cap por node — feed é observabilidade, não histórico infinito. */
 const FEED_CAP = 300;
 
-const SPAWNER_TOOLS = new Set(["Agent", "Task"]);
+const SPAWNER_TOOLS = new Set(['Agent', 'Task']);
 
 function str(value: unknown): string | null {
-  return typeof value === "string" && value.length > 0 ? value : null;
+  return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
 /** Resumo de uma linha por tool call, pro feed do card/modal. */
@@ -88,7 +88,7 @@ export function summarizeTool(
   toolName: string,
   input?: Record<string, unknown>,
 ): string {
-  if (!input) return "";
+  if (!input) return '';
   const basename = (p: string) => p.split(/[\\/]/).pop() ?? p;
   const clip = (s: string, n = 80) => (s.length > n ? `${s.slice(0, n)}…` : s);
 
@@ -96,25 +96,25 @@ export function summarizeTool(
   if (filePath) return basename(filePath);
 
   switch (toolName) {
-    case "Bash":
-    case "PowerShell":
-      return clip(str(input.command) ?? "");
-    case "Grep":
-      return clip(str(input.pattern) ?? "");
-    case "Glob":
-      return clip(str(input.pattern) ?? "");
-    case "WebFetch":
-      return clip(str(input.url) ?? "");
-    case "WebSearch":
-      return clip(str(input.query) ?? "");
-    case "Agent":
-    case "Task":
-      return clip(str(input.description) ?? "");
+    case 'Bash':
+    case 'PowerShell':
+      return clip(str(input.command) ?? '');
+    case 'Grep':
+      return clip(str(input.pattern) ?? '');
+    case 'Glob':
+      return clip(str(input.pattern) ?? '');
+    case 'WebFetch':
+      return clip(str(input.url) ?? '');
+    case 'WebSearch':
+      return clip(str(input.query) ?? '');
+    case 'Agent':
+    case 'Task':
+      return clip(str(input.description) ?? '');
     default: {
       const firstString = Object.values(input).find(
-        (v) => typeof v === "string" && v.length > 0,
+        (v) => typeof v === 'string' && v.length > 0,
       );
-      return firstString ? clip(firstString as string) : "";
+      return firstString ? clip(firstString as string) : '';
     }
   }
 }
@@ -152,24 +152,24 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
     const event = raw.hook_event_name;
     set({ lastEventAt: Date.now() });
 
-    if (event === "SubagentStart") {
+    if (event === 'SubagentStart') {
       const id = raw.agent_id;
       if (!id) {
         console.warn(
-          "[agentCanvasStore] SubagentStart sem agent_id, ignorado:",
+          '[agentCanvasStore] SubagentStart sem agent_id, ignorado:',
           raw,
         );
         return;
       }
       set((s) => {
         if (s.nodes.some((n) => n.id === id)) return s;
-        const agentType = raw.agent_type ?? "unknown";
+        const agentType = raw.agent_type ?? 'unknown';
 
         // Teammate in-process: cada turno encarna como subagent com
         // agent_type = nome do teammate. Se já existe node teammate com esse
         // nome, é uma encarnação dele — não cria card novo.
         const teammateIdx = s.nodes.findIndex(
-          (n) => n.kind === "teammate" && n.agentType === agentType,
+          (n) => n.kind === 'teammate' && n.agentType === agentType,
         );
         if (teammateIdx !== -1) {
           console.log(
@@ -178,7 +178,7 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
           const nodes = [...s.nodes];
           nodes[teammateIdx] = {
             ...nodes[teammateIdx],
-            status: "running",
+            status: 'running',
             turns: nodes[teammateIdx].turns + 1,
           };
           return {
@@ -191,7 +191,7 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
         const queue = s.pendingPrompts[agentType] ?? [];
         const pending = queue[0] ?? null;
         console.log(
-          `[agentCanvasStore] node criado id=${id} type=${agentType} prompt=${pending?.description ?? "(sem)"}`,
+          `[agentCanvasStore] node criado id=${id} type=${agentType} prompt=${pending?.description ?? '(sem)'}`,
         );
         return {
           nodes: [
@@ -199,11 +199,11 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
             {
               id,
               agentType,
-              kind: "subagent",
+              kind: 'subagent',
               team: null,
               turns: 0,
               prompt: pending?.description ?? pending?.prompt ?? null,
-              status: "running",
+              status: 'running',
               startedAt: Date.now(),
               endedAt: null,
               result: null,
@@ -219,7 +219,7 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
       return;
     }
 
-    if (event === "SubagentStop") {
+    if (event === 'SubagentStop') {
       const id = raw.agent_id;
       if (!id) return;
       set((s) => {
@@ -228,17 +228,17 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
         const teammateNodeId = s.incarnations[id];
         const idx = s.nodes.findIndex((n) => n.id === (teammateNodeId ?? id));
         if (idx === -1) {
-          console.warn("[agentCanvasStore] SubagentStop órfão:", id);
+          console.warn('[agentCanvasStore] SubagentStop órfão:', id);
           return s;
         }
-        const isTeammate = s.nodes[idx].kind === "teammate";
+        const isTeammate = s.nodes[idx].kind === 'teammate';
         console.log(
-          `[agentCanvasStore] ${isTeammate ? "teammate idle" : "node done"} id=${id}`,
+          `[agentCanvasStore] ${isTeammate ? 'teammate idle' : 'node done'} id=${id}`,
         );
         const nodes = [...s.nodes];
         nodes[idx] = {
           ...nodes[idx],
-          status: isTeammate ? "idle" : "done",
+          status: isTeammate ? 'idle' : 'done',
           endedAt: Date.now(),
           result: raw.last_assistant_message ?? nodes[idx].result,
           transcriptPath:
@@ -249,20 +249,20 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
       return;
     }
 
-    if (event === "PreToolUse") {
+    if (event === 'PreToolUse') {
       const agentId = raw.agent_id;
       const input = raw.tool_input ?? {};
 
       // TaskUpdate (lead OU teammate) → estado da task list.
-      if (raw.tool_name === "TaskUpdate") {
+      if (raw.tool_name === 'TaskUpdate') {
         const taskId = str(input.taskId) ?? str(input.task_id);
         if (taskId) {
           set((s) => {
             const prev = s.tasks[taskId];
             const status =
-              (str(input.status) as TeamTask["status"] | null) ??
+              (str(input.status) as TeamTask['status'] | null) ??
               prev?.status ??
-              "pending";
+              'pending';
             return {
               tasks: {
                 ...s.tasks,
@@ -270,7 +270,7 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
                   id: taskId,
                   subject:
                     prev?.subject ?? str(input.subject) ?? `task ${taskId}`,
-                  description: prev?.description ?? "",
+                  description: prev?.description ?? '',
                   status,
                   owner: str(input.owner) ?? prev?.owner ?? null,
                 },
@@ -283,9 +283,9 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
 
       if (!agentId) {
         // Sessão principal (lead).
-        if (raw.tool_name === "TeamCreate") {
+        if (raw.tool_name === 'TeamCreate') {
           const teamName = str(input.team_name);
-          console.log("[agentCanvasStore] TeamCreate:", teamName);
+          console.log('[agentCanvasStore] TeamCreate:', teamName);
           if (teamName) set({ teamName });
           return;
         }
@@ -308,11 +308,11 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
                   {
                     id: nodeId,
                     agentType: teammateName,
-                    kind: "teammate",
+                    kind: 'teammate',
                     team: teamName,
                     turns: 0,
                     prompt: str(input.prompt) ?? str(input.description),
-                    status: "running",
+                    status: 'running',
                     startedAt: Date.now(),
                     endedAt: null,
                     result: null,
@@ -326,7 +326,7 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
           }
           // Spawn de subagent comum: guarda description/prompt pro próximo
           // Start do mesmo tipo casar.
-          const subagentType = str(input.subagent_type) ?? "general-purpose";
+          const subagentType = str(input.subagent_type) ?? 'general-purpose';
           set((s) => ({
             pendingPrompts: {
               ...s.pendingPrompts,
@@ -345,8 +345,8 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
 
       const toolEvent: ToolEvent = {
         toolUseId: raw.tool_use_id ?? `${Date.now()}-${Math.random()}`,
-        toolName: raw.tool_name ?? "?",
-        summary: summarizeTool(raw.tool_name ?? "", raw.tool_input),
+        toolName: raw.tool_name ?? '?',
+        summary: summarizeTool(raw.tool_name ?? '', raw.tool_input),
         ts: Date.now(),
       };
       set((s) => {
@@ -365,12 +365,12 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
               ...s.nodes,
               {
                 id: agentId,
-                agentType: raw.agent_type ?? "unknown",
-                kind: "subagent",
+                agentType: raw.agent_type ?? 'unknown',
+                kind: 'subagent',
                 team: null,
                 turns: 0,
                 prompt: null,
-                status: "running",
+                status: 'running',
                 startedAt: Date.now(),
                 endedAt: null,
                 result: null,
@@ -388,24 +388,24 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
       return;
     }
 
-    if (event === "TeammateIdle") {
+    if (event === 'TeammateIdle') {
       const name = raw.teammate_name;
       if (!name) return;
       set((s) => {
         const idx = s.nodes.findIndex(
-          (n) => n.kind === "teammate" && n.agentType === name,
+          (n) => n.kind === 'teammate' && n.agentType === name,
         );
         if (idx === -1) return s;
-        if (s.nodes[idx].status === "idle") return s;
+        if (s.nodes[idx].status === 'idle') return s;
         console.log(`[agentCanvasStore] TeammateIdle: ${name}`);
         const nodes = [...s.nodes];
-        nodes[idx] = { ...nodes[idx], status: "idle" };
+        nodes[idx] = { ...nodes[idx], status: 'idle' };
         return { nodes };
       });
       return;
     }
 
-    if (event === "TaskCreated") {
+    if (event === 'TaskCreated') {
       const id = raw.task_id;
       if (!id) return;
       console.log(`[agentCanvasStore] TaskCreated #${id}: ${raw.task_subject}`);
@@ -415,8 +415,8 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
           [id]: {
             id,
             subject: raw.task_subject ?? `task ${id}`,
-            description: raw.task_description ?? "",
-            status: s.tasks[id]?.status ?? "pending",
+            description: raw.task_description ?? '',
+            status: s.tasks[id]?.status ?? 'pending',
             owner: s.tasks[id]?.owner ?? null,
           },
         },
@@ -424,12 +424,12 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
       return;
     }
 
-    if (event === "TaskCompleted") {
+    if (event === 'TaskCompleted') {
       const id = raw.task_id;
       if (!id) return;
       // Dispara repetido (3x por task no smoke test) — upsert dedupa sozinho.
       set((s) => {
-        if (s.tasks[id]?.status === "completed") return s;
+        if (s.tasks[id]?.status === 'completed') return s;
         console.log(
           `[agentCanvasStore] TaskCompleted #${id} por ${raw.teammate_name}`,
         );
@@ -440,8 +440,8 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
               id,
               subject: raw.task_subject ?? s.tasks[id]?.subject ?? `task ${id}`,
               description:
-                raw.task_description ?? s.tasks[id]?.description ?? "",
-              status: "completed",
+                raw.task_description ?? s.tasks[id]?.description ?? '',
+              status: 'completed',
               owner: raw.teammate_name ?? s.tasks[id]?.owner ?? null,
             },
           },
@@ -451,16 +451,16 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
     }
 
     // PostToolUse: registra resultado da ferramenta no feed do nó.
-    if (event === "PostToolUse") {
+    if (event === 'PostToolUse') {
       const r = raw as any;
       const agentId = r.agent_id;
       if (!agentId) return;
 
-      const toolName = r.tool_name ?? "unknown";
+      const toolName = r.tool_name ?? 'unknown';
       const result = r.tool_result ?? {};
       const error = result.is_error ? result.error : null;
-      const summary = summarizeTool(r.tool_name ?? "", r.tool_input ?? {});
-      const status = error ? "error" : "success";
+      const summary = summarizeTool(r.tool_name ?? '', r.tool_input ?? {});
+      const status = error ? 'error' : 'success';
 
       set((s) => {
         const idx = s.nodes.findIndex(
@@ -477,9 +477,9 @@ export const useAgentCanvasStore = create<AgentCanvasState>((set, get) => ({
         const feed = [...(node.feed ?? [])];
         feed.push({
           ts: Date.now(),
-          kind: "tool_result",
+          kind: 'tool_result',
           toolName,
-          summary: `${summary} → ${status}${error ? `: ${error}` : ""}`,
+          summary: `${summary} → ${status}${error ? `: ${error}` : ''}`,
           error,
         });
         if (feed.length > 300) feed.splice(0, feed.length - 300);

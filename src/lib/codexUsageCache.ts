@@ -1,4 +1,4 @@
-import { getCodexUsage, type CodexUsage } from "./tauri";
+import { getCodexUsage, type CodexUsage } from './tauri';
 
 const TTL_MS = 60_000;
 

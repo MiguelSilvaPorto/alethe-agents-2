@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { intlLocale, useT, type Locale, type TFunction } from "../../lib/i18n";
+import { intlLocale, useT, type Locale, type TFunction } from '../../lib/i18n';
 import {
   listClaudeSessions,
   restartPty,
   type ClaudeSessionMeta,
-} from "../../lib/tauri";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { Modal } from "./Modal";
-import styles from "./ClaudeHistoryModal.module.css";
+} from '../../lib/tauri';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { Modal } from './Modal';
+import styles from './ClaudeHistoryModal.module.css';
 
 type Props = {
   open: boolean;
@@ -24,13 +24,13 @@ type Props = {
 
 function formatRelative(ms: number, t: TFunction, language: Locale): string {
   const diff = Date.now() - ms;
-  if (diff < 60_000) return t("mod.justNow");
+  if (diff < 60_000) return t('mod.justNow');
   if (diff < 3_600_000)
-    return t("mod.minutesAgo", { count: Math.floor(diff / 60_000) });
+    return t('mod.minutesAgo', { count: Math.floor(diff / 60_000) });
   if (diff < 86_400_000)
-    return t("mod.hoursAgo", { count: Math.floor(diff / 3_600_000) });
+    return t('mod.hoursAgo', { count: Math.floor(diff / 3_600_000) });
   const days = Math.floor(diff / 86_400_000);
-  if (days < 30) return t("mod.daysAgo", { count: days });
+  if (days < 30) return t('mod.daysAgo', { count: days });
   return new Date(ms).toLocaleDateString(intlLocale(language));
 }
 
@@ -56,7 +56,7 @@ export function ClaudeHistoryModal({
   const [sessions, setSessions] = useState<ClaudeSessionMeta[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState('');
 
   useEffect(() => {
     if (!open || !cwd) return;
@@ -87,24 +87,24 @@ export function ClaudeHistoryModal({
       const old = extraArgs ?? [];
       const filtered: string[] = [];
       for (let i = 0; i < old.length; i++) {
-        if (old[i] === "--resume") {
+        if (old[i] === '--resume') {
           i++; // pula o sessionId antigo
           continue;
         }
         filtered.push(old[i]);
       }
-      const newExtraArgs = [...filtered, "--resume", sessionId];
+      const newExtraArgs = [...filtered, '--resume', sessionId];
 
       await restartPty({
         id: ptyId,
         cols: 80,
         rows: 24,
-        command: agentType === "shell" ? undefined : agentType,
+        command: agentType === 'shell' ? undefined : agentType,
         cwd,
         extraArgs: newExtraArgs,
       });
       window.dispatchEvent(
-        new CustomEvent("alethe:terminal-resize-request", {
+        new CustomEvent('alethe:terminal-resize-request', {
           detail: { ptyId },
         }),
       );
@@ -116,7 +116,7 @@ export function ClaudeHistoryModal({
 
       onClose();
     } catch (err) {
-      setError(t("mod.resumeFailed", { error: String(err) }));
+      setError(t('mod.resumeFailed', { error: String(err) }));
     } finally {
       setBusyId(null);
     }
@@ -126,8 +126,8 @@ export function ClaudeHistoryModal({
     if (!filter.trim()) return true;
     const needle = filter.toLowerCase();
     return (
-      (s.title ?? "").toLowerCase().includes(needle) ||
-      (s.first_user_prompt ?? "").toLowerCase().includes(needle) ||
+      (s.title ?? '').toLowerCase().includes(needle) ||
+      (s.first_user_prompt ?? '').toLowerCase().includes(needle) ||
       s.id.toLowerCase().includes(needle)
     );
   });
@@ -136,15 +136,15 @@ export function ClaudeHistoryModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={t("mod.sessionHistory")}
+      title={t('mod.sessionHistory')}
       width={520}
     >
-      <div className={styles.cwd}>{cwd || t("mod.noCwd")}</div>
+      <div className={styles.cwd}>{cwd || t('mod.noCwd')}</div>
 
       <input
         type="text"
         className={styles.search}
-        placeholder={t("mod.filterPlaceholder")}
+        placeholder={t('mod.filterPlaceholder')}
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
         data-autofocus
@@ -154,19 +154,19 @@ export function ClaudeHistoryModal({
 
       <div className={styles.list}>
         {sessions === null ? (
-          <div className={styles.empty}>{t("mod.loadingSessions")}</div>
+          <div className={styles.empty}>{t('mod.loadingSessions')}</div>
         ) : filtered && filtered.length === 0 ? (
           <div className={styles.empty}>
             {sessions.length === 0
-              ? t("mod.noSessionsForCwd")
-              : t("mod.noSessionsMatchFilter")}
+              ? t('mod.noSessionsForCwd')
+              : t('mod.noSessionsMatchFilter')}
           </div>
         ) : (
           filtered?.map((session) => {
             const titleText =
               session.title ||
               session.first_user_prompt ||
-              t("mod.sessionFallback", { id: session.id.slice(0, 8) });
+              t('mod.sessionFallback', { id: session.id.slice(0, 8) });
             return (
               <div key={session.id} className={styles.item}>
                 <div className={styles.itemMain}>
@@ -187,7 +187,7 @@ export function ClaudeHistoryModal({
                     </span>
                     <span>·</span>
                     <span>
-                      {t("mod.msgsCount", { count: session.message_count })}
+                      {t('mod.msgsCount', { count: session.message_count })}
                     </span>
                     <span>·</span>
                     <span>{formatSize(session.size_bytes)}</span>
@@ -199,9 +199,9 @@ export function ClaudeHistoryModal({
                     className={styles.actionBtn}
                     disabled={busyId !== null}
                     onClick={() => void resumeHere(session.id)}
-                    title={t("mod.resumeHereTooltip")}
+                    title={t('mod.resumeHereTooltip')}
                   >
-                    {busyId === session.id ? "…" : t("mod.resumeHere")}
+                    {busyId === session.id ? '…' : t('mod.resumeHere')}
                   </button>
                 </div>
               </div>

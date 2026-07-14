@@ -1,27 +1,27 @@
-import * as Dialog from "@radix-ui/react-dialog";
-import { Check, GitBranch, Globe, Palette, Users } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import * as Dialog from '@radix-ui/react-dialog';
+import { Check, GitBranch, Globe, Palette, Users } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import aletheLogo from "../../assets/alethe-logo.png";
-import { LOCALES, useT } from "../../lib/i18n";
-import { getProfileInitial } from "../../lib/profile";
-import { THEME_OPTIONS, themeDescription, themeLabel } from "../../lib/themes";
-import type { AgentType } from "../../lib/types";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import { AgentIcon } from "../icons/AgentIcons";
-import { ImageInput } from "./ImageInput";
-import styles from "./OnboardingModal.module.css";
+import aletheLogo from '../../assets/alethe-logo.png';
+import { LOCALES, useT } from '../../lib/i18n';
+import { getProfileInitial } from '../../lib/profile';
+import { THEME_OPTIONS, themeDescription, themeLabel } from '../../lib/themes';
+import type { AgentType } from '../../lib/types';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import { AgentIcon } from '../icons/AgentIcons';
+import { ImageInput } from './ImageInput';
+import styles from './OnboardingModal.module.css';
 
 const STEP_COUNT = 4;
 
 const AGENTS: { id: AgentType; label: string }[] = [
-  { id: "shell", label: "Shell" },
-  { id: "claude", label: "Claude" },
-  { id: "codex", label: "Codex" },
-  { id: "opencode", label: "OpenCode" },
-  { id: "freebuff", label: "Freebuff" },
-  { id: "mimo", label: "Mimo" },
+  { id: 'shell', label: 'Shell' },
+  { id: 'claude', label: 'Claude' },
+  { id: 'codex', label: 'Codex' },
+  { id: 'opencode', label: 'OpenCode' },
+  { id: 'freebuff', label: 'Freebuff' },
+  { id: 'mimo', label: 'Mimo' },
 ];
 
 export function OnboardingModal() {
@@ -54,23 +54,23 @@ export function OnboardingModal() {
   const stepMeta = useMemo(
     () => [
       {
-        label: t("onboarding.profileStep"),
-        hint: t("onboarding.profileStepHint"),
+        label: t('onboarding.profileStep'),
+        hint: t('onboarding.profileStepHint'),
         icon: Globe,
       },
       {
-        label: t("onboarding.themeStep"),
-        hint: t("onboarding.themeStepHint"),
+        label: t('onboarding.themeStep'),
+        hint: t('onboarding.themeStepHint'),
         icon: Palette,
       },
       {
-        label: t("onboarding.agentsStep"),
-        hint: t("onboarding.agentsStepHint"),
+        label: t('onboarding.agentsStep'),
+        hint: t('onboarding.agentsStepHint'),
         icon: Users,
       },
       {
-        label: t("onboarding.gitStep"),
-        hint: t("onboarding.gitStepHint"),
+        label: t('onboarding.gitStep'),
+        hint: t('onboarding.gitStepHint'),
         icon: GitBranch,
       },
     ],
@@ -92,7 +92,7 @@ export function OnboardingModal() {
 
   useEffect(() => {
     const node =
-      contentRef.current?.querySelector<HTMLElement>("[data-autofocus]");
+      contentRef.current?.querySelector<HTMLElement>('[data-autofocus]');
     node?.focus();
   }, [step]);
 
@@ -110,7 +110,7 @@ export function OnboardingModal() {
       profileImageUrl: trimmedPhotoUrl,
     });
     window.setTimeout(() => {
-      openModal("newProject");
+      openModal('newProject');
     }, 0);
   };
 
@@ -136,7 +136,7 @@ export function OnboardingModal() {
             event.preventDefault();
             const node =
               contentRef.current?.querySelector<HTMLElement>(
-                "[data-autofocus]",
+                '[data-autofocus]',
               );
             node?.focus();
           }}
@@ -155,9 +155,9 @@ export function OnboardingModal() {
                     draggable={false}
                   />
                 </div>
-                <div className={styles.eyebrow}>{t("onboarding.kicker")}</div>
-                <h1 className={styles.headline}>{t("onboarding.title")}</h1>
-                <p className={styles.subcopy}>{t("onboarding.subtitle")}</p>
+                <div className={styles.eyebrow}>{t('onboarding.kicker')}</div>
+                <h1 className={styles.headline}>{t('onboarding.title')}</h1>
+                <p className={styles.subcopy}>{t('onboarding.subtitle')}</p>
               </div>
 
               <div className={styles.stepList}>
@@ -170,11 +170,11 @@ export function OnboardingModal() {
                       key={item.label}
                       className={[
                         styles.stepItem,
-                        active ? styles.stepItemActive : "",
-                        done ? styles.stepItemDone : "",
+                        active ? styles.stepItemActive : '',
+                        done ? styles.stepItemDone : '',
                       ]
                         .filter(Boolean)
-                        .join(" ")}
+                        .join(' ')}
                     >
                       <div className={styles.stepBadge}>
                         {done ? <Check size={12} /> : <Icon size={12} />}
@@ -188,17 +188,17 @@ export function OnboardingModal() {
                 })}
               </div>
 
-              <p className={styles.localNote}>{t("onboarding.localNote")}</p>
+              <p className={styles.localNote}>{t('onboarding.localNote')}</p>
             </aside>
 
             <section className={styles.main}>
               <header className={styles.mainHeader}>
                 <div className={styles.progressMeta}>
                   <div className={styles.progressLabel}>
-                    {t("onboarding.progressLabel")}
+                    {t('onboarding.progressLabel')}
                   </div>
                   <div className={styles.progressStep}>
-                    {t("onboarding.step", {
+                    {t('onboarding.step', {
                       current: step + 1,
                       total: STEP_COUNT,
                     })}
@@ -218,10 +218,10 @@ export function OnboardingModal() {
                     <>
                       <div className={styles.sectionIntro}>
                         <h2 className={styles.sectionTitle}>
-                          {t("onboarding.profileTitle")}
+                          {t('onboarding.profileTitle')}
                         </h2>
                         <p className={styles.sectionSubtitle}>
-                          {t("onboarding.profileSubtitle")}
+                          {t('onboarding.profileSubtitle')}
                         </p>
                       </div>
 
@@ -248,10 +248,10 @@ export function OnboardingModal() {
 
                           <div className={styles.previewText}>
                             <div className={styles.previewName}>
-                              {trimmedName || t("onboarding.namePlaceholder")}
+                              {trimmedName || t('onboarding.namePlaceholder')}
                             </div>
                             <div className={styles.previewHint}>
-                              {t("onboarding.profilePreviewHint")}
+                              {t('onboarding.profilePreviewHint')}
                             </div>
                           </div>
                         </div>
@@ -261,9 +261,9 @@ export function OnboardingModal() {
                             <div className={styles.fieldLabel}>
                               <Globe
                                 size={12}
-                                style={{ verticalAlign: "-2px" }}
-                              />{" "}
-                              {t("language.title")}
+                                style={{ verticalAlign: '-2px' }}
+                              />{' '}
+                              {t('language.title')}
                             </div>
                             <div className={styles.languageGrid}>
                               {LOCALES.map((locale) => {
@@ -275,10 +275,10 @@ export function OnboardingModal() {
                                     type="button"
                                     className={[
                                       styles.languageCard,
-                                      active ? styles.languageCardActive : "",
+                                      active ? styles.languageCardActive : '',
                                     ]
                                       .filter(Boolean)
-                                      .join(" ")}
+                                      .join(' ')}
                                     onClick={() => setLanguage(locale.id)}
                                   >
                                     <span className={styles.languageCardBody}>
@@ -288,10 +288,10 @@ export function OnboardingModal() {
                                         {locale.nativeName}
                                       </span>
                                       <span className={styles.languageCardMeta}>
-                                        {locale.id === "en"
-                                          ? t("onboarding.languageEnglishHint")
+                                        {locale.id === 'en'
+                                          ? t('onboarding.languageEnglishHint')
                                           : t(
-                                              "onboarding.languagePortugueseHint",
+                                              'onboarding.languagePortugueseHint',
                                             )}
                                       </span>
                                     </span>
@@ -312,7 +312,7 @@ export function OnboardingModal() {
                               className={styles.fieldLabel}
                               htmlFor="onboarding-name"
                             >
-                              {t("onboarding.name")}
+                              {t('onboarding.name')}
                             </label>
                             <input
                               id="onboarding-name"
@@ -320,18 +320,18 @@ export function OnboardingModal() {
                               className={styles.input}
                               value={name}
                               onChange={(event) => setName(event.target.value)}
-                              placeholder={t("onboarding.namePlaceholder")}
+                              placeholder={t('onboarding.namePlaceholder')}
                               maxLength={60}
                             />
                             <div className={styles.inputHint}>
-                              {t("onboarding.nameHint")}
+                              {t('onboarding.nameHint')}
                             </div>
                           </div>
 
                           <div className={styles.field}>
                             <div className={styles.toggleRow}>
                               <div className={styles.fieldLabel}>
-                                {t("onboarding.photoTitle")}
+                                {t('onboarding.photoTitle')}
                               </div>
                               <button
                                 type="button"
@@ -339,23 +339,23 @@ export function OnboardingModal() {
                                 onClick={() => setShowPhoto((value) => !value)}
                               >
                                 {showPhoto
-                                  ? t("onboarding.photoHide")
-                                  : t("onboarding.photoShow")}
+                                  ? t('onboarding.photoHide')
+                                  : t('onboarding.photoShow')}
                               </button>
                             </div>
                             <div className={styles.inputHint}>
-                              {t("onboarding.photoHint")}
+                              {t('onboarding.photoHint')}
                             </div>
                             {showPhoto ? (
                               <ImageInput
-                                label={t("prefs.photoPlaceholder")}
+                                label={t('prefs.photoPlaceholder')}
                                 value={photoUrl}
                                 onChange={(value) => {
                                   setPhotoUrl(value);
                                   setImgFailed(false);
                                 }}
                                 placeholder="https://..."
-                                hint={t("image.urlOrUpload")}
+                                hint={t('image.urlOrUpload')}
                               />
                             ) : null}
                           </div>
@@ -368,10 +368,10 @@ export function OnboardingModal() {
                     <>
                       <div className={styles.sectionIntro}>
                         <h2 className={styles.sectionTitle}>
-                          {t("onboarding.themeTitle")}
+                          {t('onboarding.themeTitle')}
                         </h2>
                         <p className={styles.sectionSubtitle}>
-                          {t("onboarding.themeSubtitle")}
+                          {t('onboarding.themeSubtitle')}
                         </p>
                       </div>
 
@@ -385,12 +385,12 @@ export function OnboardingModal() {
                               type="button"
                               className={[
                                 styles.themeOption,
-                                active ? styles.themeOptionActive : "",
+                                active ? styles.themeOptionActive : '',
                               ]
                                 .filter(Boolean)
-                                .join(" ")}
+                                .join(' ')}
                               onClick={() => setUiTheme(theme.id)}
-                              data-autofocus={active ? "true" : undefined}
+                              data-autofocus={active ? 'true' : undefined}
                             >
                               <div className={styles.themeSwatches}>
                                 <span style={{ background: bg }} />
@@ -422,18 +422,18 @@ export function OnboardingModal() {
                     <>
                       <div className={styles.sectionIntro}>
                         <h2 className={styles.sectionTitle}>
-                          {t("onboarding.agentsTitle")}
+                          {t('onboarding.agentsTitle')}
                         </h2>
                         <p className={styles.sectionSubtitle}>
-                          {t("onboarding.agentsSubtitle")}
+                          {t('onboarding.agentsSubtitle')}
                         </p>
                       </div>
 
                       <div className={styles.agentSummary}>
                         <span>
-                          {t("onboarding.agentsCount", { count: enabledCount })}
+                          {t('onboarding.agentsCount', { count: enabledCount })}
                         </span>
-                        <span>{t("onboarding.agentsCountHint")}</span>
+                        <span>{t('onboarding.agentsCountHint')}</span>
                       </div>
 
                       <div className={styles.agentGrid}>
@@ -447,12 +447,12 @@ export function OnboardingModal() {
                               disabled={lockSingle}
                               className={[
                                 styles.agentOption,
-                                active ? styles.agentOptionActive : "",
+                                active ? styles.agentOptionActive : '',
                               ]
                                 .filter(Boolean)
-                                .join(" ")}
+                                .join(' ')}
                               onClick={() => setAgentEnabled(agent.id, !active)}
-                              data-autofocus={active ? "true" : undefined}
+                              data-autofocus={active ? 'true' : undefined}
                             >
                               <div className={styles.agentIconWrap}>
                                 <AgentIcon
@@ -491,10 +491,10 @@ export function OnboardingModal() {
                     <>
                       <div className={styles.sectionIntro}>
                         <h2 className={styles.sectionTitle}>
-                          {t("onboarding.gitTitle")}
+                          {t('onboarding.gitTitle')}
                         </h2>
                         <p className={styles.sectionSubtitle}>
-                          {t("onboarding.gitSubtitle")}
+                          {t('onboarding.gitSubtitle')}
                         </p>
                       </div>
                       <div className={styles.agentGrid}>
@@ -506,14 +506,14 @@ export function OnboardingModal() {
                               type="button"
                               className={[
                                 styles.agentOption,
-                                active ? styles.agentOptionActive : "",
+                                active ? styles.agentOptionActive : '',
                               ]
                                 .filter(Boolean)
-                                .join(" ")}
+                                .join(' ')}
                               onClick={() =>
                                 setPreferences({ showGitControl: enabled })
                               }
-                              data-autofocus={active ? "true" : undefined}
+                              data-autofocus={active ? 'true' : undefined}
                             >
                               <div className={styles.agentIconWrap}>
                                 <GitBranch size={20} />
@@ -522,8 +522,8 @@ export function OnboardingModal() {
                                 <div className={styles.agentNameRow}>
                                   <span className={styles.agentName}>
                                     {enabled
-                                      ? t("onboarding.gitEnable")
-                                      : t("onboarding.gitDisable")}
+                                      ? t('onboarding.gitEnable')
+                                      : t('onboarding.gitDisable')}
                                   </span>
                                   {active ? (
                                     <Check
@@ -534,8 +534,8 @@ export function OnboardingModal() {
                                 </div>
                                 <div className={styles.agentDesc}>
                                   {enabled
-                                    ? t("onboarding.gitEnableDesc")
-                                    : t("onboarding.gitDisableDesc")}
+                                    ? t('onboarding.gitEnableDesc')
+                                    : t('onboarding.gitDisableDesc')}
                                 </div>
                               </div>
                             </button>
@@ -549,7 +549,7 @@ export function OnboardingModal() {
 
               <footer className={styles.footer}>
                 <div className={styles.footerLeft}>
-                  {t("onboarding.footerNote")}
+                  {t('onboarding.footerNote')}
                 </div>
                 <div className={styles.footerActions}>
                   {step > 0 ? (
@@ -558,7 +558,7 @@ export function OnboardingModal() {
                       className={`${styles.button} ${styles.buttonSecondary}`}
                       onClick={back}
                     >
-                      {t("common.back")}
+                      {t('common.back')}
                     </button>
                   ) : null}
                   <button
@@ -567,7 +567,7 @@ export function OnboardingModal() {
                     onClick={next}
                     disabled={!canProceed}
                   >
-                    {isLast ? t("onboarding.finish") : t("common.next")}
+                    {isLast ? t('onboarding.finish') : t('common.next')}
                   </button>
                 </div>
               </footer>

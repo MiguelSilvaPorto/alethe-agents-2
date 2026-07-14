@@ -1,14 +1,14 @@
-import * as Dialog from "@radix-ui/react-dialog";
-import { Minus, Plus, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import * as Dialog from '@radix-ui/react-dialog';
+import { Minus, Plus, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { autoGridLayout, reconcileGridLayout } from "../../lib/gridLayout";
-import { useT } from "../../lib/i18n";
-import type { GridCell, GridLayout } from "../../lib/types";
-import { useProjectsStore } from "../../stores/projectsStore";
-import { useUiStore } from "../../stores/uiStore";
-import controls from "./controls.module.css";
-import styles from "./LayoutDesignerModal.module.css";
+import { autoGridLayout, reconcileGridLayout } from '../../lib/gridLayout';
+import { useT } from '../../lib/i18n';
+import type { GridCell, GridLayout } from '../../lib/types';
+import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
+import controls from './controls.module.css';
+import styles from './LayoutDesignerModal.module.css';
 
 type DesignerChild = {
   id: string;
@@ -19,19 +19,19 @@ type DesignerChild = {
 };
 
 type Context =
-  | { kind: "project"; id: string }
-  | { kind: "group"; id: string }
-  | { kind: "workspace" };
+  | { kind: 'project'; id: string }
+  | { kind: 'group'; id: string }
+  | { kind: 'workspace' };
 
 export function LayoutDesignerModal() {
-  const open = useUiStore((s) => s.openModal === "layoutDesigner");
+  const open = useUiStore((s) => s.openModal === 'layoutDesigner');
   const context = useUiStore((s) => s.modalContext) as Context | null;
   const closeModal = useUiStore((s) => s.closeModal);
 
   if (!open || !context) return null;
   const k =
-    context.kind === "workspace"
-      ? "workspace"
+    context.kind === 'workspace'
+      ? 'workspace'
       : `${context.kind}:${context.id}`;
   return <DesignerInner key={k} context={context} onClose={closeModal} />;
 }
@@ -45,12 +45,12 @@ function DesignerInner({
 }) {
   const t = useT();
   const project = useProjectsStore((s) =>
-    context.kind === "project"
+    context.kind === 'project'
       ? s.projects.find((p) => p.id === context.id)
       : null,
   );
   const group = useProjectsStore((s) =>
-    context.kind === "group" ? s.groups.find((g) => g.id === context.id) : null,
+    context.kind === 'group' ? s.groups.find((g) => g.id === context.id) : null,
   );
   const projects = useProjectsStore((s) => s.projects);
   const containers = useProjectsStore((s) => s.workspace.containers);
@@ -66,49 +66,49 @@ function DesignerInner({
   const [title, children, currentLayout] = useMemo<
     [string, DesignerChild[], GridLayout | undefined]
   >(() => {
-    if (context.kind === "project" && project) {
+    if (context.kind === 'project' && project) {
       return [
-        t("mod.layoutTitleProject", { name: project.name }),
+        t('mod.layoutTitleProject', { name: project.name }),
         project.terminals.map((term) => ({
           id: term.id,
           label: term.name,
           color: project.color,
-          hint: term.tabs[0]?.type ?? "shell",
+          hint: term.tabs[0]?.type ?? 'shell',
         })),
         project.gridLayout,
       ];
     }
-    if (context.kind === "group" && group) {
+    if (context.kind === 'group' && group) {
       const groupProjects = group.projectIds
         .map((id) => projects.find((p) => p.id === id))
         .filter((p): p is NonNullable<typeof p> => Boolean(p));
       return [
-        t("mod.layoutTitleGroup", { name: group.name }),
+        t('mod.layoutTitleGroup', { name: group.name }),
         groupProjects.map((p) => ({
           id: p.id,
           label: p.name,
           color: p.color,
-          hint: t("mod.terminalCount", { count: p.terminals.length }),
+          hint: t('mod.terminalCount', { count: p.terminals.length }),
         })),
         group.gridLayout,
       ];
     }
-    if (context.kind === "workspace") {
+    if (context.kind === 'workspace') {
       const openProjects = containers
         .map((c) => projects.find((p) => p.id === c.projectId))
         .filter((p): p is NonNullable<typeof p> => Boolean(p));
       return [
-        t("mod.layoutTitleWorkspace"),
+        t('mod.layoutTitleWorkspace'),
         openProjects.map((p) => ({
           id: p.id,
           label: p.name,
           color: p.color,
-          hint: t("mod.terminalCount", { count: p.terminals.length }),
+          hint: t('mod.terminalCount', { count: p.terminals.length }),
         })),
         workspaceLayout,
       ];
     }
-    return [t("mod.layoutTitleFallback"), [], undefined];
+    return [t('mod.layoutTitleFallback'), [], undefined];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context, project, group, projects, containers, workspaceLayout]);
 
@@ -276,8 +276,8 @@ function DesignerInner({
       ev.preventDefault();
     };
     const onUp = (ev: PointerEvent) => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
       const target = pixelToCell(ev.clientX, ev.clientY);
       // só dropa se o cursor terminou DENTRO do canvas
       const el = canvasRef.current;
@@ -292,8 +292,8 @@ function DesignerInner({
       }
       setDragging(null);
     };
-    window.addEventListener("pointermove", onMove, { passive: false });
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
   };
 
   /** Mapeia coordenada de pixel pra célula (col/row 1-based) usando os pesos atuais. */
@@ -352,11 +352,11 @@ function DesignerInner({
       });
     };
     const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   /** Drag entre 2 colunas pra ajustar fração (em fr). */
@@ -390,11 +390,11 @@ function DesignerInner({
       setColSizes(next);
     };
     const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   const startRowResize = (rowIdx: number, e: React.PointerEvent) => {
@@ -425,11 +425,11 @@ function DesignerInner({
       setRowSizes(next);
     };
     const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   };
 
   const resetAuto = () => {
@@ -451,14 +451,14 @@ function DesignerInner({
       },
       childIds,
     );
-    if (context.kind === "project") setProjectGridLayout(context.id, layout);
-    else if (context.kind === "group") setGroupGridLayout(context.id, layout);
+    if (context.kind === 'project') setProjectGridLayout(context.id, layout);
+    else if (context.kind === 'group') setGroupGridLayout(context.id, layout);
     else setWorkspaceGridLayout(layout);
     onClose();
   };
 
   const clearWorkspace =
-    context.kind === "workspace" && workspaceLayout
+    context.kind === 'workspace' && workspaceLayout
       ? () => {
           setWorkspaceGridLayout(null);
           onClose();
@@ -484,7 +484,7 @@ function DesignerInner({
             <button
               type="button"
               className={styles.closeBtn}
-              aria-label={t("mod.close")}
+              aria-label={t('mod.close')}
               onClick={onClose}
             >
               <X size={16} />
@@ -505,9 +505,9 @@ function DesignerInner({
               onInc={() => setRows((v) => Math.min(8, v + 1))}
             />
             <button type="button" className={controls.btn} onClick={resetAuto}>
-              {t("mod.autoArrange")}
+              {t('mod.autoArrange')}
             </button>
-            <span className={styles.hint}>{t("mod.layoutHint")}</span>
+            <span className={styles.hint}>{t('mod.layoutHint')}</span>
           </div>
 
           <div
@@ -516,18 +516,18 @@ function DesignerInner({
             style={{
               gridTemplateColumns: colSizes
                 .map((s) => `minmax(0, ${Math.max(0.05, s)}fr)`)
-                .join(" "),
+                .join(' '),
               gridTemplateRows: rowSizes
                 .map((s) => `minmax(0, ${Math.max(0.05, s)}fr)`)
-                .join(" "),
+                .join(' '),
             }}
           >
             {/* slots de fundo (visual apenas — drop é pointer-based no box) */}
             {cellsArray.map(({ col, row }) => (
               <div
                 key={`slot-${col}-${row}`}
-                className={`${styles.slot} ${dragging ? styles.slotActive : ""}`}
-                style={{ gridColumn: col, gridRow: row, pointerEvents: "none" }}
+                className={`${styles.slot} ${dragging ? styles.slotActive : ''}`}
+                style={{ gridColumn: col, gridRow: row, pointerEvents: 'none' }}
               />
             ))}
             {/* resizers verticais (entre cols) */}
@@ -562,13 +562,13 @@ function DesignerInner({
               return (
                 <div
                   key={child.id}
-                  className={`${styles.box} ${isSelected ? styles.boxSelected : ""} ${
-                    dragging === child.id ? styles.boxDragging : ""
+                  className={`${styles.box} ${isSelected ? styles.boxSelected : ''} ${
+                    dragging === child.id ? styles.boxDragging : ''
                   }`}
                   style={{
                     gridColumn: `${cell.col} / span ${cell.colSpan}`,
                     gridRow: `${cell.row} / span ${cell.rowSpan}`,
-                    borderColor: isSelected ? "var(--accent)" : undefined,
+                    borderColor: isSelected ? 'var(--accent)' : undefined,
                   }}
                   onPointerDown={(e) => startDrag(child.id, e)}
                   onClick={() =>
@@ -594,7 +594,7 @@ function DesignerInner({
                     className={styles.resizeHandle}
                     data-resize-handle="1"
                     onPointerDown={(e) => startResize(child.id, e)}
-                    title={t("mod.dragToResize")}
+                    title={t('mod.dragToResize')}
                   />
                 </div>
               );
@@ -607,20 +607,20 @@ function DesignerInner({
                 type="button"
                 className={controls.btn}
                 onClick={clearWorkspace}
-                style={{ marginRight: "auto" }}
+                style={{ marginRight: 'auto' }}
               >
-                {t("mod.removeCustomLayout")}
+                {t('mod.removeCustomLayout')}
               </button>
             ) : null}
             <button type="button" className={controls.btn} onClick={onClose}>
-              {t("mod.cancel")}
+              {t('mod.cancel')}
             </button>
             <button
               type="button"
               className={`${controls.btn} ${controls.btnPrimary}`}
               onClick={save}
             >
-              {t("mod.saveLayout")}
+              {t('mod.saveLayout')}
             </button>
           </footer>
         </Dialog.Content>
@@ -648,7 +648,7 @@ function Stepper({
         type="button"
         className={styles.stepperBtn}
         onClick={onDec}
-        aria-label={t("mod.decrease", { label })}
+        aria-label={t('mod.decrease', { label })}
       >
         <Minus size={12} />
       </button>
@@ -657,7 +657,7 @@ function Stepper({
         type="button"
         className={styles.stepperBtn}
         onClick={onInc}
-        aria-label={t("mod.increase", { label })}
+        aria-label={t('mod.increase', { label })}
       >
         <Plus size={12} />
       </button>
