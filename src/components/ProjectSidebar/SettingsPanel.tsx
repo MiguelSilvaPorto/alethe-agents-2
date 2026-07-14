@@ -579,9 +579,10 @@ function ModelsAndKeysSettingsView() {
 
   const handleSyncOpenCodeProviders = async () => {
     setSyncingOpenCode(true);
+    const proxyPort = useUiStore.getState().proxyPort;
+    const hostname = preferences.opencodeHostname || '127.0.0.1';
+    const port = proxyPort || preferences.opencodePort || 4096;
     try {
-      const hostname = preferences.opencodeHostname || '127.0.0.1';
-      const port = preferences.opencodePort || 4096;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       let response: Response;
