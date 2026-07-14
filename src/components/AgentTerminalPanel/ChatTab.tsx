@@ -142,8 +142,12 @@ export function ChatTab() {
     [],
   );
 
-  const AVAILABLE_MODELS = useMemo(
-    () => [
+  const preferences = useProjectsStore((s) => s.preferences);
+
+  const AVAILABLE_MODELS = useMemo(() => {
+    const list: Array<{ name: string; provider: string }> = [];
+
+    const nativos = [
       { name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
       { name: 'Claude 3.5 Haiku', provider: 'Anthropic' },
       { name: 'Claude 3 Opus', provider: 'Anthropic' },
@@ -157,9 +161,29 @@ export function ChatTab() {
       { name: 'Gemini 2.0 Pro', provider: 'Google' },
       { name: 'DeepSeek V3', provider: 'DeepSeek' },
       { name: 'DeepSeek R1', provider: 'DeepSeek' },
-    ],
-    [],
-  );
+    ];
+
+    nativos.forEach((m) => {
+      const isVerified = preferences.verifiedProviders?.[m.provider] === true;
+      const isEnabled = preferences.enabledModels?.[m.name] !== false;
+      if (isVerified && isEnabled) {
+        list.push(m);
+      }
+    });
+
+    (preferences.customModels ?? []).forEach((m) => {
+      const isEnabled = preferences.enabledModels?.[m.id] !== false;
+      if (isEnabled) {
+        list.push({ name: m.name, provider: m.provider });
+      }
+    });
+
+    return list;
+  }, [
+    preferences.verifiedProviders,
+    preferences.enabledModels,
+    preferences.customModels,
+  ]);
 
   const [inputValue, setInputValue] = useState('');
   const [model, setModel] = useState(currentSession.activeModel);
