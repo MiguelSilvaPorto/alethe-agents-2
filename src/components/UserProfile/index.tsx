@@ -87,7 +87,10 @@ export function UserProfile({ compact = false }: { compact?: boolean }) {
       </button>
 
       {open ? (
-        <div className={styles.popover} role="menu">
+        <div
+          className={`${styles.popover} ${compact ? styles.popoverCompact : ''}`}
+          role="menu"
+        >
           <div className={styles.popHeader}>
             {avatarUrl && !imgFailed ? (
               <img
