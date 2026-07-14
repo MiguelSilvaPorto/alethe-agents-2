@@ -16,6 +16,13 @@ import {
   Plus,
   Minus,
   ShieldAlert,
+  Bot,
+  Sparkles,
+  Globe,
+  Cloud,
+  Cpu,
+  Zap,
+  type LucideIcon,
 } from 'lucide-react';
 
 const NATIVE_MODELS = [
@@ -32,33 +39,47 @@ const NATIVE_MODELS = [
   { id: 'gemini-2.0-pro', name: 'Gemini 2.0 Pro', provider: 'Google' },
   { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek' },
   { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'DeepSeek' },
-  // Modelos do OpenCode Go
   {
     id: 'opencode-go/glm-5.2',
-    name: 'GLM 5.2 (OpenCode Go)',
+    name: 'GLM 5.2',
     provider: 'OpenCode Go',
   },
   {
     id: 'opencode-go/kimi-k2.7-code',
-    name: 'Kimi K2.7 Code (OpenCode Go)',
+    name: 'Kimi K2.7 Code',
     provider: 'OpenCode Go',
   },
   {
     id: 'opencode-go/mimo-v2.5-pro',
-    name: 'Mimo v2.5 Pro (OpenCode Go)',
+    name: 'Mimo v2.5 Pro',
     provider: 'OpenCode Go',
   },
   {
     id: 'opencode-go/qwen3.7-max',
-    name: 'Qwen 3.7 Max (OpenCode Go)',
+    name: 'Qwen 3.7 Max',
     provider: 'OpenCode Go',
   },
   {
     id: 'opencode-go/deepseek-v4-flash',
-    name: 'DeepSeek V4 Flash (OpenCode Go)',
+    name: 'DeepSeek V4 Flash',
     provider: 'OpenCode Go',
   },
 ];
+
+const PROVIDER_ORDER = [
+  'Anthropic',
+  'OpenAI',
+  'Google',
+  'DeepSeek',
+  'OpenCode Go',
+];
+const PROVIDER_ICONS: Record<string, LucideIcon> = {
+  Anthropic: Sparkles,
+  OpenAI: Cpu,
+  Google: Globe,
+  DeepSeek: Cloud,
+  'OpenCode Go': Zap,
+};
 
 export function SettingsPanel() {
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'models'>(
@@ -506,6 +527,16 @@ function ModelsAndKeysSettingsView() {
   const [inlineModelId, setInlineModelId] = useState('');
   const [inlineModelBaseUrl, setInlineModelBaseUrl] = useState('');
   const [inlineModelProvider, setInlineModelProvider] = useState('OpenAI');
+
+  const [expandedProviders, setExpandedProviders] = useState<
+    Record<string, boolean>
+  >({
+    Anthropic: true,
+    OpenAI: true,
+    Google: true,
+    DeepSeek: true,
+    'OpenCode Go': true,
+  });
 
   const isSearchModelInList = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -1068,122 +1099,204 @@ function ModelsAndKeysSettingsView() {
 
         <div
           style={{
-            maxHeight: '260px',
+            maxHeight: '400px',
             overflowY: 'auto',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-sm)',
-            background: 'var(--bg)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
           }}
         >
-          {filteredModelsList.map((m) => {
-            const isEnabled = preferences.enabledModels?.[m.id] !== false;
-            const isCustom = !NATIVE_MODELS.some((n) => n.id === m.id);
-
+          {PROVIDER_ORDER.map((provider) => {
+            const providerModels = filteredModelsList.filter(
+              (m) => m.provider === provider,
+            );
+            if (providerModels.length === 0) return null;
+            const expanded = expandedProviders[provider] !== false;
+            const enabledCount = providerModels.filter(
+              (m) => preferences.enabledModels?.[m.id] !== false,
+            ).length;
+            const ProviderIcon = PROVIDER_ICONS[provider] ?? Bot;
             return (
-              <div
-                key={m.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 16px',
-                  borderBottom: '1px solid var(--border)',
-                }}
-              >
-                <div
+              <div key={provider}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedProviders((prev) => ({
+                      ...prev,
+                      [provider]: !expanded,
+                    }))
+                  }
                   style={{
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
+                    alignItems: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: expanded ? 'var(--bg-elevated)' : 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid var(--border)',
+                    color: 'var(--fg)',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    outline: 'none',
+                    borderRadius: expanded
+                      ? 'var(--radius-sm) var(--radius-sm) 0 0'
+                      : 0,
                   }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: 500 }}>
-                    {m.name}
-                  </span>
+                  {expanded ? (
+                    <ChevronDown size={13} />
+                  ) : (
+                    <ChevronRight size={13} />
+                  )}
+                  <ProviderIcon size={14} />
+                  <span style={{ flex: 1 }}>{provider}</span>
                   <span
-                    style={{ fontSize: '10.5px', color: 'var(--fg-faint)' }}
-                  >
-                    {m.provider} {isCustom && '· Customizado'}
-                  </span>
-                </div>
-
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '12px' }}
-                >
-                  <label
                     style={{
-                      position: 'relative',
-                      display: 'inline-block',
-                      width: '32px',
-                      height: '18px',
+                      fontSize: '10px',
+                      fontWeight: 500,
+                      color: 'var(--fg-faint)',
+                      background: 'var(--border)',
+                      padding: '1px 6px',
+                      borderRadius: '8px',
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={isEnabled}
-                      onChange={(e) =>
-                        handleToggleModel(m.id, e.target.checked)
-                      }
-                      style={{
-                        opacity: 0,
-                        width: 0,
-                        height: 0,
-                        cursor: 'pointer',
-                      }}
-                    />
-                    <span
-                      style={{
-                        position: 'absolute',
-                        cursor: 'pointer',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: isEnabled
-                          ? 'var(--status-working, #4caf50)'
-                          : 'var(--border)',
-                        transition: '0.2s',
-                        borderRadius: '9px',
-                      }}
-                    >
-                      <span
-                        style={{
-                          position: 'absolute',
-                          height: '14px',
-                          width: '14px',
-                          left: isEnabled ? '16px' : '2px',
-                          bottom: '2px',
-                          backgroundColor: '#fff',
-                          transition: '0.2s',
-                          borderRadius: '50%',
-                        }}
-                      />
-                    </span>
-                  </label>
-
-                  {isCustom && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCustomModel(m.id)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--fg-faint)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.color = '#ff4d4f')
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.color = 'var(--fg-faint)')
-                      }
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
+                    {enabledCount}/{providerModels.length}
+                  </span>
+                </button>
+                {expanded && (
+                  <div
+                    style={{
+                      borderBottom: '1px solid var(--border)',
+                      background: 'var(--bg)',
+                    }}
+                  >
+                    {providerModels.map((m) => {
+                      const isEnabled =
+                        preferences.enabledModels?.[m.id] !== false;
+                      const isCustom = !NATIVE_MODELS.some(
+                        (n) => n.id === m.id,
+                      );
+                      return (
+                        <div
+                          key={m.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '7px 12px 7px 32px',
+                            borderBottom: '1px solid var(--border)',
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '1px',
+                            }}
+                          >
+                            <span style={{ fontSize: '12px', fontWeight: 500 }}>
+                              {m.name}
+                            </span>
+                            {isCustom && (
+                              <span
+                                style={{
+                                  fontSize: '10px',
+                                  color: 'var(--fg-faint)',
+                                }}
+                              >
+                                Customizado
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                            }}
+                          >
+                            <label
+                              style={{
+                                position: 'relative',
+                                display: 'inline-block',
+                                width: '32px',
+                                height: '18px',
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isEnabled}
+                                onChange={(e) =>
+                                  handleToggleModel(m.id, e.target.checked)
+                                }
+                                style={{
+                                  opacity: 0,
+                                  width: 0,
+                                  height: 0,
+                                  cursor: 'pointer',
+                                }}
+                              />
+                              <span
+                                style={{
+                                  position: 'absolute',
+                                  cursor: 'pointer',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  backgroundColor: isEnabled
+                                    ? 'var(--status-working, #4caf50)'
+                                    : 'var(--border)',
+                                  transition: '0.2s',
+                                  borderRadius: '9px',
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    position: 'absolute',
+                                    height: '14px',
+                                    width: '14px',
+                                    left: isEnabled ? '16px' : '2px',
+                                    bottom: '2px',
+                                    backgroundColor: '#fff',
+                                    transition: '0.2s',
+                                    borderRadius: '50%',
+                                  }}
+                                />
+                              </span>
+                            </label>
+                            {isCustom && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCustomModel(m.id)}
+                                style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--fg-faint)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.color = '#ff4d4f')
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.color =
+                                    'var(--fg-faint)')
+                                }
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
