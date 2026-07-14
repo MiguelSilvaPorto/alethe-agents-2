@@ -7,7 +7,7 @@ import { useProjectsStore } from '../../stores/projectsStore';
 import { useUiStore } from '../../stores/uiStore';
 import styles from './UserProfile.module.css';
 
-export function UserProfile() {
+export function UserProfile({ compact = false }: { compact?: boolean }) {
   const t = useT();
   const openModal = useUiStore((s) => s.openModal_);
   const preferences = useProjectsStore((s) => s.preferences);
@@ -72,14 +72,18 @@ export function UserProfile() {
         ) : (
           <span className={styles.avatar}>{initial}</span>
         )}
-        <span className={styles.identity}>
-          <span className={styles.name}>{displayName}</span>
-          <span className={styles.email}>
-            {t('profile.localAccount')}
-            {activeProfile ? ` · ${activeProfile.name}` : ''}
-          </span>
-        </span>
-        <Settings size={13} className={styles.gear} />
+        {!compact && (
+          <>
+            <span className={styles.identity}>
+              <span className={styles.name}>{displayName}</span>
+              <span className={styles.email}>
+                {t('profile.localAccount')}
+                {activeProfile ? ` · ${activeProfile.name}` : ''}
+              </span>
+            </span>
+            <Settings size={13} className={styles.gear} />
+          </>
+        )}
       </button>
 
       {open ? (

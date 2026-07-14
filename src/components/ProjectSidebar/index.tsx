@@ -746,7 +746,7 @@ export function ProjectSidebar() {
         </button>
 
         <div style={{ flex: 1 }} />
-        <UserProfile />
+        <UserProfile compact />
       </div>
 
       {/* Conteúdo da Sidebar correspondente */}

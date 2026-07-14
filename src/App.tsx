@@ -9,7 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { FocusOverlay } from './components/FocusOverlay';
 import { MainMenu } from './components/MainMenu';
 import { ProjectSidebar } from './components/ProjectSidebar';
-import { TaskPanel } from './components/TaskPanel';
+import { AgentTerminalPanel } from './components/AgentTerminalPanel';
 import { TitleBar } from './components/TitleBar';
 import { TokenHud } from './components/TokenHud';
 import { useKeybindings } from './hooks/useKeybindings';
@@ -425,8 +425,8 @@ export default function App() {
                   </div>
                 ) : null}
               </Suspense>
-              {/* TaskPanel — painel direito com tarefas */}
-              {activeView === 'workspace' ? <TaskPanel /> : null}
+              {/* AgentTerminalPanel — painel direito com agentes e tarefas */}
+              {activeView === 'workspace' ? <AgentTerminalPanel /> : null}
               {/* HomeView e AgentCanvasPOC — lazy, montados apenas quando ativos */}
               <Suspense fallback={<LoadingScreen />}>
                 {activeView === 'home' ? (
