@@ -22,12 +22,12 @@ pub struct OpenCodeProvider {
     pub active: bool,
 }
 
-/// Executa `opencode models --verbose` e parseia a saída.
-/// Retorna todos os modelos disponíveis do OpenCode (Zen, Go, OpenRouter, Nvidia).
+/// Executa `opencode models` (sem --verbose) e parseia a saída — IDs apenas.
+/// Muito mais rápido que --verbose que traz JSON completo de centenas de modelos.
 #[tauri::command]
 pub fn get_opencode_models() -> Result<Vec<OpenCodeModel>, String> {
     let output = Command::new("opencode")
-        .args(["models", "--verbose"])
+        .args(["models"])
         .output()
         .map_err(|e| format!("falha ao executar opencode models: {e}"))?;
 
@@ -37,69 +37,61 @@ pub fn get_opencode_models() -> Result<Vec<OpenCodeModel>, String> {
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let lines: Vec<&str> = stdout.lines().collect();
-
     let mut models = Vec::new();
-    let mut i = 0;
 
-    while i < lines.len() {
-        let line = lines[i].trim();
-        // Cada modelo começa com "provider/model-id" seguido de JSON
-        if !line.is_empty() && !line.starts_with('{') && !line.starts_with('}') {
-            let full_id = line.to_string();
-            // Coleta o JSON que segue até a próxima linha de modelo ou fim
-            i += 1;
-            let mut json_str = String::new();
-            while i < lines.len() {
-                let json_line = lines[i].trim();
-                if json_line.is_empty() {
-                    i += 1;
-                    continue;
-                }
-                if !json_line.starts_with('{')
-                    && !json_line.starts_with('}')
-                    && !json_line.starts_with('"')
-                {
-                    break;
-                }
-                json_str.push_str(json_line);
-                i += 1;
-            }
-
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&json_str) {
-                let id = val.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let name = val.get("name").and_then(|v| v.as_str()).unwrap_or(&id).to_string();
-                let provider_id = val.get("providerID").and_then(|v| v.as_str()).unwrap_or("").to_string();
-                let status = val.get("status").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
-
-                let cost_input = val.get("cost").and_then(|c| c.get("input")).and_then(|v| v.as_f64()).unwrap_or(0.0);
-                let cost_output = val.get("cost").and_then(|c| c.get("output")).and_then(|v| v.as_f64()).unwrap_or(0.0);
-                let context_length = val.get("limit").and_then(|l| l.get("context")).and_then(|v| v.as_u64());
-
-                // Deriva o provedor amigável do provider_id
-                let provider = match provider_id.as_str() {
-                    "opencode" => "OpenCode Zen".to_string(),
-                    "opencode-go" => "OpenCode Go".to_string(),
-                    "nvidia" => "Nvidia".to_string(),
-                    "openrouter" => "OpenRouter".to_string(),
-                    other => other.to_string(),
-                };
-
-                models.push(OpenCodeModel {
-                    id,
-                    full_id,
-                    name,
-                    provider,
-                    provider_id,
-                    cost_input,
-                    cost_output,
-                    context_length,
-                    status,
-                });
-            }
-        } else {
-            i += 1;
+    for line in stdout.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
         }
+
+        let full_id = line.to_string();
+        // Formato: "provedor/nome-modelo"
+        let slash_pos = full_id.find('/');
+        let (provider_prefix, model_name) = match slash_pos {
+            Some(pos) => (full_id[..pos].to_string(), full_id[pos + 1..].to_string()),
+            None => ("unknown".to_string(), full_id.clone()),
+        };
+
+        let provider = match provider_prefix.as_str() {
+            "opencode" => "OpenCode Zen",
+            "opencode-go" => "OpenCode Go",
+            "nvidia" => "Nvidia",
+            "openrouter" => "OpenRouter",
+            _ => &provider_prefix,
+        };
+
+        // Deriva um nome legível
+        let name = model_name
+            .split(|c: char| c == '-' || c == '_')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>()
+            .join(" ");
+
+        // Nome capitalizado (primeira letra maiúscula de cada palavra)
+        let display_name = name
+            .split_whitespace()
+            .map(|w| {
+                let mut chars = w.chars();
+                match chars.next() {
+                    None => String::new(),
+                    Some(c) => c.to_uppercase().to_string() + chars.as_str(),
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        models.push(OpenCodeModel {
+            id: model_name.to_string(),
+            full_id,
+            name: display_name,
+            provider: provider.to_string(),
+            provider_id: provider_prefix.to_string(),
+            cost_input: 0.0,
+            cost_output: 0.0,
+            context_length: None,
+            status: "active".to_string(),
+        });
     }
 
     Ok(models)

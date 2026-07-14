@@ -1216,7 +1216,9 @@ function ModelsAndKeysSettingsView() {
                           letterSpacing: '0.5px',
                         }}
                       >
-                        Free
+                        {providerModels.some((m: any) => m.id.includes('free'))
+                          ? 'Free'
+                          : 'Pago'}
                       </span>
                     )}
                     <span
@@ -1268,7 +1270,7 @@ function ModelsAndKeysSettingsView() {
                               >
                                 {m.name}
                               </span>
-                              {provider === 'OpenCode Zen' ? (
+                              {m.id.includes('free') ? (
                                 <span
                                   style={{
                                     fontSize: '10px',
