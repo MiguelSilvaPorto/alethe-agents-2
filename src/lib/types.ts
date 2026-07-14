@@ -213,6 +213,14 @@ export type WorkspaceHistoryEntry = {
   visitedAt: number;
 };
 
+export type CustomModel = {
+  id: string;
+  name: string;
+  provider: string; // ex: 'Anthropic', 'OpenAI', 'Google', 'DeepSeek', 'Custom'
+  baseUrl: string;
+  enabled: boolean;
+};
+
 export type Preferences = {
   /** Idioma da UI. Default 'en'. */
   language: Locale;
@@ -270,6 +278,10 @@ export type Preferences = {
   openaiApiKey?: string;
   googleApiKey?: string;
   deepseekApiKey?: string;
+  /** Toggles e Modelos customizados */
+  enabledModels: Record<string, boolean>;
+  customModels: CustomModel[];
+  verifiedProviders?: Record<string, boolean>; // ex: { Anthropic: true }
 };
 
 export type ProjectsFile = {
@@ -338,6 +350,9 @@ export const DEFAULT_PREFERENCES: Preferences = {
   openaiApiKey: '',
   googleApiKey: '',
   deepseekApiKey: '',
+  enabledModels: {},
+  customModels: [],
+  verifiedProviders: {},
 };
 
 export const EMPTY_PROJECTS_FILE: ProjectsFile = {
