@@ -148,24 +148,58 @@ export function ChatTab() {
     const list: Array<{ name: string; provider: string }> = [];
 
     const nativos = [
-      { name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
-      { name: 'Claude 3.5 Haiku', provider: 'Anthropic' },
-      { name: 'Claude 3 Opus', provider: 'Anthropic' },
-      { name: 'GPT-4o', provider: 'OpenAI' },
-      { name: 'GPT-4o mini', provider: 'OpenAI' },
-      { name: 'o1-mini', provider: 'OpenAI' },
-      { name: 'o1-preview', provider: 'OpenAI' },
-      { name: 'Gemini 1.5 Pro', provider: 'Google' },
-      { name: 'Gemini 1.5 Flash', provider: 'Google' },
-      { name: 'Gemini 2.0 Flash', provider: 'Google' },
-      { name: 'Gemini 2.0 Pro', provider: 'Google' },
-      { name: 'DeepSeek V3', provider: 'DeepSeek' },
-      { name: 'DeepSeek R1', provider: 'DeepSeek' },
+      {
+        id: 'claude-3-5-sonnet',
+        name: 'Claude 3.5 Sonnet',
+        provider: 'Anthropic',
+      },
+      {
+        id: 'claude-3-5-haiku',
+        name: 'Claude 3.5 Haiku',
+        provider: 'Anthropic',
+      },
+      { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic' },
+      { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
+      { id: 'gpt-4o-mini', name: 'GPT-4o mini', provider: 'OpenAI' },
+      { id: 'o1-mini', name: 'o1-mini', provider: 'OpenAI' },
+      { id: 'o1-preview', name: 'o1-preview', provider: 'OpenAI' },
+      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'Google' },
+      { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google' },
+      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'Google' },
+      { id: 'gemini-2.0-pro', name: 'Gemini 2.0 Pro', provider: 'Google' },
+      { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek' },
+      { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'DeepSeek' },
+      // OpenCode Go
+      {
+        id: 'opencode-go/glm-5.2',
+        name: 'GLM 5.2 (OpenCode Go)',
+        provider: 'OpenCode Go',
+      },
+      {
+        id: 'opencode-go/kimi-k2.7-code',
+        name: 'Kimi K2.7 Code (OpenCode Go)',
+        provider: 'OpenCode Go',
+      },
+      {
+        id: 'opencode-go/mimo-v2.5-pro',
+        name: 'Mimo v2.5 Pro (OpenCode Go)',
+        provider: 'OpenCode Go',
+      },
+      {
+        id: 'opencode-go/qwen3.7-max',
+        name: 'Qwen 3.7 Max (OpenCode Go)',
+        provider: 'OpenCode Go',
+      },
+      {
+        id: 'opencode-go/deepseek-v4-flash',
+        name: 'DeepSeek V4 Flash (OpenCode Go)',
+        provider: 'OpenCode Go',
+      },
     ];
 
     nativos.forEach((m) => {
       const isVerified = preferences.verifiedProviders?.[m.provider] === true;
-      const isEnabled = preferences.enabledModels?.[m.name] !== false;
+      const isEnabled = preferences.enabledModels?.[m.id] !== false;
       if (isVerified && isEnabled) {
         list.push(m);
       }

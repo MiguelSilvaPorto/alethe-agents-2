@@ -498,6 +498,13 @@ function normalizePreferences(
     enabledModels: preferences.enabledModels ?? {},
     customModels: preferences.customModels ?? [],
     verifiedProviders: preferences.verifiedProviders ?? {},
+    taskModels: preferences.taskModels ?? {
+      exploreSubagent: 'Claude 3.5 Sonnet',
+      chatDefault: 'Claude 3.5 Sonnet',
+    },
+    opencodePort: preferences.opencodePort ?? 4096,
+    opencodeHostname: preferences.opencodeHostname ?? '127.0.0.1',
+    opencodePassword: preferences.opencodePassword ?? '',
     language: preferences.language === 'pt-BR' ? 'pt-BR' : 'en',
     accountCreated: legacyAccountCreated,
     displayName: preferences.displayName.trim(),

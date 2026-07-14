@@ -282,6 +282,12 @@ export type Preferences = {
   enabledModels: Record<string, boolean>;
   customModels: CustomModel[];
   verifiedProviders?: Record<string, boolean>; // ex: { Anthropic: true }
+  /** Papéis de IA / Task Models */
+  taskModels: { exploreSubagent: string; chatDefault: string };
+  /** Configuração do OpenCode Headless Server */
+  opencodePort: number;
+  opencodeHostname: string;
+  opencodePassword?: string;
 };
 
 export type ProjectsFile = {
@@ -353,6 +359,13 @@ export const DEFAULT_PREFERENCES: Preferences = {
   enabledModels: {},
   customModels: [],
   verifiedProviders: {},
+  taskModels: {
+    exploreSubagent: 'Claude 3.5 Sonnet',
+    chatDefault: 'Claude 3.5 Sonnet',
+  },
+  opencodePort: 4096,
+  opencodeHostname: '127.0.0.1',
+  opencodePassword: '',
 };
 
 export const EMPTY_PROJECTS_FILE: ProjectsFile = {

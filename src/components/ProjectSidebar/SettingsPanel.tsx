@@ -1,74 +1,205 @@
-import { useState } from 'react';
-import { useT, LOCALES } from '../../lib/i18n';
-import { THEME_OPTIONS, themeLabel } from '../../lib/themes';
+import { useState, useMemo, useEffect } from 'react';
 import { useProjectsStore } from '../../stores/projectsStore';
 import {
   Settings,
-  ShieldAlert,
-  Palette,
-  Languages,
-  ZoomIn,
-  Plus,
-  Minus,
-  Key,
-  Eye,
-  EyeOff,
-  Check,
-  Cpu,
+  Search,
+  RefreshCw,
   Trash2,
-  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
   RotateCw,
+  Server,
 } from 'lucide-react';
 
-type SettingsTab =
-  'general' | 'Anthropic' | 'OpenAI' | 'Google' | 'DeepSeek' | 'Custom';
+const NATIVE_MODELS = [
+  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
+  { id: 'claude-3-5-haiku', name: 'Claude 3.5 Haiku', provider: 'Anthropic' },
+  { id: 'claude-3-opus', name: 'Claude 3 Opus', provider: 'Anthropic' },
+  { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o mini', provider: 'OpenAI' },
+  { id: 'o1-mini', name: 'o1-mini', provider: 'OpenAI' },
+  { id: 'o1-preview', name: 'o1-preview', provider: 'OpenAI' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'Google' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'Google' },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'Google' },
+  { id: 'gemini-2.0-pro', name: 'Gemini 2.0 Pro', provider: 'Google' },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek' },
+  { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'DeepSeek' },
+  // Modelos do OpenCode Go
+  {
+    id: 'opencode-go/glm-5.2',
+    name: 'GLM 5.2 (OpenCode Go)',
+    provider: 'OpenCode Go',
+  },
+  {
+    id: 'opencode-go/kimi-k2.7-code',
+    name: 'Kimi K2.7 Code (OpenCode Go)',
+    provider: 'OpenCode Go',
+  },
+  {
+    id: 'opencode-go/mimo-v2.5-pro',
+    name: 'Mimo v2.5 Pro (OpenCode Go)',
+    provider: 'OpenCode Go',
+  },
+  {
+    id: 'opencode-go/qwen3.7-max',
+    name: 'Qwen 3.7 Max (OpenCode Go)',
+    provider: 'OpenCode Go',
+  },
+  {
+    id: 'opencode-go/deepseek-v4-flash',
+    name: 'DeepSeek V4 Flash (OpenCode Go)',
+    provider: 'OpenCode Go',
+  },
+];
 
 export function SettingsPanel() {
-  const t = useT();
   const preferences = useProjectsStore((s) => s.preferences);
   const setPreferences = useProjectsStore((s) => s.setPreferences);
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+  // Estados de layout
+  const [apiKeysExpanded, setApiKeysExpanded] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Estados locais para verificação de chaves de API
+  // Toggles de provedores complexos e override de URL
+  const [overrideOpenaiUrl, setOverrideOpenaiUrl] = useState(false);
+  const [openaiBaseUrl, setOpenaiBaseUrl] = useState('');
+  const [azureEnabled, setAzureEnabled] = useState(false);
+  const [azureBaseUrl, setAzureBaseUrl] = useState('');
+  const [azureDeploymentName, setAzureDeploymentName] = useState('');
+  const [azureApiKey, setAzureApiKey] = useState('');
+
+  const [bedrockEnabled, setBedrockEnabled] = useState(false);
+  const [bedrockAccessKey, setBedrockAccessKey] = useState('');
+  const [bedrockSecretKey, setBedrockSecretKey] = useState('');
+  const [bedrockRegion, setBedrockRegion] = useState('');
+  const [bedrockTestModel, setBedrockTestModel] = useState('');
+
+  // Estados locais para verificação de chaves
   const [verifyStatus, setVerifyStatus] = useState<
     Record<string, { loading: boolean; success: boolean; error: string | null }>
   >({});
+  const [syncingOpenCode, setSyncingOpenCode] = useState(false);
 
-  // Estados locais para formulário de modelo customizado
-  const [customName, setCustomName] = useState('');
-  const [customId, setCustomId] = useState('');
-  const [customBaseUrl, setCustomBaseUrl] = useState('');
-  const [customProvider, setCustomProvider] = useState('OpenAI');
+  // Formulário inline para adicionar modelo customizado
+  const [showAddInlineForm, setShowAddInlineForm] = useState(false);
+  const [inlineModelName, setInlineModelName] = useState('');
+  const [inlineModelId, setInlineModelId] = useState('');
+  const [inlineModelBaseUrl, setInlineModelBaseUrl] = useState('');
+  const [inlineModelProvider, setInlineModelProvider] = useState('OpenAI');
 
-  const zoomPercent = Math.round(preferences.uiZoom * 100);
+  // Ao digitar algo que não está na lista, o usuário pode clicar para iniciar a criação inline
+  const isSearchModelInList = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    return (
+      NATIVE_MODELS.some((m) => m.name.toLowerCase().includes(query)) ||
+      (preferences.customModels ?? []).some((m) =>
+        m.name.toLowerCase().includes(query),
+      )
+    );
+  }, [searchQuery, preferences.customModels]);
 
-  const handleZoomIn = () => {
-    const next = Math.min(1.4, preferences.uiZoom + 0.1);
-    setPreferences({ uiZoom: parseFloat(next.toFixed(1)) });
+  useEffect(() => {
+    if (!isSearchModelInList && searchQuery.trim().length > 0) {
+      setInlineModelName(searchQuery);
+      setInlineModelId(searchQuery.toLowerCase().replace(/\s+/g, '-'));
+    }
+  }, [isSearchModelInList, searchQuery]);
+
+  // Lista unificada rolável
+  const filteredModelsList = useMemo(() => {
+    const list = [...NATIVE_MODELS, ...(preferences.customModels ?? [])];
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return list;
+    return list.filter(
+      (m) =>
+        m.name.toLowerCase().includes(query) ||
+        m.provider.toLowerCase().includes(query),
+    );
+  }, [searchQuery, preferences.customModels]);
+
+  const handleToggleModel = (modelId: string, enabled: boolean) => {
+    const currentToggles = preferences.enabledModels ?? {};
+    setPreferences({
+      enabledModels: {
+        ...currentToggles,
+        [modelId]: enabled,
+      },
+    });
   };
 
-  const handleZoomOut = () => {
-    const next = Math.max(0.8, preferences.uiZoom - 0.1);
-    setPreferences({ uiZoom: parseFloat(next.toFixed(1)) });
+  const handleAddCustomModelInline = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inlineModelName || !inlineModelId) return;
+
+    const newModel = {
+      id: inlineModelId,
+      name: inlineModelName,
+      provider: inlineModelProvider,
+      baseUrl: inlineModelBaseUrl,
+      enabled: true,
+    };
+
+    const updatedList = [...(preferences.customModels ?? []), newModel];
+    setPreferences({
+      customModels: updatedList,
+      enabledModels: {
+        ...(preferences.enabledModels ?? {}),
+        [inlineModelId]: true,
+      },
+    });
+
+    // Reset formulário inline e busca
+    setInlineModelName('');
+    setInlineModelId('');
+    setInlineModelBaseUrl('');
+    setSearchQuery('');
+    setShowAddInlineForm(false);
   };
 
-  const toggleShowKey = (provider: string) => {
-    setShowKey((prev) => ({ ...prev, [provider]: !prev[provider] }));
+  const handleRemoveCustomModel = (modelId: string) => {
+    const updatedList = (preferences.customModels ?? []).filter(
+      (m) => m.id !== modelId,
+    );
+    setPreferences({ customModels: updatedList });
+
+    const currentToggles = { ...(preferences.enabledModels ?? {}) };
+    delete currentToggles[modelId];
+    setPreferences({ enabledModels: currentToggles });
   };
 
-  // Modelos nativos por Provedor
-  const PROVIDER_MODELS: Record<string, string[]> = {
-    Anthropic: ['Claude 3.5 Sonnet', 'Claude 3.5 Haiku', 'Claude 3 Opus'],
-    OpenAI: ['GPT-4o', 'GPT-4o mini', 'o1-mini', 'o1-preview'],
-    Google: [
-      'Gemini 1.5 Pro',
-      'Gemini 1.5 Flash',
-      'Gemini 2.0 Flash',
-      'Gemini 2.0 Pro',
-    ],
-    DeepSeek: ['DeepSeek V3', 'DeepSeek R1'],
+  // Sincronização bidirecional ativa com a API do OpenCode
+  const handleSyncOpenCodeProviders = async () => {
+    setSyncingOpenCode(true);
+    try {
+      const response = await fetch(
+        `http://${preferences.opencodeHostname}:${preferences.opencodePort}/provider`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const connectedProviders = data.connected || []; // Array de strings (ex: ["openai", "anthropic"])
+
+        const nextVerified = { ...(preferences.verifiedProviders ?? {}) };
+        // Mapeia o retorno do OpenCode para a verificação do Alethe
+        nextVerified['OpenAI'] = connectedProviders.includes('openai');
+        nextVerified['Anthropic'] = connectedProviders.includes('anthropic');
+        nextVerified['Google'] = connectedProviders.includes('google');
+        nextVerified['DeepSeek'] = connectedProviders.includes('deepseek');
+        nextVerified['OpenCode Go'] = true; // Subscrição nativa ativa
+
+        setPreferences({ verifiedProviders: nextVerified });
+        alert('Sincronização com o OpenCode realizada com sucesso!');
+      } else {
+        alert(`Erro ao sincronizar com o OpenCode: Status ${response.status}`);
+      }
+    } catch (e: any) {
+      alert(
+        `Falha ao conectar no servidor OpenCode: ${e.message || 'Verifique se ele está ativo e rodando.'}`,
+      );
+    } finally {
+      setSyncingOpenCode(false);
+    }
   };
 
   // Função para verificar chave de API com chamadas reais contra CORS/Autenticação
@@ -102,7 +233,6 @@ export function SettingsPanel() {
         url = 'https://api.openai.com/v1/models';
         headers['Authorization'] = `Bearer ${apiKey}`;
       } else if (provider === 'Anthropic') {
-        // endpoint de mensagens da Anthropic
         url = 'https://api.anthropic.com/v1/messages';
         headers['x-api-key'] = apiKey;
         headers['anthropic-version'] = '2023-06-01';
@@ -127,11 +257,9 @@ export function SettingsPanel() {
           ...prev,
           [provider]: { loading: false, success: true, error: null },
         }));
-        // Salva nas preferências que a chave foi verificada
-        const currentVerified = preferences.verifiedProviders ?? {};
         setPreferences({
           verifiedProviders: {
-            ...currentVerified,
+            ...(preferences.verifiedProviders ?? {}),
             [provider]: true,
           },
         });
@@ -145,14 +273,6 @@ export function SettingsPanel() {
           ...prev,
           [provider]: { loading: false, success: false, error: errMsg },
         }));
-        // Remove dos verificados se falhar
-        const currentVerified = preferences.verifiedProviders ?? {};
-        setPreferences({
-          verifiedProviders: {
-            ...currentVerified,
-            [provider]: false,
-          },
-        });
       }
     } catch (e: any) {
       setVerifyStatus((prev) => ({
@@ -168,91 +288,12 @@ export function SettingsPanel() {
     }
   };
 
-  const handleToggleModel = (modelId: string, enabled: boolean) => {
-    const currentToggles = preferences.enabledModels ?? {};
-    setPreferences({
-      enabledModels: {
-        ...currentToggles,
-        [modelId]: enabled,
-      },
-    });
-  };
-
-  const handleAddCustomModel = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customName || !customId) return;
-
-    const newModel = {
-      id: customId,
-      name: customName,
-      provider: customProvider,
-      baseUrl: customBaseUrl,
-      enabled: true,
-    };
-
-    const updatedList = [...(preferences.customModels ?? []), newModel];
-    setPreferences({ customModels: updatedList });
-
-    // Habilita por padrão nas preferências
-    handleToggleModel(customId, true);
-
-    // Limpa os campos
-    setCustomName('');
-    setCustomId('');
-    setCustomBaseUrl('');
-  };
-
-  const handleRemoveCustomModel = (modelId: string) => {
-    const updatedList = (preferences.customModels ?? []).filter(
-      (m) => m.id !== modelId,
+  // Listagem de modelos elegíveis para os dropdowns de Task Models
+  const activeModelsList = useMemo(() => {
+    return [...NATIVE_MODELS, ...(preferences.customModels ?? [])].filter(
+      (m) => preferences.enabledModels?.[m.id] !== false,
     );
-    setPreferences({ customModels: updatedList });
-
-    const currentToggles = { ...(preferences.enabledModels ?? {}) };
-    delete currentToggles[modelId];
-    setPreferences({ enabledModels: currentToggles });
-  };
-
-  // Helper para verificar se um provedor tem uma chave configurada
-  const hasKey = (provider: string): boolean => {
-    if (provider === 'Anthropic') return !!preferences.anthropicApiKey;
-    if (provider === 'OpenAI') return !!preferences.openaiApiKey;
-    if (provider === 'Google') return !!preferences.googleApiKey;
-    if (provider === 'DeepSeek') return !!preferences.deepseekApiKey;
-    return false;
-  };
-
-  // Helper para obter a chave correspondente
-  const getKeyValue = (provider: string): string => {
-    if (provider === 'Anthropic') return preferences.anthropicApiKey || '';
-    if (provider === 'OpenAI') return preferences.openaiApiKey || '';
-    if (provider === 'Google') return preferences.googleApiKey || '';
-    if (provider === 'DeepSeek') return preferences.deepseekApiKey || '';
-    return '';
-  };
-
-  // Helper para atualizar a chave correspondente
-  const handleUpdateKey = (provider: string, val: string) => {
-    // Ao alterar a chave, removemos o status de verificado
-    const currentVerified = preferences.verifiedProviders ?? {};
-    setPreferences({
-      verifiedProviders: {
-        ...currentVerified,
-        [provider]: false,
-      },
-    });
-
-    // Limpa também o status de erro de verificação anterior
-    setVerifyStatus((prev) => ({
-      ...prev,
-      [provider]: { loading: false, success: false, error: null },
-    }));
-
-    if (provider === 'Anthropic') setPreferences({ anthropicApiKey: val });
-    if (provider === 'OpenAI') setPreferences({ openaiApiKey: val });
-    if (provider === 'Google') setPreferences({ googleApiKey: val });
-    if (provider === 'DeepSeek') setPreferences({ deepseekApiKey: val });
-  };
+  }, [preferences.customModels, preferences.enabledModels]);
 
   return (
     <div
@@ -263,6 +304,7 @@ export function SettingsPanel() {
         background: 'var(--bg-sunken)',
         color: 'var(--fg)',
         fontFamily: 'inherit',
+        overflowY: 'auto',
       }}
     >
       <header
@@ -270,16 +312,16 @@ export function SettingsPanel() {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '12px 14px',
+          padding: '16px 24px',
           borderBottom: '1px solid var(--border)',
           background: 'var(--bg)',
           flexShrink: 0,
         }}
       >
-        <Settings size={14} style={{ color: 'var(--accent)' }} />
+        <Settings size={16} style={{ color: 'var(--accent)' }} />
         <span
           style={{
-            fontSize: '12px',
+            fontSize: '13px',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -289,1019 +331,1000 @@ export function SettingsPanel() {
         </span>
       </header>
 
-      {/* Grid Principal: Menu Lateral e Área de Inputs */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Menu Lateral de Abas Verticais */}
-        <aside
+      <div
+        style={{
+          maxWidth: '720px',
+          margin: '0 auto',
+          width: '100%',
+          padding: '24px',
+        }}
+      >
+        {/* ==================== SEÇÃO 1: MODELS ==================== */}
+        <section
           style={{
-            width: '190px',
-            background: 'var(--bg)',
-            borderRight: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            padding: '8px 4px',
-            gap: '2px',
-            flexShrink: 0,
-            overflowY: 'auto',
+            gap: '20px',
+            marginBottom: '32px',
           }}
         >
-          {(
-            [
-              'general',
-              'Anthropic',
-              'OpenAI',
-              'Google',
-              'DeepSeek',
-              'Custom',
-            ] as SettingsTab[]
-          ).map((tabId) => {
-            const isVerified = preferences.verifiedProviders?.[tabId] === true;
-            const keyConfigured = hasKey(tabId);
+          <h2
+            style={{
+              fontSize: '14px',
+              fontWeight: 600,
+              borderBottom: '1px solid var(--border)',
+              paddingBottom: '8px',
+              margin: 0,
+            }}
+          >
+            Models
+          </h2>
 
-            return (
-              <button
-                key={tabId}
-                type="button"
-                onClick={() => setActiveTab(tabId)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 12px',
-                  background:
-                    activeTab === tabId ? 'var(--panel-hover)' : 'transparent',
-                  border: 'none',
-                  borderLeft:
-                    activeTab === tabId
-                      ? '3px solid var(--accent)'
-                      : '3px solid transparent',
-                  borderRadius: 'var(--radius-sm)',
-                  color: activeTab === tabId ? 'var(--fg)' : 'var(--fg-faint)',
-                  fontSize: '12px',
-                  fontWeight: activeTab === tabId ? 600 : 400,
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                <span>
-                  {tabId === 'general'
-                    ? 'Geral'
-                    : tabId === 'Custom'
-                      ? 'Modelos Custom'
-                      : tabId}
-                </span>
+          {/* Block: Task Models */}
+          <div
+            style={{
+              padding: '16px',
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--fg-muted)',
+              }}
+            >
+              Task Models
+            </span>
 
-                {/* Pontinho sutil de status ao lado de cada provider */}
-                {tabId !== 'general' && tabId !== 'Custom' && (
-                  <span
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: isVerified
-                        ? 'var(--status-working, #4caf50)'
-                        : keyConfigured
-                          ? 'var(--warning, #ff9800)'
-                          : 'var(--border, #555)',
-                    }}
-                    title={
-                      isVerified
-                        ? 'Chave verificada e conectada'
-                        : keyConfigured
-                          ? 'Chave configurada, pendente de verificação'
-                          : 'Chave não configurada'
-                    }
-                  />
-                )}
-              </button>
-            );
-          })}
-        </aside>
-
-        {/* Área de Conteúdo */}
-        <main
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '20px 24px',
-            background: 'var(--bg-sunken)',
-          }}
-        >
-          {activeTab === 'general' && (
+            {/* Explore Subagent Model */}
             <div
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '18px',
-                maxWidth: '600px',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
               }}
             >
-              {/* Aparência / Tema */}
-              <div
-                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
-              >
-                <label
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'var(--fg-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Palette size={12} />
-                  {t('prefs.uiTheme')}
-                </label>
-                <select
-                  value={preferences.uiTheme}
-                  onChange={(e) =>
-                    setPreferences({ uiTheme: e.target.value as any })
-                  }
-                  style={{
-                    width: '100%',
-                    padding: '6px 10px',
-                    background: 'var(--bg-elevated)',
-                    color: 'var(--fg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {THEME_OPTIONS.map((theme) => (
-                    <option key={theme as any} value={theme as any}>
-                      {themeLabel(t, theme as any)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Idioma */}
-              <div
-                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
-              >
-                <label
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'var(--fg-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Languages size={12} />
-                  {t('prefs.language')}
-                </label>
-                <select
-                  value={preferences.language}
-                  onChange={(e) =>
-                    setPreferences({ language: e.target.value as any })
-                  }
-                  style={{
-                    width: '100%',
-                    padding: '6px 10px',
-                    background: 'var(--bg-elevated)',
-                    color: 'var(--fg)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    outline: 'none',
-                    fontSize: '12px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {LOCALES.map((loc) => (
-                    <option key={loc as any} value={loc as any}>
-                      {(loc as any) === 'pt-BR'
-                        ? 'Português (Brasil)'
-                        : 'English'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Zoom */}
-              <div
-                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
-              >
-                <label
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'var(--fg-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <ZoomIn size={12} />
-                  {t('prefs.uiZoom')}
-                </label>
-
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <button
-                    type="button"
-                    onClick={handleZoomOut}
-                    disabled={preferences.uiZoom <= 0.8}
-                    style={{
-                      padding: '6px 10px',
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--fg)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      opacity: preferences.uiZoom <= 0.8 ? 0.5 : 1,
-                    }}
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      width: '45px',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {zoomPercent}%
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleZoomIn}
-                    disabled={preferences.uiZoom >= 1.4}
-                    style={{
-                      padding: '6px 10px',
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--fg)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      opacity: preferences.uiZoom >= 1.4 ? 0.5 : 1,
-                    }}
-                  >
-                    <Plus size={12} />
-                  </button>
-                </div>
-              </div>
-
-              <hr
-                style={{
-                  border: 'none',
-                  borderBottom: '1px solid var(--border)',
-                  margin: '4px 0',
-                }}
-              />
-
-              {/* Revisor de Agente */}
               <div
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '10px',
+                  gap: '2px',
+                  flex: 1,
                 }}
               >
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: 'var(--fg-muted)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <ShieldAlert size={12} />
-                    Revisor de Agente
-                  </span>
-                  <label
-                    style={{
-                      position: 'relative',
-                      display: 'inline-block',
-                      width: '32px',
-                      height: '18px',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={preferences.reviewerEnabled ?? false}
-                      onChange={(e) =>
-                        setPreferences({ reviewerEnabled: e.target.checked })
-                      }
-                      style={{ opacity: 0, width: 0, height: 0 }}
-                    />
-                    <span
-                      style={{
-                        position: 'absolute',
-                        cursor: 'pointer',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: preferences.reviewerEnabled
-                          ? 'var(--accent)'
-                          : 'var(--border)',
-                        transition: '0.2s',
-                        borderRadius: '9px',
-                      }}
-                    >
-                      <span
-                        style={{
-                          position: 'absolute',
-                          content: '""',
-                          height: '14px',
-                          width: '14px',
-                          left: preferences.reviewerEnabled ? '16px' : '2px',
-                          bottom: '2px',
-                          backgroundColor: '#fff',
-                          transition: '0.2s',
-                          borderRadius: '50%',
-                        }}
-                      />
-                    </span>
-                  </label>
-                </div>
-
-                {preferences.reviewerEnabled && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: '10.5px',
-                          color: 'var(--fg-muted)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        System Prompt:
-                      </span>
-                      <textarea
-                        value={preferences.reviewerSystemPrompt || ''}
-                        onChange={(e) =>
-                          setPreferences({
-                            reviewerSystemPrompt: e.target.value,
-                          })
-                        }
-                        rows={4}
-                        style={{
-                          width: '100%',
-                          padding: '6px 8px',
-                          fontSize: '11.5px',
-                          background: 'var(--bg-elevated)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius-sm)',
-                          color: 'var(--fg)',
-                          outline: 'none',
-                          resize: 'vertical',
-                          lineHeight: '1.4',
-                        }}
-                        placeholder="Instruções para o revisor..."
-                      />
-                    </div>
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: '10.5px',
-                          color: 'var(--fg-muted)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        Project Roadmap:
-                      </span>
-                      <textarea
-                        value={preferences.reviewerProjectRoadmap || ''}
-                        onChange={(e) =>
-                          setPreferences({
-                            reviewerProjectRoadmap: e.target.value,
-                          })
-                        }
-                        rows={4}
-                        style={{
-                          width: '100%',
-                          padding: '6px 8px',
-                          fontSize: '11.5px',
-                          background: 'var(--bg-elevated)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius-sm)',
-                          color: 'var(--fg)',
-                          outline: 'none',
-                          resize: 'vertical',
-                          lineHeight: '1.4',
-                        }}
-                        placeholder="Roteiro e metas do projeto..."
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Abas de Provedores com Chaves e Toggles */}
-          {activeTab !== 'general' && activeTab !== 'Custom' && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '18px',
-                maxWidth: '600px',
-              }}
-            >
-              {/* Card de Status do Provedor */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 12px',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                }}
-              >
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <Cpu size={14} style={{ color: 'var(--accent)' }} />
-                  <span style={{ fontSize: '12px', fontWeight: 600 }}>
-                    Status do Provedor
-                  </span>
-                </div>
-                {preferences.verifiedProviders?.[activeTab] === true ? (
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: 'var(--status-working)',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <Check size={12} /> Conectado e Verificado
-                  </span>
-                ) : hasKey(activeTab) ? (
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: 'var(--warning, #ff9800)',
-                      fontWeight: 500,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <AlertTriangle size={12} /> Pendente de Verificação
-                  </span>
-                ) : (
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: 'var(--fg-faint)',
-                      fontWeight: 500,
-                    }}
-                  >
-                    Chave não configurada
-                  </span>
-                )}
-              </div>
-
-              {/* Input de Chave da API com Botão "Verify" */}
-              <div
-                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
-              >
-                <label
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'var(--fg-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Key size={12} />
-                  Chave da API ({activeTab})
-                </label>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <input
-                    type={showKey[activeTab] ? 'text' : 'password'}
-                    value={getKeyValue(activeTab)}
-                    onChange={(e) => handleUpdateKey(activeTab, e.target.value)}
-                    placeholder={`Cole sua chave de API da ${activeTab}...`}
-                    style={{
-                      flex: 1,
-                      padding: '8px 10px',
-                      background: 'var(--bg-elevated)',
-                      color: 'var(--fg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)',
-                      fontSize: '12px',
-                      outline: 'none',
-                      fontFamily: 'var(--font-mono)',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => toggleShowKey(activeTab)}
-                    style={{
-                      padding: '8px',
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--fg-muted)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {showKey[activeTab] ? (
-                      <EyeOff size={14} />
-                    ) : (
-                      <Eye size={14} />
-                    )}
-                  </button>
-
-                  {/* Botão de Verificação Ativa (Verify) */}
-                  <button
-                    type="button"
-                    disabled={
-                      !getKeyValue(activeTab) ||
-                      verifyStatus[activeTab]?.loading
-                    }
-                    onClick={() =>
-                      handleVerifyKey(activeTab, getKeyValue(activeTab))
-                    }
-                    style={{
-                      padding: '8px 14px',
-                      background: 'var(--accent)',
-                      border: 'none',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--accent-on, #fff)',
-                      cursor: 'pointer',
-                      fontSize: '11.5px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      opacity:
-                        !getKeyValue(activeTab) ||
-                        verifyStatus[activeTab]?.loading
-                          ? 0.6
-                          : 1,
-                    }}
-                  >
-                    {verifyStatus[activeTab]?.loading ? (
-                      <RotateCw
-                        size={12}
-                        className="spin-animation"
-                        style={{ animation: 'spin 1s linear infinite' }}
-                      />
-                    ) : (
-                      'Verify'
-                    )}
-                  </button>
-                </div>
-
-                {/* Exibição de mensagens de sucesso ou erro específicos de verificação */}
-                {verifyStatus[activeTab]?.error && (
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: '#ff4d4f',
-                      marginTop: '4px',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {verifyStatus[activeTab]?.error}
-                  </span>
-                )}
-                {verifyStatus[activeTab]?.success && (
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      color: 'var(--status-working, #4caf50)',
-                      marginTop: '4px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Chave verificada e conectada com sucesso!
-                  </span>
-                )}
-              </div>
-
-              {/* Toggles individuais para os Modelos */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  marginTop: '8px',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'var(--fg-muted)',
-                  }}
-                >
-                  Modelos do Provedor
-                </span>
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                  }}
-                >
-                  {PROVIDER_MODELS[activeTab]?.map((modelName) => {
-                    const isModelEnabled =
-                      preferences.enabledModels?.[modelName] !== false; // ativo por default
-                    const providerConnected =
-                      preferences.verifiedProviders?.[activeTab] === true;
-
-                    return (
-                      <div
-                        key={modelName}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 12px',
-                          background: 'var(--bg-elevated)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius-sm)',
-                          opacity: providerConnected ? 1 : 0.5,
-                        }}
-                      >
-                        <span style={{ fontSize: '12px', fontWeight: 500 }}>
-                          {modelName}
-                        </span>
-
-                        <label
-                          style={{
-                            position: 'relative',
-                            display: 'inline-block',
-                            width: '32px',
-                            height: '18px',
-                            cursor: providerConnected
-                              ? 'pointer'
-                              : 'not-allowed',
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            disabled={!providerConnected}
-                            checked={providerConnected && isModelEnabled}
-                            onChange={(e) =>
-                              handleToggleModel(modelName, e.target.checked)
-                            }
-                            style={{ opacity: 0, width: 0, height: 0 }}
-                          />
-                          <span
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              backgroundColor:
-                                providerConnected && isModelEnabled
-                                  ? 'var(--accent)'
-                                  : 'var(--border)',
-                              transition: '0.2s',
-                              borderRadius: '9px',
-                            }}
-                          >
-                            <span
-                              style={{
-                                position: 'absolute',
-                                height: '14px',
-                                width: '14px',
-                                left:
-                                  providerConnected && isModelEnabled
-                                    ? '16px'
-                                    : '2px',
-                                bottom: '2px',
-                                backgroundColor: '#fff',
-                                transition: '0.2s',
-                                borderRadius: '50%',
-                              }}
-                            />
-                          </span>
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Aba de Modelos Customizados (Add Custom Model) */}
-          {activeTab === 'Custom' && (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '18px',
-                maxWidth: '600px',
-              }}
-            >
-              <div
-                style={{
-                  padding: '12px 14px',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-sm)',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    display: 'block',
-                    marginBottom: '4px',
-                  }}
-                >
-                  Modelos Customizados e Endpoints Locais
+                <span style={{ fontSize: '12px', fontWeight: 500 }}>
+                  Explore Subagent Model
                 </span>
                 <span
                   style={{
                     fontSize: '11px',
                     color: 'var(--fg-faint)',
                     lineHeight: 1.4,
-                    display: 'block',
                   }}
                 >
-                  Adicione e conecte endpoints locais (ex: Ollama, LM Studio) ou
-                  proxies compatíveis com a API do OpenAI (ex: OpenRouter,
-                  Together AI).
+                  Choose the model used by the Explore subagent for initial
+                  research
                 </span>
               </div>
+              <select
+                value={
+                  preferences.taskModels?.exploreSubagent || 'Claude 3.5 Sonnet'
+                }
+                onChange={(e) =>
+                  setPreferences({
+                    taskModels: {
+                      ...(preferences.taskModels ?? {}),
+                      exploreSubagent: e.target.value,
+                    },
+                  })
+                }
+                style={{
+                  padding: '6px 10px',
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--fg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '11.5px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  width: '200px',
+                }}
+              >
+                {activeModelsList.map((m) => (
+                  <option key={m.id} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              {/* Lista de Modelos Customizados Cadastrados */}
-              {(preferences.customModels ?? []).length > 0 && (
-                <div
+            {/* Chat Default Model */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '2px',
+                  flex: 1,
+                }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 500 }}>
+                  Chat Default Model
+                </span>
+                <span
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
+                    fontSize: '11px',
+                    color: 'var(--fg-faint)',
+                    lineHeight: 1.4,
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: 'var(--fg-muted)',
-                    }}
-                  >
-                    Modelos cadastrados
-                  </span>
-                  {(preferences.customModels ?? []).map((m) => {
-                    const isModelEnabled =
-                      preferences.enabledModels?.[m.id] !== false;
+                  Choose the default model used for main workspace chats
+                </span>
+              </div>
+              <select
+                value={
+                  preferences.taskModels?.chatDefault || 'Claude 3.5 Sonnet'
+                }
+                onChange={(e) =>
+                  setPreferences({
+                    taskModels: {
+                      ...(preferences.taskModels ?? {}),
+                      chatDefault: e.target.value,
+                    },
+                  })
+                }
+                style={{
+                  padding: '6px 10px',
+                  background: 'var(--bg-elevated)',
+                  color: 'var(--fg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '11.5px',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  width: '200px',
+                }}
+              >
+                {activeModelsList.map((m) => (
+                  <option key={m.id} value={m.name}>
+                    {m.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-                    return (
-                      <div
-                        key={m.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 12px',
-                          background: 'var(--bg-elevated)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 'var(--radius-sm)',
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '2px',
-                          }}
-                        >
-                          <span style={{ fontSize: '12px', fontWeight: 600 }}>
-                            {m.name}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              color: 'var(--fg-faint)',
-                            }}
-                          >
-                            ID: {m.id} &middot; Endpoint: {m.baseUrl}
-                          </span>
-                        </div>
+          {/* Search or Add Model Input */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 12px',
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+              }}
+            >
+              <Search size={14} style={{ color: 'var(--fg-faint)' }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Add or search model"
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'var(--fg)',
+                  fontSize: '12px',
+                }}
+              />
+            </div>
+            <button
+              type="button"
+              title="Refresh models status"
+              onClick={handleSyncOpenCodeProviders}
+              style={{
+                padding: '8px',
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--fg-muted)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
 
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                          }}
-                        >
-                          {/* Toggle */}
-                          <label
-                            style={{
-                              position: 'relative',
-                              display: 'inline-block',
-                              width: '32px',
-                              height: '18px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isModelEnabled}
-                              onChange={(e) =>
-                                handleToggleModel(m.id, e.target.checked)
-                              }
-                              style={{ opacity: 0, width: 0, height: 0 }}
-                            />
-                            <span
-                              style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: isModelEnabled
-                                  ? 'var(--accent)'
-                                  : 'var(--border)',
-                                transition: '0.2s',
-                                borderRadius: '9px',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  position: 'absolute',
-                                  height: '14px',
-                                  width: '14px',
-                                  left: isModelEnabled ? '16px' : '2px',
-                                  bottom: '2px',
-                                  backgroundColor: '#fff',
-                                  transition: '0.2s',
-                                  borderRadius: '50%',
-                                }}
-                              />
-                            </span>
-                          </label>
-
-                          {/* Delete */}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveCustomModel(m.id)}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--fg-faint)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              padding: '4px',
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.color = '#ff4d4f')
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.color = 'var(--fg-faint)')
-                            }
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Formulário para Adicionar Novo Modelo Customizado */}
+          {/* Formulário inline para adicionar modelo customizado */}
+          {(!isSearchModelInList || showAddInlineForm) &&
+            searchQuery.trim().length > 0 && (
               <form
-                onSubmit={handleAddCustomModel}
+                onSubmit={handleAddCustomModelInline}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '12px',
                   padding: '14px',
                   background: 'var(--bg)',
-                  border: '1px solid var(--border)',
+                  border: '1px dashed var(--accent)',
                   borderRadius: 'var(--radius-sm)',
                 }}
               >
                 <span
                   style={{
-                    fontSize: '11.5px',
+                    fontSize: '11px',
                     fontWeight: 600,
+                    color: 'var(--accent)',
                     textTransform: 'uppercase',
                   }}
                 >
-                  Novo Modelo Customizado
+                  Adicionar Modelo Customizado Inline
                 </span>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <div
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    required
+                    value={inlineModelName}
+                    onChange={(e) => setInlineModelName(e.target.value)}
+                    placeholder="Enter model name"
                     style={{
                       flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px',
+                      padding: '6px 10px',
+                      background: 'var(--bg-elevated)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11.5px',
+                      outline: 'none',
                     }}
-                  >
-                    <span
-                      style={{ fontSize: '10.5px', color: 'var(--fg-muted)' }}
-                    >
-                      Nome de Exibição
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      value={customName}
-                      onChange={(e) => setCustomName(e.target.value)}
-                      placeholder="Ex: My local Qwen"
-                      style={{
-                        padding: '6px 10px',
-                        background: 'var(--bg-elevated)',
-                        color: 'var(--fg)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '11.5px',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
-
-                  <div
+                  />
+                  <input
+                    type="text"
+                    required
+                    value={inlineModelId}
+                    onChange={(e) => setInlineModelId(e.target.value)}
+                    placeholder="Model ID (ex: custom-gpt4)"
                     style={{
                       flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px',
+                      padding: '6px 10px',
+                      background: 'var(--bg-elevated)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11.5px',
+                      outline: 'none',
                     }}
-                  >
-                    <span
-                      style={{ fontSize: '10.5px', color: 'var(--fg-muted)' }}
-                    >
-                      Model ID
-                    </span>
-                    <input
-                      type="text"
-                      required
-                      value={customId}
-                      onChange={(e) => setCustomId(e.target.value)}
-                      placeholder="Ex: qwen2.5-coder:7b"
-                      style={{
-                        padding: '6px 10px',
-                        background: 'var(--bg-elevated)',
-                        color: 'var(--fg)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '11.5px',
-                        outline: 'none',
-                      }}
-                    />
-                  </div>
+                  />
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    value={inlineModelProvider}
+                    onChange={(e) => setInlineModelProvider(e.target.value)}
+                    style={{
+                      width: '120px',
+                      padding: '6px 10px',
+                      background: 'var(--bg-elevated)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11.5px',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="OpenAI">OpenAI</option>
+                    <option value="Anthropic">Anthropic</option>
+                    <option value="Google">Google</option>
+                    <option value="DeepSeek">DeepSeek</option>
+                    <option value="Custom">Custom</option>
+                  </select>
+
+                  <input
+                    type="text"
+                    value={inlineModelBaseUrl}
+                    onChange={(e) => setInlineModelBaseUrl(e.target.value)}
+                    placeholder="Base URL / Custom Endpoint"
+                    style={{
+                      flex: 1,
+                      padding: '6px 10px',
+                      background: 'var(--bg-elevated)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11.5px',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+
+                <div
+                  style={{ display: 'flex', gap: '6px', alignSelf: 'flex-end' }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      padding: '6px 12px',
+                      background: 'transparent',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--fg-muted)',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '6px 14px',
+                      background: 'var(--accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--accent-on)',
+                      cursor: 'pointer',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </form>
+            )}
+
+          {/* List: Toggle de Modelos */}
+          <div
+            style={{
+              maxHeight: '260px',
+              overflowY: 'auto',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg)',
+            }}
+          >
+            {filteredModelsList.map((m) => {
+              const isEnabled = preferences.enabledModels?.[m.id] !== false;
+              const isCustom = !NATIVE_MODELS.some((n) => n.id === m.id);
+
+              return (
+                <div
+                  key={m.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 16px',
+                    borderBottom: '1px solid var(--border)',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                    }}
+                  >
+                    <span style={{ fontSize: '12px', fontWeight: 500 }}>
+                      {m.name}
+                    </span>
+                    <span
+                      style={{ fontSize: '10.5px', color: 'var(--fg-faint)' }}
+                    >
+                      {m.provider} {isCustom && '· Customizado'}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                    }}
+                  >
+                    {/* Toggle */}
+                    <label
+                      style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        width: '32px',
+                        height: '18px',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isEnabled}
+                        onChange={(e) =>
+                          handleToggleModel(m.id, e.target.checked)
+                        }
+                        style={{
+                          opacity: 0,
+                          width: 0,
+                          height: 0,
+                          cursor: 'pointer',
+                        }}
+                      />
+                      <span
+                        style={{
+                          position: 'absolute',
+                          cursor: 'pointer',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: isEnabled
+                            ? 'var(--status-working, #4caf50)'
+                            : 'var(--border)',
+                          transition: '0.2s',
+                          borderRadius: '9px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            height: '14px',
+                            width: '14px',
+                            left: isEnabled ? '16px' : '2px',
+                            bottom: '2px',
+                            backgroundColor: '#fff',
+                            transition: '0.2s',
+                            borderRadius: '50%',
+                          }}
+                        />
+                      </span>
+                    </label>
+
+                    {/* Delete Custom Model */}
+                    {isCustom && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomModel(m.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--fg-faint)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.color = '#ff4d4f')
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.color = 'var(--fg-faint)')
+                        }
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ==================== SEÇÃO 2: API KEYS (COLAPSÁVEL) ==================== */}
+        <section
+          style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}
+        >
+          <button
+            type="button"
+            onClick={() => setApiKeysExpanded(!apiKeysExpanded)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '1px solid var(--border)',
+              paddingBottom: '8px',
+              color: 'var(--fg)',
+              cursor: 'pointer',
+              fontWeight: 600,
+              fontSize: '14px',
+              textAlign: 'left',
+              outline: 'none',
+            }}
+          >
+            <span>API Keys</span>
+            {apiKeysExpanded ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )}
+          </button>
+
+          {apiKeysExpanded && (
+            <div
+              style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
+            >
+              {/* OpenAI (Simples + Override URL option) */}
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                  OpenAI API Key
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--fg-faint)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  You can put in your OpenAI key to use OpenAI models at cost.
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="password"
+                    value={preferences.openaiApiKey || ''}
+                    onChange={(e) => {
+                      setPreferences({ openaiApiKey: e.target.value });
+                      setVerifyStatus((prev) => ({
+                        ...prev,
+                        OpenAI: { loading: false, success: false, error: null },
+                      }));
+                    }}
+                    placeholder="Enter your OpenAI API Key"
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      background: 'var(--bg)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '12px',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={verifyStatus['OpenAI']?.loading}
+                    onClick={() =>
+                      handleVerifyKey('OpenAI', preferences.openaiApiKey)
+                    }
+                    style={{
+                      padding: '6px 14px',
+                      background: 'var(--accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--accent-on)',
+                      cursor: 'pointer',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    {verifyStatus['OpenAI']?.loading && (
+                      <RotateCw
+                        size={12}
+                        className="spin-animation"
+                        style={{ animation: 'spin 1s linear infinite' }}
+                      />
+                    )}
+                    Verify
+                  </button>
+                </div>
+                {verifyStatus['OpenAI']?.error && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: '#ff4d4f',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {verifyStatus['OpenAI']?.error}
+                  </span>
+                )}
+                {preferences.verifiedProviders?.['OpenAI'] === true && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: 'var(--status-working, #4caf50)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Chave verificada com sucesso!
+                  </span>
+                )}
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginTop: '6px',
+                  }}
+                >
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={overrideOpenaiUrl}
+                      onChange={(e) => setOverrideOpenaiUrl(e.target.checked)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    Override OpenAI Base URL
+                  </label>
+                </div>
+                {overrideOpenaiUrl && (
+                  <input
+                    type="text"
+                    value={openaiBaseUrl}
+                    onChange={(e) => setOpenaiBaseUrl(e.target.value)}
+                    placeholder="Change the base URL for OpenAI API requests."
+                    style={{
+                      padding: '6px 10px',
+                      background: 'var(--bg)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '11.5px',
+                      outline: 'none',
+                      marginTop: '4px',
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Anthropic (Simples) */}
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                  Anthropic API Key
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--fg-faint)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  You can put in your Anthropic key to use Claude at cost. When
+                  enabled, this key will be used for all models beginning with
+                  'claude-'.
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="password"
+                    value={preferences.anthropicApiKey || ''}
+                    onChange={(e) => {
+                      setPreferences({ anthropicApiKey: e.target.value });
+                      setVerifyStatus((prev) => ({
+                        ...prev,
+                        Anthropic: {
+                          loading: false,
+                          success: false,
+                          error: null,
+                        },
+                      }));
+                    }}
+                    placeholder="Enter your Anthropic API Key"
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      background: 'var(--bg)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '12px',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={verifyStatus['Anthropic']?.loading}
+                    onClick={() =>
+                      handleVerifyKey('Anthropic', preferences.anthropicApiKey)
+                    }
+                    style={{
+                      padding: '6px 14px',
+                      background: 'var(--accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--accent-on)',
+                      cursor: 'pointer',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    {verifyStatus['Anthropic']?.loading && (
+                      <RotateCw
+                        size={12}
+                        className="spin-animation"
+                        style={{ animation: 'spin 1s linear infinite' }}
+                      />
+                    )}
+                    Verify
+                  </button>
+                </div>
+                {verifyStatus['Anthropic']?.error && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: '#ff4d4f',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {verifyStatus['Anthropic']?.error}
+                  </span>
+                )}
+                {preferences.verifiedProviders?.['Anthropic'] === true && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: 'var(--status-working, #4caf50)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Chave verificada com sucesso!
+                  </span>
+                )}
+              </div>
+
+              {/* Google Gemini (Simples) */}
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                  Google Gemini API Key
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--fg-faint)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Enter your Google AI Studio key to use Gemini models.
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="password"
+                    value={preferences.googleApiKey || ''}
+                    onChange={(e) => {
+                      setPreferences({ googleApiKey: e.target.value });
+                      setVerifyStatus((prev) => ({
+                        ...prev,
+                        Google: { loading: false, success: false, error: null },
+                      }));
+                    }}
+                    placeholder="Enter your Google Gemini API Key"
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      background: 'var(--bg)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '12px',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={verifyStatus['Google']?.loading}
+                    onClick={() =>
+                      handleVerifyKey('Google', preferences.googleApiKey)
+                    }
+                    style={{
+                      padding: '6px 14px',
+                      background: 'var(--accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--accent-on)',
+                      cursor: 'pointer',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    {verifyStatus['Google']?.loading && (
+                      <RotateCw
+                        size={12}
+                        className="spin-animation"
+                        style={{ animation: 'spin 1s linear infinite' }}
+                      />
+                    )}
+                    Verify
+                  </button>
+                </div>
+                {verifyStatus['Google']?.error && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: '#ff4d4f',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {verifyStatus['Google']?.error}
+                  </span>
+                )}
+                {preferences.verifiedProviders?.['Google'] === true && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: 'var(--status-working, #4caf50)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Chave verificada com sucesso!
+                  </span>
+                )}
+              </div>
+
+              {/* DeepSeek (Simples) */}
+              <div
+                style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}
+              >
+                <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                  DeepSeek API Key
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--fg-faint)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Put in your DeepSeek key to use DeepSeek V3 and DeepSeek R1.
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="password"
+                    value={preferences.deepseekApiKey || ''}
+                    onChange={(e) => {
+                      setPreferences({ deepseekApiKey: e.target.value });
+                      setVerifyStatus((prev) => ({
+                        ...prev,
+                        DeepSeek: {
+                          loading: false,
+                          success: false,
+                          error: null,
+                        },
+                      }));
+                    }}
+                    placeholder="Enter your DeepSeek API Key"
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      background: 'var(--bg)',
+                      color: 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: '12px',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={verifyStatus['DeepSeek']?.loading}
+                    onClick={() =>
+                      handleVerifyKey('DeepSeek', preferences.deepseekApiKey)
+                    }
+                    style={{
+                      padding: '6px 14px',
+                      background: 'var(--accent)',
+                      border: 'none',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--accent-on)',
+                      cursor: 'pointer',
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    {verifyStatus['DeepSeek']?.loading && (
+                      <RotateCw
+                        size={12}
+                        className="spin-animation"
+                        style={{ animation: 'spin 1s linear infinite' }}
+                      />
+                    )}
+                    Verify
+                  </button>
+                </div>
+                {verifyStatus['DeepSeek']?.error && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: '#ff4d4f',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {verifyStatus['DeepSeek']?.error}
+                  </span>
+                )}
+                {preferences.verifiedProviders?.['DeepSeek'] === true && (
+                  <span
+                    style={{
+                      fontSize: '10.5px',
+                      color: 'var(--status-working, #4caf50)',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Chave verificada com sucesso!
+                  </span>
+                )}
+              </div>
+
+              {/* OpenCode Headless Server Integration */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  padding: '16px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <div
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <Server size={14} style={{ color: 'var(--accent)' }} />
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                    OpenCode Local Headless Server
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: 'var(--fg-faint)',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Configurações do servidor autônomo do OpenCode para
+                  sincronização bidirecional de chaves e status de modelos.
+                </span>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
                   <div
                     style={{
                       flex: 1,
@@ -1311,13 +1334,18 @@ export function SettingsPanel() {
                     }}
                   >
                     <span
-                      style={{ fontSize: '10.5px', color: 'var(--fg-muted)' }}
+                      style={{ fontSize: '10px', color: 'var(--fg-muted)' }}
                     >
-                      Provedor base
+                      Port
                     </span>
-                    <select
-                      value={customProvider}
-                      onChange={(e) => setCustomProvider(e.target.value)}
+                    <input
+                      type="number"
+                      value={preferences.opencodePort}
+                      onChange={(e) =>
+                        setPreferences({
+                          opencodePort: parseInt(e.target.value) || 4096,
+                        })
+                      }
                       style={{
                         padding: '6px 10px',
                         background: 'var(--bg-elevated)',
@@ -1326,35 +1354,61 @@ export function SettingsPanel() {
                         borderRadius: 'var(--radius-sm)',
                         fontSize: '11.5px',
                         outline: 'none',
-                        cursor: 'pointer',
                       }}
-                    >
-                      <option value="OpenAI">OpenAI</option>
-                      <option value="Anthropic">Anthropic</option>
-                      <option value="Google">Google</option>
-                      <option value="DeepSeek">DeepSeek</option>
-                      <option value="Custom">Custom / Outro</option>
-                    </select>
+                    />
                   </div>
 
                   <div
                     style={{
-                      flex: 1.5,
+                      flex: 2,
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '4px',
                     }}
                   >
                     <span
-                      style={{ fontSize: '10.5px', color: 'var(--fg-muted)' }}
+                      style={{ fontSize: '10px', color: 'var(--fg-muted)' }}
                     >
-                      Custom Base URL / Endpoint
+                      Hostname
                     </span>
                     <input
-                      type="url"
-                      value={customBaseUrl}
-                      onChange={(e) => setCustomBaseUrl(e.target.value)}
-                      placeholder="Ex: http://127.0.0.1:11434/v1"
+                      type="text"
+                      value={preferences.opencodeHostname}
+                      onChange={(e) =>
+                        setPreferences({ opencodeHostname: e.target.value })
+                      }
+                      style={{
+                        padding: '6px 10px',
+                        background: 'var(--bg-elevated)',
+                        color: 'var(--fg)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '11.5px',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      flex: 2.5,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                    }}
+                  >
+                    <span
+                      style={{ fontSize: '10px', color: 'var(--fg-muted)' }}
+                    >
+                      Server Password
+                    </span>
+                    <input
+                      type="password"
+                      value={preferences.opencodePassword || ''}
+                      onChange={(e) =>
+                        setPreferences({ opencodePassword: e.target.value })
+                      }
+                      placeholder="OPENCODE_SERVER_PASSWORD"
                       style={{
                         padding: '6px 10px',
                         background: 'var(--bg-elevated)',
@@ -1369,25 +1423,480 @@ export function SettingsPanel() {
                 </div>
 
                 <button
-                  type="submit"
+                  type="button"
+                  disabled={syncingOpenCode}
+                  onClick={handleSyncOpenCodeProviders}
                   style={{
-                    alignSelf: 'flex-end',
+                    alignSelf: 'flex-start',
+                    marginTop: '4px',
                     padding: '6px 14px',
-                    background: 'var(--accent)',
-                    border: 'none',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
-                    color: 'var(--accent-on)',
+                    color: 'var(--fg)',
                     cursor: 'pointer',
-                    fontSize: '11.5px',
+                    fontSize: '11px',
                     fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                   }}
                 >
-                  Adicionar Modelo
+                  {syncingOpenCode ? (
+                    <RotateCw
+                      size={12}
+                      className="spin-animation"
+                      style={{ animation: 'spin 1s linear infinite' }}
+                    />
+                  ) : (
+                    'Sincronizar com OpenCode'
+                  )}
                 </button>
-              </form>
+              </div>
+
+              {/* Azure OpenAI (Complexo: Toggle + Formulário expandido) */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  padding: '16px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                    }}
+                  >
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                      Azure OpenAI
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: 'var(--fg-faint)',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      Use Azure OpenAI deployments for secure corporate
+                      instances.
+                    </span>
+                  </div>
+
+                  {/* Toggle */}
+                  <label
+                    style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      width: '32px',
+                      height: '18px',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={azureEnabled}
+                      onChange={(e) => setAzureEnabled(e.target.checked)}
+                      style={{
+                        opacity: 0,
+                        width: 0,
+                        height: 0,
+                        cursor: 'pointer',
+                      }}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: azureEnabled
+                          ? 'var(--accent)'
+                          : 'var(--border)',
+                        transition: '0.2s',
+                        borderRadius: '9px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: 'absolute',
+                          height: '14px',
+                          width: '14px',
+                          left: azureEnabled ? '16px' : '2px',
+                          bottom: '2px',
+                          backgroundColor: '#fff',
+                          transition: '0.2s',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    </span>
+                  </label>
+                </div>
+
+                {azureEnabled && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      marginTop: '6px',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                      }}
+                    >
+                      <span
+                        style={{ fontSize: '10.5px', color: 'var(--fg-muted)' }}
+                      >
+                        Base URL
+                      </span>
+                      <input
+                        type="text"
+                        value={azureBaseUrl}
+                        onChange={(e) => setAzureBaseUrl(e.target.value)}
+                        placeholder="e.g. my-resource.openai.azure.com"
+                        style={{
+                          padding: '6px 10px',
+                          background: 'var(--bg-elevated)',
+                          color: 'var(--fg)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '11.5px',
+                          outline: 'none',
+                        }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--fg-muted)',
+                          }}
+                        >
+                          Deployment Name
+                        </span>
+                        <input
+                          type="text"
+                          value={azureDeploymentName}
+                          onChange={(e) =>
+                            setAzureDeploymentName(e.target.value)
+                          }
+                          placeholder="e.g. gpt-35-turbo"
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--fg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '11.5px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1.5,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--fg-muted)',
+                          }}
+                        >
+                          API Key
+                        </span>
+                        <input
+                          type="password"
+                          value={azureApiKey}
+                          onChange={(e) => setAzureApiKey(e.target.value)}
+                          placeholder="Azure API Key"
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--fg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '11.5px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* AWS Bedrock (Complexo: Toggle + Formulário expandido) */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  padding: '16px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                    }}
+                  >
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                      AWS Bedrock
+                    </span>
+                    <span
+                      style={{
+                        fontSize: '11px',
+                        color: 'var(--fg-faint)',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      Use models from AWS Bedrock directly at cost. Enterprise
+                      teams can configure IAM roles to access Bedrock without
+                      any Access Keys.
+                    </span>
+                  </div>
+
+                  {/* Toggle */}
+                  <label
+                    style={{
+                      position: 'relative',
+                      display: 'inline-block',
+                      width: '32px',
+                      height: '18px',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={bedrockEnabled}
+                      onChange={(e) => setBedrockEnabled(e.target.checked)}
+                      style={{
+                        opacity: 0,
+                        width: 0,
+                        height: 0,
+                        cursor: 'pointer',
+                      }}
+                    />
+                    <span
+                      style={{
+                        position: 'absolute',
+                        cursor: 'pointer',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: bedrockEnabled
+                          ? 'var(--accent)'
+                          : 'var(--border)',
+                        transition: '0.2s',
+                        borderRadius: '9px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: 'absolute',
+                          height: '14px',
+                          width: '14px',
+                          left: bedrockEnabled ? '16px' : '2px',
+                          bottom: '2px',
+                          backgroundColor: '#fff',
+                          transition: '0.2s',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    </span>
+                  </label>
+                </div>
+
+                {bedrockEnabled && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px',
+                      marginTop: '6px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--fg-muted)',
+                          }}
+                        >
+                          Access Key ID
+                        </span>
+                        <input
+                          type="text"
+                          value={bedrockAccessKey}
+                          onChange={(e) => setBedrockAccessKey(e.target.value)}
+                          placeholder="e.g. AKIA..."
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--fg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '11.5px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--fg-muted)',
+                          }}
+                        >
+                          Secret Access Key
+                        </span>
+                        <input
+                          type="password"
+                          value={bedrockSecretKey}
+                          onChange={(e) => setBedrockSecretKey(e.target.value)}
+                          placeholder="Secret Key"
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--fg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '11.5px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <div
+                        style={{
+                          flex: 1,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--fg-muted)',
+                          }}
+                        >
+                          Region
+                        </span>
+                        <input
+                          type="text"
+                          value={bedrockRegion}
+                          onChange={(e) => setBedrockRegion(e.target.value)}
+                          placeholder="e.g. us-east-1"
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--fg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '11.5px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                      <div
+                        style={{
+                          flex: 1.5,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            color: 'var(--fg-muted)',
+                          }}
+                        >
+                          Test Model
+                        </span>
+                        <input
+                          type="text"
+                          value={bedrockTestModel}
+                          onChange={(e) => setBedrockTestModel(e.target.value)}
+                          placeholder="e.g. us.anthropic.claude-3-5-sonnet-v1:0"
+                          style={{
+                            padding: '6px 10px',
+                            background: 'var(--bg-elevated)',
+                            color: 'var(--fg)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)',
+                            fontSize: '11.5px',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </main>
+        </section>
       </div>
 
       <style>{`
