@@ -23,9 +23,7 @@ export function WorkflowModal() {
   const activeProjectId = useProjectsStore((s) => s.activeProjectId);
   const projects = useProjectsStore((s) => s.projects);
 
-  const activeProject = projects.find((p) => p.id === activeProjectId);
-  const defaultCwd = activeProject?.terminals?.[0]?.cwd || '';
-
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [task, setTask] = useState('');
   const [agentType, setAgentType] = useState<string>('claude');
   const [mode, setMode] = useState<WorkflowMode>('LOCAL');
@@ -34,13 +32,23 @@ export function WorkflowModal() {
   const [error, setError] = useState<string | null>(null);
   const [gitStatus, setGitStatus] = useState<GitStatus>('checking');
 
+  const activeProject = projects.find((p) => p.id === selectedProjectId);
+  const defaultCwd = activeProject?.terminals?.[0]?.cwd || '';
+
+  // Sincroniza com o projeto ativo quando o modal abre
+  useEffect(() => {
+    if (open) {
+      setSelectedProjectId(activeProjectId || (projects[0]?.id ?? ''));
+    }
+  }, [open, activeProjectId, projects]);
+
   useEffect(() => {
     if (!open) return;
     setGitStatus('checking');
     setRepoRoot(defaultCwd);
 
     if (!defaultCwd) {
-      setGitStatus('no-git');
+      setGitStatus('no-repo');
       setMode('LOCAL');
       return;
     }
@@ -51,7 +59,6 @@ export function WorkflowModal() {
         setMode('GIT');
       })
       .catch(() => {
-        // git rev-parse falhou — pode ser sem git ou sem repo
         setGitStatus('no-repo');
         setMode('LOCAL');
       });
@@ -135,6 +142,20 @@ export function WorkflowModal() {
             placeholder="e.g. Implement JWT authentication"
             rows={3}
           />
+        </label>
+        <label className={styles.label}>
+          {t('ui.sidebar.projects')}
+          <select
+            className={styles.select}
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+          >
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className={styles.label}>
