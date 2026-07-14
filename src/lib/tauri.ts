@@ -597,6 +597,33 @@ export async function snapshotOpenCodeSessions(
   });
 }
 
+export type OpenCodeModel = {
+  id: string;
+  full_id: string;
+  name: string;
+  provider: string;
+  provider_id: string;
+  cost_input: number;
+  cost_output: number;
+  context_length: number | null;
+  status: string;
+};
+
+export type OpenCodeProvider = {
+  id: string;
+  name: string;
+  kind: string;
+  active: boolean;
+};
+
+export async function getOpenCodeModels(): Promise<OpenCodeModel[]> {
+  return invoke<OpenCodeModel[]>('get_opencode_models');
+}
+
+export async function getOpenCodeProviders(): Promise<OpenCodeProvider[]> {
+  return invoke<OpenCodeProvider[]>('get_opencode_providers');
+}
+
 export async function snapshotClaudeSessions(
   cwd: string,
 ): Promise<ClaudeSessionSnapshot[]> {

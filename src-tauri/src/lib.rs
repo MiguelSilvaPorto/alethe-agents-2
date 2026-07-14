@@ -24,6 +24,7 @@ mod worktree;
 mod github_sync;
 mod logging;
 mod opencode_sessions;
+mod opencode_models;
 mod paths;
 mod projects;
 mod profiles;
@@ -167,6 +168,8 @@ pub fn run() {
             claude_sessions::get_claude_activity,
             codex_sessions::snapshot_codex_sessions,
             opencode_sessions::snapshot_opencode_sessions,
+            opencode_models::get_opencode_models,
+            opencode_models::get_opencode_providers,
             claude_usage::get_claude_usage,
             codex_usage::get_codex_usage,
             agent_cost::get_session_cost,
