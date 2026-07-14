@@ -1,11 +1,4 @@
-import {
-  GitBranch,
-  Layers,
-  Loader2,
-  Plus,
-  RefreshCw,
-  ChevronDown,
-} from 'lucide-react';
+import { GitBranch, Layers, Loader2, Plus, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { useT } from '../../lib/i18n';
@@ -302,27 +295,6 @@ export function WorkflowDashboard() {
           </button>
         </div>
       </header>
-
-      {/* Seletor de projeto */}
-      {projects.length > 0 && (
-        <div className={styles.projectSelector}>
-          <select
-            className={styles.projectSelect}
-            value={selectedProjectId}
-            onChange={(e) => setSelectedProjectId(e.target.value)}
-          >
-            <option value="__all__">
-              {t('task.allProjects')} ({projects.length})
-            </option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} ({p.tasks.length})
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={12} className={styles.selectChevron} />
-        </div>
-      )}
 
       {showKanban && (
         <div className={styles.kanban}>
