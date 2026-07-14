@@ -42,27 +42,27 @@ const NATIVE_MODELS = [
   {
     id: 'opencode-go/glm-5.2',
     name: 'GLM 5.2',
-    provider: 'OpenCode Go',
+    provider: 'OpenCode ZEN',
   },
   {
     id: 'opencode-go/kimi-k2.7-code',
     name: 'Kimi K2.7 Code',
-    provider: 'OpenCode Go',
+    provider: 'OpenCode ZEN',
   },
   {
     id: 'opencode-go/mimo-v2.5-pro',
     name: 'Mimo v2.5 Pro',
-    provider: 'OpenCode Go',
+    provider: 'OpenCode ZEN',
   },
   {
     id: 'opencode-go/qwen3.7-max',
     name: 'Qwen 3.7 Max',
-    provider: 'OpenCode Go',
+    provider: 'OpenCode ZEN',
   },
   {
     id: 'opencode-go/deepseek-v4-flash',
     name: 'DeepSeek V4 Flash',
-    provider: 'OpenCode Go',
+    provider: 'OpenCode ZEN',
   },
 ];
 
@@ -72,6 +72,7 @@ const PROVIDER_ORDER = [
   'Google',
   'DeepSeek',
   'OpenCode Go',
+  'OpenCode ZEN',
 ];
 const PROVIDER_ICONS: Record<string, LucideIcon> = {
   Anthropic: Sparkles,
@@ -79,6 +80,7 @@ const PROVIDER_ICONS: Record<string, LucideIcon> = {
   Google: Globe,
   DeepSeek: Cloud,
   'OpenCode Go': Zap,
+  'OpenCode ZEN': Zap,
 };
 
 export function SettingsPanel() {
@@ -1153,7 +1155,7 @@ function ModelsAndKeysSettingsView() {
                   )}
                   <ProviderIcon size={14} />
                   <span style={{ flex: 1 }}>{provider}</span>
-                  {provider === 'OpenCode Go' && (
+                  {provider === 'OpenCode ZEN' && (
                     <span
                       style={{
                         fontSize: '9px',
@@ -1216,7 +1218,7 @@ function ModelsAndKeysSettingsView() {
                             <span style={{ fontSize: '12px', fontWeight: 500 }}>
                               {m.name}
                             </span>
-                            {provider === 'OpenCode Go' ? (
+                            {provider === 'OpenCode ZEN' ? (
                               <span
                                 style={{
                                   fontSize: '10px',
