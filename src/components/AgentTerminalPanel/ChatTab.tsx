@@ -7,8 +7,10 @@ import {
   Mic,
   CheckSquare,
   ChevronDown,
+  Settings,
   X,
 } from 'lucide-react';
+import { useUiStore } from '../../stores/uiStore';
 import { useProjectsStore } from '../../stores/projectsStore';
 import styles from './ChatTab.module.css';
 
@@ -44,6 +46,7 @@ interface ChatSession {
 export function ChatTab() {
   const activeProjectId = useProjectsStore((s) => s.activeProjectId);
   const projects = useProjectsStore((s) => s.projects);
+  const openModal = useUiStore((s) => s.openModal_);
   const activeProject = useMemo(
     () => projects.find((p) => p.id === activeProjectId),
     [projects, activeProjectId],
@@ -702,6 +705,9 @@ export function ChatTab() {
                     style={{
                       padding: '6px',
                       borderBottom: '1px solid var(--border)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
                     }}
                   >
                     <input
@@ -711,7 +717,7 @@ export function ChatTab() {
                       value={modelSearchQuery}
                       onChange={(e) => setModelSearchQuery(e.target.value)}
                       style={{
-                        width: '100%',
+                        flex: 1,
                         padding: '4px 8px',
                         fontSize: '11px',
                         background: 'var(--bg-sunken)',
@@ -723,6 +729,36 @@ export function ChatTab() {
                       }}
                       autoFocus
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        openModal('preferences');
+                        setShowModelDropdown(false);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--fg-muted)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        transition: 'background 0.15s, color 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--panel-hover)';
+                        e.currentTarget.style.color = 'var(--fg)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = 'var(--fg-muted)';
+                      }}
+                      title="Abrir Preferências (Configurações)"
+                    >
+                      <Settings size={14} />
+                    </button>
                   </div>
                   <div
                     style={{
