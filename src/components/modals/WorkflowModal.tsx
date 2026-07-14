@@ -1,5 +1,5 @@
 import { GitBranch, Layers, Loader2, AlertCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 import { useT } from '../../lib/i18n';
 import { useUiStore } from '../../stores/uiStore';
@@ -24,6 +24,7 @@ export function WorkflowModal() {
   const projects = useProjectsStore((s) => s.projects);
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [selectedTerminalId, setSelectedTerminalId] = useState<string>('');
   const [task, setTask] = useState('');
   const [agentType, setAgentType] = useState<string>('claude');
   const [mode, setMode] = useState<WorkflowMode>('LOCAL');
@@ -33,7 +34,14 @@ export function WorkflowModal() {
   const [gitStatus, setGitStatus] = useState<GitStatus>('checking');
 
   const activeProject = projects.find((p) => p.id === selectedProjectId);
-  const defaultCwd = activeProject?.terminals?.[0]?.cwd || '';
+  const terminals = useMemo(
+    () => activeProject?.terminals ?? [],
+    [activeProject],
+  );
+  const selectedTerminal =
+    terminals.find((term: any) => term.id === selectedTerminalId) ||
+    terminals[0];
+  const defaultCwd = selectedTerminal?.cwd || '';
 
   // Sincroniza com o projeto ativo quando o modal abre
   useEffect(() => {
@@ -41,6 +49,15 @@ export function WorkflowModal() {
       setSelectedProjectId(activeProjectId || (projects[0]?.id ?? ''));
     }
   }, [open, activeProjectId, projects]);
+
+  // Sincroniza com o primeiro terminal quando muda o projeto selecionado
+  useEffect(() => {
+    if (terminals.length > 0) {
+      setSelectedTerminalId(terminals[0].id);
+    } else {
+      setSelectedTerminalId('');
+    }
+  }, [terminals]);
 
   useEffect(() => {
     if (!open) return;
@@ -157,6 +174,23 @@ export function WorkflowModal() {
             ))}
           </select>
         </label>
+
+        {terminals.length > 0 && (
+          <label className={styles.label}>
+            Terminal
+            <select
+              className={styles.select}
+              value={selectedTerminalId}
+              onChange={(e) => setSelectedTerminalId(e.target.value)}
+            >
+              {terminals.map((term) => (
+                <option key={term.id} value={term.id}>
+                  {term.name || `Terminal (${term.cwd})`}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label className={styles.label}>
           {t('workflow.agentType')}

@@ -261,6 +261,10 @@ export type Preferences = {
    * Default false até a feature sair do estágio experimental.
    */
   nativeTerminalMacos?: boolean;
+  /** Configurações do Agent Reviewer */
+  reviewerEnabled: boolean;
+  reviewerSystemPrompt: string;
+  reviewerProjectRoadmap: string;
 };
 
 export type ProjectsFile = {
@@ -321,6 +325,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   showGitControl: true,
   notifyOnLimitReset: true,
   spawnConcurrency: 3,
+  reviewerEnabled: false,
+  reviewerSystemPrompt:
+    'Você é um arquiteto e revisor de código sênior. Compare o que foi pedido com o que foi entregue. Analise o contexto e verifique se o rumo correto do projeto foi tomado. Se houver desvios ou erros, aponte-os claramente.',
+  reviewerProjectRoadmap: '',
 };
 
 export const EMPTY_PROJECTS_FILE: ProjectsFile = {

@@ -10,6 +10,7 @@ import {
   Search,
   TerminalSquare,
   UserRound,
+  ShieldCheck,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -32,7 +33,8 @@ import { ImageInput } from './ImageInput';
 import controls from './controls.module.css';
 import styles from './PreferencesModal.module.css';
 
-type CategoryId = 'account' | 'appearance' | 'terminal' | 'integrations';
+type CategoryId =
+  'account' | 'appearance' | 'terminal' | 'integrations' | 'reviewer';
 
 type Category = {
   id: CategoryId;
@@ -96,6 +98,12 @@ export function PreferencesModal() {
         label: t('prefs.categoryIntegrations'),
         description: t('prefs.categoryIntegrationsDesc'),
         Icon: Plug,
+      },
+      {
+        id: 'reviewer',
+        label: 'Agent Reviewer',
+        description: 'Configurações de revisão automatizada de código',
+        Icon: ShieldCheck,
       },
     ],
     [t],
@@ -408,6 +416,7 @@ export function PreferencesModal() {
                   <TerminalPage enabledCount={enabledCount} />
                 ) : null}
                 {category === 'integrations' ? <IntegrationsPage /> : null}
+                {category === 'reviewer' ? <ReviewerPage /> : null}
               </div>
             </div>
           </main>
@@ -961,5 +970,97 @@ function Avatar({
     >
       {initial}
     </span>
+  );
+}
+
+function ReviewerPage() {
+  const preferences = useProjectsStore((state) => state.preferences);
+  const setPreferences = useProjectsStore((state) => state.setPreferences);
+
+  return (
+    <>
+      <SettingsSection
+        id="reviewer-enabled"
+        title="Ativar Agent Reviewer"
+        description="Quando ativo, um agente revisor irá comparar o que foi pedido com o que foi entregue após cada conclusão de tarefa."
+      >
+        <div className={styles.segmented}>
+          <button
+            type="button"
+            className={
+              preferences.reviewerEnabled ? styles.segmentActive : undefined
+            }
+            onClick={() => setPreferences({ reviewerEnabled: true })}
+          >
+            Habilitado
+          </button>
+          <button
+            type="button"
+            className={
+              !preferences.reviewerEnabled ? styles.segmentActive : undefined
+            }
+            onClick={() => setPreferences({ reviewerEnabled: false })}
+          >
+            Desabilitado
+          </button>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        id="reviewer-prompt"
+        title="Instruções de Comparação (System Prompt)"
+        description="Personalize as instruções que o agente revisor seguirá ao analisar os entregáveis e compará-los com a solicitação."
+      >
+        <textarea
+          className={controls.input}
+          style={{
+            width: '100%',
+            minHeight: '100px',
+            resize: 'vertical',
+            padding: '10px',
+            background: 'var(--bg-sunken)',
+            color: 'var(--fg)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            outline: 'none',
+            fontSize: '12px',
+            fontFamily: 'inherit',
+          }}
+          value={preferences.reviewerSystemPrompt}
+          onChange={(e) =>
+            setPreferences({ reviewerSystemPrompt: e.target.value })
+          }
+          placeholder="Ex: Compare o que foi pedido com o que foi entregue..."
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="reviewer-roadmap"
+        title="Rumo do Projeto & Diretrizes (Roadmap)"
+        description="Especifique os objetivos principais, caminhos do projeto e metas que o revisor usará para julgar se a direção correta foi tomada."
+      >
+        <textarea
+          className={controls.input}
+          style={{
+            width: '100%',
+            minHeight: '120px',
+            resize: 'vertical',
+            padding: '10px',
+            background: 'var(--bg-sunken)',
+            color: 'var(--fg)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            outline: 'none',
+            fontSize: '12px',
+            fontFamily: 'inherit',
+          }}
+          value={preferences.reviewerProjectRoadmap}
+          onChange={(e) =>
+            setPreferences({ reviewerProjectRoadmap: e.target.value })
+          }
+          placeholder="Ex: Meta 1: Migrar interfaces para Tailwind CSS. Meta 2: Refatorar store global..."
+        />
+      </SettingsSection>
+    </>
   );
 }
