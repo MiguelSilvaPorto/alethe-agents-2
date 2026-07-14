@@ -487,14 +487,7 @@ function ModelsAndKeysSettingsView() {
 
   const [expandedProviders, setExpandedProviders] = useState<
     Record<string, boolean>
-  >({
-    Anthropic: true,
-    OpenAI: true,
-    Google: true,
-    DeepSeek: true,
-    'OpenCode Go': true,
-    'OpenCode Zen': true,
-  });
+  >({});
 
   // OpenCode real data
   const [opencodeModels, setLocalOpencodeModels] = useState<OpenCodeModel[]>(
