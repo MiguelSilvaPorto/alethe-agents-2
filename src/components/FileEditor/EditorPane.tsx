@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect } from 'react';
 import Editor, { type OnMount, type OnChange } from '@monaco-editor/react';
 import { useEditorStore } from '../../stores/editorStore';
 import { SettingsPanel } from '../ProjectSidebar/SettingsPanel';
+import { MarkdownRenderer } from '../MarkdownPane/MarkdownRenderer';
 import styles from './EditorPane.module.css';
 
 const MONACO_OPTIONS = {
@@ -112,6 +113,26 @@ export function EditorPane() {
 
   if (!activeFileState) {
     return null;
+  }
+
+  if (activeTab.name.toLowerCase() === 'implementation_plan.md') {
+    return (
+      <div
+        style={{
+          flex: 1,
+          padding: '24px 32px',
+          overflowY: 'auto',
+          background: 'var(--bg-sunken)',
+          color: 'var(--fg)',
+          fontFamily: 'var(--font-sans)',
+          lineHeight: 1.6,
+        }}
+      >
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <MarkdownRenderer content={activeFileState.content} dark={true} />
+        </div>
+      </div>
+    );
   }
 
   const fileLoading = loading[activeTab.filePath];

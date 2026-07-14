@@ -32,3 +32,16 @@ Consulte as regras locais específicas para o desenvolvimento de cada domínio:
 
 - Frontend (React / TypeScript / Zustand / CSS): [`src/.claude.rules.md`](src/.claude.rules.md)
 - Backend (Rust / Tauri / PTY / System): [`src-tauri/.claude.rules.md`](src-tauri/.claude.rules.md)
+
+## 5. Geração de Planos de Implementação (Nativo)
+
+Sempre que o usuário solicitar um planejamento detalhado de mudanças ou implementação complexa:
+
+1. **Gere o plano formatado no arquivo físico `implementation_plan.md` na raiz do projeto**.
+2. Estruture o plano em Markdown contendo:
+   - Título claro no topo (`# Título`)
+   - Resumo e motivação
+   - Seções de alterações planejadas agrupadas por componente
+   - Diagramas Mermaid se for ilustrar fluxos/arquitetura
+   - Blocos de código com a linguagem especificada para realce de sintaxe
+3. O Alethe intercepta a abertura de `implementation_plan.md` no editor e renderiza uma visualização nativa formatada muito premium. Não imprima textos brutos imensos no terminal se puder direcionar para este arquivo.
