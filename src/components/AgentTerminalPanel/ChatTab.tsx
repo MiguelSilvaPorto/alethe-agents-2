@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useProjectsStore } from '../../stores/projectsStore';
+import { getOpenCodeModels } from '../../lib/tauri';
 import {
   IconText,
   IconImage,
@@ -132,6 +133,15 @@ export function ChatTab() {
   ]);
 
   const [activeSessionId, setActiveSessionId] = useState<string>('session-1');
+
+  useEffect(() => {
+    const models = useUiStore.getState().opencodeModels;
+    if (models.length === 0) {
+      getOpenCodeModels()
+        .then((list) => useUiStore.getState().setOpenCodeModels(list))
+        .catch(() => {});
+    }
+  }, []);
 
   const currentSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || sessions[0],
