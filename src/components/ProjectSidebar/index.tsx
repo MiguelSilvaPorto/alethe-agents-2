@@ -115,10 +115,8 @@ export function ProjectSidebar() {
   const activeTerminalRef = useUiStore((s) => s.activeTerminal);
   const setActiveTerminal = useUiStore((s) => s.setActiveTerminal);
   const [menu, setMenu] = useState<ContextMenuState>(null);
-  const [sidebarTab, setSidebarTab] = useState<
-    'files' | 'git' | 'projects' | 'workflows'
-  >('projects');
-  const keepHome = activeView === 'home';
+  const sidebarTab = useUiStore((s) => s.sidebarTab);
+  const setSidebarTab = useUiStore((s) => s.setSidebarTab);
 
   useEffect(() => {
     if (!showGitControl && sidebarTab === 'git') setSidebarTab('projects');
@@ -694,7 +692,7 @@ export function ProjectSidebar() {
           className={`${styles.activityBtn} ${sidebarTab === 'projects' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             setSidebarTab('projects');
-            if (!keepHome) setActiveView('workspace');
+            setActiveView('workspace');
           }}
         >
           <Grid3x3 size={20} />
@@ -709,7 +707,7 @@ export function ProjectSidebar() {
           className={`${styles.activityBtn} ${sidebarTab === 'files' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             setSidebarTab('files');
-            if (!keepHome) setActiveView('workspace');
+            setActiveView('workspace');
           }}
         >
           <Folder size={20} />
@@ -725,7 +723,7 @@ export function ProjectSidebar() {
             className={`${styles.activityBtn} ${sidebarTab === 'git' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
             onClick={() => {
               setSidebarTab('git');
-              if (!keepHome) setActiveView('workspace');
+              setActiveView('workspace');
             }}
           >
             <GitBranch size={20} />
@@ -741,7 +739,7 @@ export function ProjectSidebar() {
           className={`${styles.activityBtn} ${sidebarTab === 'workflows' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             setSidebarTab('workflows');
-            if (!keepHome) setActiveView('workspace');
+            setActiveView('workspace');
           }}
         >
           <Layers size={20} />
