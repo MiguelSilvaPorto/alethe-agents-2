@@ -1047,4 +1047,9 @@ export const ptBR: Record<MessageKey, string> = {
   'task.selectProjectHint':
     'Crie ou selecione um projeto na sidebar para começar a gerenciar tarefas.',
   'task.allProjects': 'Todos os projetos',
+
+  /* ---- editor ---- */
+  'editor.empty': 'Nenhum arquivo aberto',
+  'editor.emptyHint':
+    'Clique ou clique duas vezes em um arquivo no Explorador para abri-lo',
 };

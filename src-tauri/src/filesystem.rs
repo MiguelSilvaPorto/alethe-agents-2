@@ -14,31 +14,35 @@ pub struct DirectoryEntry {
 }
 
 #[tauri::command]
-pub fn list_directory(path: String) -> Result<Vec<DirectoryEntry>, String> {
+pub async fn list_directory(path: String) -> Result<Vec<DirectoryEntry>, String> {
     let directory = PathBuf::from(path.trim());
     if !directory.is_dir() {
         return Err("directory not found".to_string());
     }
 
-    let mut entries = fs::read_dir(&directory)
-        .map_err(|error| error.to_string())?
-        .filter_map(|entry| {
-            let entry = entry.ok()?;
-            let file_type = entry.file_type().ok()?;
-            Some(DirectoryEntry {
-                name: entry.file_name().to_string_lossy().into_owned(),
-                path: entry.path().to_string_lossy().into_owned(),
-                is_dir: file_type.is_dir(),
+    tokio::task::spawn_blocking(move || {
+        let mut entries = fs::read_dir(&directory)
+            .map_err(|error| error.to_string())?
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let file_type = entry.file_type().ok()?;
+                Some(DirectoryEntry {
+                    name: entry.file_name().to_string_lossy().into_owned(),
+                    path: entry.path().to_string_lossy().into_owned(),
+                    is_dir: file_type.is_dir(),
+                })
             })
-        })
-        .collect::<Vec<_>>();
+            .collect::<Vec<_>>();
 
-    entries.sort_by(|a, b| {
-        b.is_dir
-            .cmp(&a.is_dir)
-            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
-    });
-    Ok(entries)
+        entries.sort_by(|a, b| {
+            b.is_dir
+                .cmp(&a.is_dir)
+                .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+        });
+        Ok(entries)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Lê um arquivo de texto (UTF-8) do disco. Usado pelo Markdown Viewer.
@@ -49,6 +53,16 @@ pub fn read_text_file(path: String) -> Result<String, String> {
         return Err("file not found".to_string());
     }
     fs::read_to_string(&file).map_err(|error| error.to_string())
+}
+
+/// Escreve um arquivo de texto (UTF-8) no disco. Usado pelo File Editor.
+#[tauri::command]
+pub fn write_text_file(path: String, content: String) -> Result<(), String> {
+    let file = PathBuf::from(path.trim());
+    if let Some(parent) = file.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    fs::write(&file, &content).map_err(|e| e.to_string())
 }
 
 /// Registro global de watchers de arquivo, chaveado pelo caminho absoluto.

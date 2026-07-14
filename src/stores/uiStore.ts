@@ -88,6 +88,9 @@ type UiState = {
   notifications: InAppToast[];
   /** Update disponível (checado em silêncio no boot). null = atualizado/sem info. */
   updateInfo: UpdateInfo | null;
+  /** Aba ativa da sidebar (projetos/arquivos/git/workflows). */
+  sidebarTab: 'files' | 'git' | 'projects' | 'workflows';
+  setSidebarTab: (tab: 'files' | 'git' | 'projects' | 'workflows') => void;
 
   openModal_: (
     kind: Exclude<ModalKind, null>,
@@ -152,6 +155,8 @@ export const useUiStore = create<UiState>((set) => ({
   toasts: [],
   notifications: [],
   updateInfo: null,
+  sidebarTab: 'projects',
+  setSidebarTab: (tab) => set({ sidebarTab: tab }),
 
   openModal_: (kind, context) =>
     set({ openModal: kind, modalContext: context ?? null }),

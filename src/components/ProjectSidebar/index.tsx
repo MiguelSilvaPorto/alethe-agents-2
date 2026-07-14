@@ -665,10 +665,15 @@ export function ProjectSidebar() {
 
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.homeRow}>
+      {/* ActivityBar Vertical */}
+      <div
+        className={styles.activityBar}
+        role="tablist"
+        aria-label={t('ui.sidebar.navigation')}
+      >
         <button
           type="button"
-          className={`${styles.homeBtn} ${activeView === 'home' ? styles.homeBtnActive : ''}`}
+          className={`${styles.activityBtn} ${activeView === 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             if (activeView !== 'home') {
               setActiveView('home');
@@ -677,188 +682,139 @@ export function ProjectSidebar() {
           title={t('ui.sidebar.homeTitle', { shortcut: 'Ctrl+Shift+H' })}
           aria-label={t('ui.sidebar.home')}
         >
-          <Home size={14} />
-          <span>{t('ui.sidebar.home')}</span>
+          <Home size={20} />
         </button>
-      </div>
 
-      <div
-        className={styles.sidebarTabs}
-        role="tablist"
-        aria-label={t('ui.sidebar.navigation')}
-      >
         <button
           type="button"
           role="tab"
-          aria-selected={sidebarTab === 'projects'}
+          aria-selected={sidebarTab === 'projects' && activeView !== 'home'}
           aria-label={t('ui.sidebar.projects')}
           title={t('ui.sidebar.projects')}
-          className={`${styles.sidebarTab} ${sidebarTab === 'projects' ? styles.sidebarTabActive : ''}`}
+          className={`${styles.activityBtn} ${sidebarTab === 'projects' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             setSidebarTab('projects');
             if (!keepHome) setActiveView('workspace');
           }}
         >
-          <Grid3x3 size={14} />
+          <Grid3x3 size={20} />
         </button>
+
         <button
           type="button"
           role="tab"
-          aria-selected={sidebarTab === 'files'}
+          aria-selected={sidebarTab === 'files' && activeView !== 'home'}
           aria-label={t('ui.sidebar.files')}
           title={t('ui.sidebar.files')}
-          className={`${styles.sidebarTab} ${sidebarTab === 'files' ? styles.sidebarTabActive : ''}`}
+          className={`${styles.activityBtn} ${sidebarTab === 'files' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             setSidebarTab('files');
             if (!keepHome) setActiveView('workspace');
           }}
         >
-          <Folder size={14} />
+          <Folder size={20} />
         </button>
+
         {showGitControl ? (
           <button
             type="button"
             role="tab"
-            aria-selected={sidebarTab === 'git'}
+            aria-selected={sidebarTab === 'git' && activeView !== 'home'}
             aria-label={t('ui.sidebar.git')}
             title={t('ui.sidebar.git')}
-            className={`${styles.sidebarTab} ${sidebarTab === 'git' ? styles.sidebarTabActive : ''}`}
+            className={`${styles.activityBtn} ${sidebarTab === 'git' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
             onClick={() => {
               setSidebarTab('git');
               if (!keepHome) setActiveView('workspace');
             }}
           >
-            <GitBranch size={14} />
+            <GitBranch size={20} />
           </button>
         ) : null}
+
         <button
           type="button"
           role="tab"
-          aria-selected={sidebarTab === 'workflows'}
+          aria-selected={sidebarTab === 'workflows' && activeView !== 'home'}
           aria-label={t('workflow.sidebarTab')}
           title={t('workflow.sidebarTab')}
-          className={`${styles.sidebarTab} ${sidebarTab === 'workflows' ? styles.sidebarTabActive : ''}`}
+          className={`${styles.activityBtn} ${sidebarTab === 'workflows' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             setSidebarTab('workflows');
             if (!keepHome) setActiveView('workspace');
           }}
         >
-          <Layers size={14} />
+          <Layers size={20} />
         </button>
+
+        <div style={{ flex: 1 }} />
+        <UserProfile />
       </div>
 
-      {sidebarTab === 'workflows' ? (
-        <section className={styles.explorerPanel}>
-          <WorkflowDashboard />
-        </section>
-      ) : null}
+      {/* Conteúdo da Sidebar correspondente */}
+      <div className={styles.sidebarContent}>
+        {sidebarTab === 'workflows' && activeView !== 'home' ? (
+          <section className={styles.explorerPanel}>
+            <WorkflowDashboard />
+          </section>
+        ) : null}
 
-      {sidebarTab === 'projects' ? (
-        <header className={styles.header}>
-          <span className={styles.title}>{t('ui.sidebar.projects')}</span>
-          <div className={styles.headerActions}>
-            <button
-              type="button"
-              className={styles.iconBtn}
-              onClick={() => void onAddMarkdownViewer()}
-              disabled={!activeProjectId}
-              title={t('ui.markdown.addViewerTitle')}
-              aria-label={t('ui.markdown.addViewer')}
-            >
-              <FileText size={14} />
-            </button>
-            <button
-              type="button"
-              className={styles.iconBtn}
-              onClick={() => openModal('newGroup')}
-              title={t('ui.sidebar.newGroupTitle', {
-                shortcut: 'Ctrl+Shift+G',
-              })}
-              aria-label={t('ui.sidebar.newGroup')}
-            >
-              <FolderPlus size={14} />
-            </button>
-            <button
-              type="button"
-              className={styles.iconBtn}
-              onClick={() => openModal('newProject')}
-              title={t('ui.sidebar.newProjectTitle', {
-                shortcut: 'Ctrl+Shift+P',
-              })}
-              aria-label={t('ui.sidebar.newProject')}
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-        </header>
-      ) : null}
-
-      {sidebarTab === 'files' ? (
-        <section className={styles.explorerPanel}>
-          <div className={styles.explorerHeader}>
-            <span className={styles.explorerLabel}>
-              {t('ui.sidebar.explorer')}
-            </span>
-            <MoreHorizontal size={14} />
-          </div>
-          {selectedTerminal && selectedSubTab ? (
-            <FileExplorer
-              cwd={selectedSubTab.cwd || selectedTerminal.cwd}
-              ptyId={selectedSubTab.ptyId}
-              terminalName={selectedTerminal.name}
-            />
-          ) : (
-            <div className={styles.explorerEmpty}>
-              <EmptyState
-                compact
-                icon={<FolderPlus size={18} />}
-                title={t('ui.sidebar.emptyTitle')}
-                description={t('ui.sidebar.emptyDesc')}
-                primaryAction={{
-                  label: t('ui.sidebar.emptyAction'),
-                  onClick: () => openModal('newProject'),
-                }}
-              />
+        {sidebarTab === 'projects' ? (
+          <header className={styles.header}>
+            <span className={styles.title}>{t('ui.sidebar.projects')}</span>
+            <div className={styles.headerActions}>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => void onAddMarkdownViewer()}
+                disabled={!activeProjectId}
+                title={t('ui.markdown.addViewerTitle')}
+                aria-label={t('ui.markdown.addViewer')}
+              >
+                <FileText size={14} />
+              </button>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => openModal('newGroup')}
+                title={t('ui.sidebar.newGroupTitle', {
+                  shortcut: 'Ctrl+Shift+G',
+                })}
+                aria-label={t('ui.sidebar.newGroup')}
+              >
+                <FolderPlus size={14} />
+              </button>
+              <button
+                type="button"
+                className={styles.iconBtn}
+                onClick={() => openModal('newProject')}
+                title={t('ui.sidebar.newProjectTitle', {
+                  shortcut: 'Ctrl+Shift+P',
+                })}
+                aria-label={t('ui.sidebar.newProject')}
+              >
+                <Plus size={14} />
+              </button>
             </div>
-          )}
-        </section>
-      ) : null}
+          </header>
+        ) : null}
 
-      {sidebarTab === 'git' ? (
-        <section className={styles.explorerPanel}>
-          <div className={styles.explorerHeader}>
-            <span className={styles.explorerLabel}>
-              {t('ui.sidebar.sourceControl')}
-            </span>
-          </div>
-          {selectedTerminal && selectedSubTab ? (
-            <GitControl
-              cwd={selectedSubTab.cwd || selectedTerminal.cwd}
-              ptyId={selectedSubTab.ptyId}
-              terminalName={selectedTerminal.name}
-            />
-          ) : (
-            <div className={styles.explorerEmpty}>
-              <EmptyState
-                compact
-                icon={<GitBranch size={18} />}
-                title={t('git.empty.noTerminal')}
-                description={t('git.empty.noTerminalDesc')}
-                primaryAction={{
-                  label: t('ui.sidebar.emptyAction'),
-                  onClick: () => openModal('newProject'),
-                }}
-              />
+        {sidebarTab === 'files' ? (
+          <section className={styles.explorerPanel}>
+            <div className={styles.explorerHeader}>
+              <span className={styles.explorerLabel}>
+                {t('ui.sidebar.explorer')}
+              </span>
+              <MoreHorizontal size={14} />
             </div>
-          )}
-        </section>
-      ) : null}
-
-      {sidebarTab === 'projects' ? (
-        <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-          <div className={styles.list}>
-            {projects.length === 0 && groups.length === 0 ? (
-              <div className={styles.emptyWrap}>
+            {selectedTerminal && selectedSubTab ? (
+              <FileExplorer
+                cwd={selectedSubTab.cwd || selectedTerminal.cwd}
+                ptyId={selectedSubTab.ptyId}
+                terminalName={selectedTerminal.name}
+              />
+            ) : (
+              <div className={styles.explorerEmpty}>
                 <EmptyState
                   compact
                   icon={<FolderPlus size={18} />}
@@ -870,21 +826,77 @@ export function ProjectSidebar() {
                   }}
                 />
               </div>
-            ) : (
-              <>
-                {(groupsByParent.get(null) ?? []).map(renderGroup)}
-
-                {ungroupedProjects.length > 0 ? (
-                  <UngroupedSection
-                    projects={ungroupedProjects}
-                    renderProject={renderProject}
-                  />
-                ) : null}
-              </>
             )}
-          </div>
-        </DndContext>
-      ) : null}
+          </section>
+        ) : null}
+
+        {sidebarTab === 'git' ? (
+          <section className={styles.explorerPanel}>
+            <div className={styles.explorerHeader}>
+              <span className={styles.explorerLabel}>
+                {t('ui.sidebar.sourceControl')}
+              </span>
+            </div>
+            {selectedTerminal && selectedSubTab ? (
+              <GitControl
+                cwd={selectedSubTab.cwd || selectedTerminal.cwd}
+                ptyId={selectedSubTab.ptyId}
+                terminalName={selectedTerminal.name}
+              />
+            ) : (
+              <div className={styles.explorerEmpty}>
+                <EmptyState
+                  compact
+                  icon={<GitBranch size={18} />}
+                  title={t('git.empty.noTerminal')}
+                  description={t('git.empty.noTerminalDesc')}
+                  primaryAction={{
+                    label: t('ui.sidebar.emptyAction'),
+                    onClick: () => openModal('newProject'),
+                  }}
+                />
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {sidebarTab === 'projects' ? (
+          <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+            <div className={styles.list}>
+              {projects.length === 0 && groups.length === 0 ? (
+                <div className={styles.emptyWrap}>
+                  <EmptyState
+                    compact
+                    icon={<FolderPlus size={18} />}
+                    title={t('ui.sidebar.emptyTitle')}
+                    description={t('ui.sidebar.emptyDesc')}
+                    primaryAction={{
+                      label: t('ui.sidebar.emptyAction'),
+                      onClick: () => openModal('newProject'),
+                    }}
+                  />
+                </div>
+              ) : (
+                <>
+                  {(groupsByParent.get(null) ?? []).map(renderGroup)}
+
+                  {ungroupedProjects.length > 0 ? (
+                    <UngroupedSection
+                      projects={ungroupedProjects}
+                      renderProject={renderProject}
+                    />
+                  ) : null}
+                </>
+              )}
+            </div>
+          </DndContext>
+        ) : null}
+
+        <WorkspaceLayoutFooter />
+        <LayoutFooter />
+        <SidebarNowPlaying />
+        <SidebarUpdate />
+      </div>
 
       {menu ? (
         <ContextMenu
@@ -894,12 +906,6 @@ export function ProjectSidebar() {
           onClose={() => setMenu(null)}
         />
       ) : null}
-
-      <WorkspaceLayoutFooter />
-      <LayoutFooter />
-      <SidebarNowPlaying />
-      <SidebarUpdate />
-      <UserProfile />
     </aside>
   );
 }

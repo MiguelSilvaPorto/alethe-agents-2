@@ -1038,6 +1038,10 @@ export const en = {
   'task.selectProjectHint':
     'Create or select a project from the sidebar to start managing tasks.',
   'task.allProjects': 'All projects',
+
+  /* ---- editor ---- */
+  'editor.empty': 'No files open',
+  'editor.emptyHint': 'Click or double-click a file in the Explorer to open it',
 } as const;
 
 export type MessageKey = keyof typeof en;

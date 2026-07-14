@@ -1104,11 +1104,11 @@
   white-space: nowrap;
 }
 
-.card[role="button"] {
+.card[role='button'] {
   cursor: pointer;
 }
 
-.card[role="button"]:hover {
+.card[role='button']:hover {
   background: var(--surface-card-default-strong);
 }
 

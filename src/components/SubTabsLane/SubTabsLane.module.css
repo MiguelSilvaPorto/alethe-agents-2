@@ -25,7 +25,7 @@
 /* Indicador da tab ativa — barra de acento colada na borda esquerda da lane
    (padrão activity-bar), some quando não-ativa. */
 .active::before {
-  content: "";
+  content: '';
   position: absolute;
   left: -5px;
   top: 50%;

@@ -1,12 +1,12 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
-import visualizer from "rollup-plugin-visualizer";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import visualizer from 'rollup-plugin-visualizer';
 
 export default defineConfig({
   plugins: [
     react(),
     visualizer({
-      filename: "dist/stats.html",
+      filename: 'dist/stats.html',
       gzipSize: true,
       brotliSize: true,
       open: false,
@@ -20,12 +20,12 @@ export default defineConfig({
     // src-tauri/target/**/*.dll enquanto o linker ainda está escrevendo o
     // arquivo e estoura EBUSY, derrubando o dev server a cada rebuild do Rust.
     watch: {
-      ignored: ["**/src-tauri/**"],
+      ignored: ['**/src-tauri/**'],
     },
   },
   build: {
     sourcemap: false,
-    minify: "terser",
+    minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: true,
@@ -42,10 +42,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          xterm: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-search"],
-          react: ["react", "react-dom"],
-          icons: ["lucide-react"],
-          tauri: ["@tauri-apps/api"],
+          xterm: ['@xterm/xterm', '@xterm/addon-fit', '@xterm/addon-search'],
+          react: ['react', 'react-dom'],
+          icons: ['lucide-react'],
+          tauri: ['@tauri-apps/api'],
         },
       },
     },

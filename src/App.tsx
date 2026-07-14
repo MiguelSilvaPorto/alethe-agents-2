@@ -56,6 +56,12 @@ const WorkspaceView = lazy(() =>
   })),
 );
 
+const FileEditor = lazy(() =>
+  import('./components/FileEditor').then((module) => ({
+    default: module.FileEditor,
+  })),
+);
+
 const FindJumpModal = lazy(() =>
   import('./components/modals/FindJumpModal').then((module) => ({
     default: module.FindJumpModal,
@@ -260,6 +266,7 @@ export default function App() {
   const activeView = useUiStore((s) => s.activeView);
   const openModal = useUiStore((s) => s.openModal);
   const sidebarVisible = useUiStore((s) => s.sidebarVisible);
+  const sidebarTab = useUiStore((s) => s.sidebarTab);
 
   useKeybindings();
   useDiscordPresence();
@@ -399,7 +406,7 @@ export default function App() {
                 overflow: 'hidden',
               }}
             >
-              {/* WorkspaceView — montado só quando workspace está ativo */}
+              {/* WorkspaceView / FileEditor — montado só quando workspace está ativo */}
               <Suspense fallback={<LoadingScreen />}>
                 {activeView === 'workspace' ? (
                   <div
@@ -410,11 +417,15 @@ export default function App() {
                       overflow: 'hidden',
                     }}
                   >
-                    <WorkspaceView />
+                    {sidebarTab === 'files' ? (
+                      <FileEditor />
+                    ) : (
+                      <WorkspaceView />
+                    )}
                   </div>
                 ) : null}
               </Suspense>
-              {/* TaskPanel — sempre renderizado, visibilidade controlada por CSS */}
+              {/* TaskPanel — painel direito com tarefas */}
               {activeView === 'workspace' ? <TaskPanel /> : null}
               {/* HomeView e AgentCanvasPOC — lazy, montados apenas quando ativos */}
               <Suspense fallback={<LoadingScreen />}>

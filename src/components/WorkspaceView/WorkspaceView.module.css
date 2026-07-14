@@ -42,7 +42,7 @@
 /* Linha sutil sempre visível no meio do separator. */
 .sepH::before,
 .sepV::before {
-  content: "";
+  content: '';
   position: absolute;
   background: var(--border-strong);
   border-radius: 2px;
@@ -70,7 +70,7 @@
 
 .sepH::after,
 .sepV::after {
-  content: "";
+  content: '';
   position: absolute;
   background: var(--accent);
   border-radius: 3px;

@@ -135,7 +135,7 @@
 /* Ponte invisível cobrindo o gap link→tooltip pra o hover não "cair" no meio
    do caminho e o tooltip sumir antes do clique. */
 .linkActions::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   right: 0;
@@ -144,7 +144,7 @@
 }
 
 .linkActions::after {
-  content: "";
+  content: '';
   position: absolute;
   left: 50%;
   bottom: -5px;

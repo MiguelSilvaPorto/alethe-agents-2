@@ -39,12 +39,12 @@ jobs:
     env:
       WH_RELEASES: ${{ secrets.DISCORD_WEBHOOK_ALETHE_RELEASES }}
       WH_UPDATES: ${{ secrets.DISCORD_WEBHOOK_ALETHE_UPDATES }}
-      KC1T_NAME: "Kc1t Assistant"
-      KC1T_AVATAR: "https://cdn.discordapp.com/icons/1513496334236389397/9fcedc8b7f5d21a685c886e8adf6d835.png?size=256"
-      COLOR: "2278750" # verde da marca #22c55e
+      KC1T_NAME: 'Kc1t Assistant'
+      KC1T_AVATAR: 'https://cdn.discordapp.com/icons/1513496334236389397/9fcedc8b7f5d21a685c886e8adf6d835.png?size=256'
+      COLOR: '2278750' # verde da marca #22c55e
       EVENT: ${{ github.event_name }}
       ACTION: ${{ github.event.action }}
-      SITE: "https://alethe-agents.kc1t.com/"
+      SITE: 'https://alethe-agents.kc1t.com/'
     steps:
       - name: Montar e enviar embed
         env:

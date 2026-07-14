@@ -80,3 +80,40 @@
   color: var(--fg-faint);
   font-size: 11px;
 }
+
+.skeleton {
+  padding: 2px 0;
+}
+
+.skeletonRow {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.skeletonIcon {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.skeletonText {
+  height: 10px;
+  width: 80px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}

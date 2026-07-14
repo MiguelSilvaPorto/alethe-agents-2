@@ -94,6 +94,7 @@ pub fn run() {
             economy_agents::economy_agents_enabled,
             filesystem::list_directory,
             filesystem::read_text_file,
+            filesystem::write_text_file,
             filesystem::watch_file,
             filesystem::unwatch_file,
             pty::spawn_pty,

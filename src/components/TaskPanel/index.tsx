@@ -142,32 +142,34 @@ export function TaskPanel() {
               })}
             </div>
 
-            <div className={styles.content}>
-              {activeTab === 'history' ? (
-                <>
-                  {filteredTasks.length === 0 ? (
-                    <div className={styles.emptyState}>
-                      {t('task.history.empty')}
-                    </div>
-                  ) : (
-                    filteredTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} variant="history" />
-                    ))
-                  )}
-                </>
-              ) : (
-                <>
-                  {filteredTasks.length === 0 ? (
-                    <div className={styles.emptyState}>
-                      {t('task.empty' as any, { status: activeTab })}
-                    </div>
-                  ) : (
-                    filteredTasks.map((task) => (
-                      <TaskCard key={task.id} task={task} />
-                    ))
-                  )}
-                </>
-              )}
+            <div className={styles.contentWrapper}>
+              <div key={activeTab} className={styles.tabContent}>
+                {activeTab === 'history' ? (
+                  <>
+                    {filteredTasks.length === 0 ? (
+                      <div className={styles.emptyState}>
+                        {t('task.history.empty')}
+                      </div>
+                    ) : (
+                      filteredTasks.map((task) => (
+                        <TaskCard key={task.id} task={task} variant="history" />
+                      ))
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {filteredTasks.length === 0 ? (
+                      <div className={styles.emptyState}>
+                        {t('task.empty' as any, { status: activeTab })}
+                      </div>
+                    ) : (
+                      filteredTasks.map((task) => (
+                        <TaskCard key={task.id} task={task} />
+                      ))
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </>
         )}
