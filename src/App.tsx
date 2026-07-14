@@ -161,6 +161,12 @@ const WorkflowDetailModal = lazy(() =>
   })),
 );
 
+const WorkflowKanbanView = lazy(() =>
+  import('./components/WorkflowKanbanView').then((module) => ({
+    default: module.WorkflowKanbanView,
+  })),
+);
+
 const ThemePickerModal = lazy(() =>
   import('./components/modals/ThemePickerModal').then((module) => ({
     default: module.ThemePickerModal,
@@ -512,6 +518,10 @@ export default function App() {
                 ) : activeView === 'agentCanvas' ? (
                   <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
                     <AgentCanvasPOC />
+                  </div>
+                ) : activeView === 'workflows' ? (
+                  <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+                    <WorkflowKanbanView />
                   </div>
                 ) : null}
               </Suspense>

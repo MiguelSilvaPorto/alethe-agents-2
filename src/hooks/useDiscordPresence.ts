@@ -11,6 +11,7 @@ const VIEW_LABELS = {
   home: 'Viewing the dashboard',
   workspace: 'Managing terminals',
   agentCanvas: 'Orchestrating AI agents',
+  workflows: 'Viewing workflows and tasks',
 } as const;
 
 export function useDiscordPresence() {

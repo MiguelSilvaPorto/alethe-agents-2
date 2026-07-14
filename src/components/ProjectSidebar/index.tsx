@@ -739,7 +739,7 @@ export function ProjectSidebar() {
           className={`${styles.activityBtn} ${sidebarTab === 'workflows' && activeView !== 'home' ? styles.activityBtnActive : ''}`}
           onClick={() => {
             setSidebarTab('workflows');
-            setActiveView('workspace');
+            setActiveView('workflows');
           }}
         >
           <Layers size={20} />

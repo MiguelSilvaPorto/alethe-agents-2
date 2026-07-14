@@ -36,7 +36,7 @@ type ModalKind =
   | 'taskBranch'
   | null;
 
-export type ActiveView = 'home' | 'workspace' | 'agentCanvas';
+export type ActiveView = 'home' | 'workspace' | 'agentCanvas' | 'workflows';
 
 export type MemorySample = MemoryStats & {
   ts: number;
