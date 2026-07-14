@@ -1,6 +1,14 @@
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { Bell, X } from 'lucide-react';
-import { lazy, Suspense, type CSSProperties, useEffect } from 'react';
+import {
+  lazy,
+  Suspense,
+  type CSSProperties,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from 'react';
 
 import { ghosttyKillAll } from './lib/tauri';
 
@@ -269,6 +277,33 @@ export default function App() {
   const sidebarVisible = useUiStore((s) => s.sidebarVisible);
   const sidebarTab = useUiStore((s) => s.sidebarTab);
 
+  const [rightPanelWidth, setRightPanelWidth] = useState(340);
+  const isResizing = useRef(false);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth > 240 && newWidth < 800) {
+      setRightPanelWidth(newWidth);
+    }
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    isResizing.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+
+  const startResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isResizing.current = true;
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    },
+    [handleMouseMove, handleMouseUp],
+  );
+
   useKeybindings();
   useDiscordPresence();
 
@@ -426,12 +461,46 @@ export default function App() {
                   </div>
                 ) : null}
               </Suspense>
+              {/* Divisor arrastável (Resize Handle) para redimensionar o painel direito */}
+              {activeView === 'workspace' &&
+                useUiStore.getState().taskPanelVisible && (
+                  <div
+                    onMouseDown={startResize}
+                    style={{
+                      width: '4px',
+                      cursor: 'col-resize',
+                      background: 'transparent',
+                      zIndex: 100,
+                      alignSelf: 'stretch',
+                      position: 'relative',
+                      marginLeft: '-2px',
+                      marginRight: '-2px',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--accent)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  />
+                )}
               {/* Painel Direito: AgentTerminalPanel na visualização de arquivos, senão TaskPanel normal */}
               {activeView === 'workspace' ? (
                 sidebarTab === 'files' ? (
-                  <AgentTerminalPanel />
+                  <AgentTerminalPanel
+                    style={{
+                      width: rightPanelWidth,
+                      maxWidth: rightPanelWidth,
+                    }}
+                  />
                 ) : (
-                  <TaskPanel />
+                  <TaskPanel
+                    style={{
+                      width: rightPanelWidth,
+                      maxWidth: rightPanelWidth,
+                    }}
+                  />
                 )
               ) : null}
               {/* HomeView e AgentCanvasPOC — lazy, montados apenas quando ativos */}

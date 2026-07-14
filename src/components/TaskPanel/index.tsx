@@ -25,7 +25,7 @@ const TABS: { id: TabId; labelKey: string; icon: typeof Plus }[] = [
   { id: 'history', labelKey: 'task.tab.history', icon: History },
 ];
 
-export function TaskPanel() {
+export function TaskPanel({ style }: { style?: React.CSSProperties }) {
   const t = useT();
   const activeProjectId = useProjectsStore((s) => s.activeProjectId);
   const projects = useProjectsStore((s) => s.projects);
@@ -48,9 +48,6 @@ export function TaskPanel() {
         (t) => t.status === 'accepted' || t.rejectionCycle > 0,
       );
     }
-    if (activeTab === 'blocked') {
-      return tasks.filter((t) => t.status === 'blocked');
-    }
     return tasks.filter((t) => t.status === activeTab);
   }, [tasks, activeTab]);
 
@@ -69,6 +66,7 @@ export function TaskPanel() {
       )}
       <aside
         className={`${styles.panel} ${!taskPanelVisible ? styles.panelHidden : ''}`}
+        style={style}
       >
         <div className={styles.header}>
           <span className={styles.headerTitle}>
