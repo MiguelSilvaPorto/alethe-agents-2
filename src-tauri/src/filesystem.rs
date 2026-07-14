@@ -45,9 +45,58 @@ pub async fn list_directory(path: String) -> Result<Vec<DirectoryEntry>, String>
     .map_err(|e| e.to_string())?
 }
 
-/// Lê um arquivo de texto (UTF-8) do disco. Usado pelo Markdown Viewer.
+#[derive(Serialize)]
+pub struct ReadFileResult {
+    pub content: String,
+    pub is_truncated: bool,
+    pub total_lines: usize,
+}
+
+/// Lê um arquivo de texto (UTF-8) do disco com otimização para arquivos gigantes.
 #[tauri::command]
-pub fn read_text_file(path: String) -> Result<String, String> {
+pub fn read_text_file(path: String) -> Result<ReadFileResult, String> {
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
+    let file = PathBuf::from(path.trim());
+    if !file.is_file() {
+        return Err("file not found".to_string());
+    }
+
+    let file_handle = File::open(&file).map_err(|e| e.to_string())?;
+    let reader = BufReader::new(file_handle);
+
+    let mut content = String::new();
+    let mut total_lines = 0;
+    let mut is_truncated = false;
+    let limit = 10000;
+
+    for line in reader.lines() {
+        let line_str = line.map_err(|e| e.to_string())?;
+        total_lines += 1;
+        if total_lines <= limit {
+            content.push_str(&line_str);
+            content.push('\n');
+        } else {
+            is_truncated = true;
+        }
+    }
+
+    // Se não foi truncado, limpa qualquer quebra de linha extra gerada pelo loop final
+    if !is_truncated && content.ends_with('\n') {
+        content.pop();
+    }
+
+    Ok(ReadFileResult {
+        content,
+        is_truncated,
+        total_lines,
+    })
+}
+
+/// Lê o conteúdo completo de um arquivo gigante caso o usuário force o carregamento.
+#[tauri::command]
+pub fn read_full_text_file(path: String) -> Result<String, String> {
     let file = PathBuf::from(path.trim());
     if !file.is_file() {
         return Err("file not found".to_string());

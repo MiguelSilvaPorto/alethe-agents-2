@@ -10,6 +10,7 @@ import { FocusOverlay } from './components/FocusOverlay';
 import { MainMenu } from './components/MainMenu';
 import { ProjectSidebar } from './components/ProjectSidebar';
 import { AgentTerminalPanel } from './components/AgentTerminalPanel';
+import { TaskPanel } from './components/TaskPanel';
 import { TitleBar } from './components/TitleBar';
 import { TokenHud } from './components/TokenHud';
 import { useKeybindings } from './hooks/useKeybindings';
@@ -425,8 +426,14 @@ export default function App() {
                   </div>
                 ) : null}
               </Suspense>
-              {/* AgentTerminalPanel — painel direito com agentes e tarefas */}
-              {activeView === 'workspace' ? <AgentTerminalPanel /> : null}
+              {/* Painel Direito: AgentTerminalPanel na visualização de arquivos, senão TaskPanel normal */}
+              {activeView === 'workspace' ? (
+                sidebarTab === 'files' ? (
+                  <AgentTerminalPanel />
+                ) : (
+                  <TaskPanel />
+                )
+              ) : null}
               {/* HomeView e AgentCanvasPOC — lazy, montados apenas quando ativos */}
               <Suspense fallback={<LoadingScreen />}>
                 {activeView === 'home' ? (
