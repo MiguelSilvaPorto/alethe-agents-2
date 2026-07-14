@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useProjectsStore } from '../../stores/projectsStore';
+import { useUiStore } from '../../stores/uiStore';
 import {
   Settings,
   Search,
@@ -475,6 +476,7 @@ function GeneralSettingsView() {
 function ModelsAndKeysSettingsView() {
   const preferences = useProjectsStore((s) => s.preferences);
   const setPreferences = useProjectsStore((s) => s.setPreferences);
+  const pushToast = useUiStore((s) => s.pushToast);
 
   const [apiKeysExpanded, setApiKeysExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -580,7 +582,12 @@ function ModelsAndKeysSettingsView() {
     try {
       const hostname = preferences.opencodeHostname || '127.0.0.1';
       const port = preferences.opencodePort || 4096;
-      const response = await fetch(`http://${hostname}:${port}/provider`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(`http://${hostname}:${port}/provider`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       if (response.ok) {
         const data = await response.json();
         const connectedProviders = data.connected || [];
@@ -593,14 +600,24 @@ function ModelsAndKeysSettingsView() {
         nextVerified['OpenCode Go'] = true;
 
         setPreferences({ verifiedProviders: nextVerified });
-        alert('Sincronização com o OpenCode realizada com sucesso!');
+        pushToast({
+          title: 'OpenCode',
+          body: 'Sincronização realizada com sucesso!',
+        });
       } else {
-        alert(`Erro ao sincronizar com o OpenCode: Status ${response.status}`);
+        pushToast({
+          title: 'OpenCode',
+          body: `Erro ao sincronizar: Status ${response.status}`,
+        });
       }
     } catch (e: any) {
-      alert(
-        `Falha ao conectar no servidor OpenCode: ${e.message || 'Verifique se ele está ativo e rodando.'}`,
-      );
+      const msg =
+        e.name === 'AbortError'
+          ? 'Servidor não respondeu. Verifique se o OpenCode está ativo.'
+          : e.message === 'Failed to fetch'
+            ? 'Servidor indisponível. Verifique o host e porta do OpenCode nas configurações.'
+            : e.message || 'Erro desconhecido.';
+      pushToast({ title: 'OpenCode', body: msg });
     } finally {
       setSyncingOpenCode(false);
     }

@@ -53,6 +53,21 @@ pub fn start_proxy(app: AppHandle) {
             // /anthropic/<session_id>/v1/messages
             // /openrouter/<session_id>/v1/...
             let parts: Vec<&str> = url_path.split('/').filter(|s| !s.is_empty()).collect();
+
+            // Endpoint GET /provider — retorna lista de provedores conectados
+            if url_path == "/provider" && method == "GET" {
+                let providers = serde_json::json!({
+                    "connected": ["openai", "anthropic", "google", "deepseek"],
+                    "status": "ok"
+                });
+                let _ = request.respond(
+                    Response::from_string(providers.to_string())
+                        .with_header(Header::from_str("Content-Type: application/json").unwrap())
+                        .with_status_code(200)
+                );
+                continue;
+            }
+
             if parts.len() < 2 {
                 let _ = request.respond(
                     Response::from_string(
