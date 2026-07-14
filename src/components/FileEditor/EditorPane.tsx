@@ -17,6 +17,15 @@ const MONACO_OPTIONS = {
   smoothScrolling: true,
   cursorBlinking: 'smooth' as const,
   padding: { top: 8 },
+  scrollbar: {
+    vertical: 'visible' as const,
+    horizontal: 'visible' as const,
+    verticalScrollbarSize: 8,
+    horizontalScrollbarSize: 8,
+    useShadows: false,
+    verticalHasArrows: false,
+    horizontalHasArrows: false,
+  },
 };
 
 export function EditorPane() {
