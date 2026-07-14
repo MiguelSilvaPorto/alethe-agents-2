@@ -1,0 +1,60 @@
+const EXTENSION_MAP: Record<string, string> = {
+  '.ts': 'typescript',
+  '.tsx': 'typescriptreact',
+  '.js': 'javascript',
+  '.jsx': 'javascriptreact',
+  '.mjs': 'javascript',
+  '.cjs': 'javascript',
+  '.json': 'json',
+  '.jsonc': 'json',
+  '.md': 'markdown',
+  '.css': 'css',
+  '.html': 'html',
+  '.htm': 'html',
+  '.py': 'python',
+  '.rs': 'rust',
+  '.rb': 'ruby',
+  '.go': 'go',
+  '.java': 'java',
+  '.kt': 'kotlin',
+  '.swift': 'swift',
+  '.c': 'c',
+  '.h': 'c',
+  '.cpp': 'cpp',
+  '.hpp': 'cpp',
+  '.cs': 'csharp',
+  '.php': 'php',
+  '.pl': 'perl',
+  '.r': 'r',
+  '.sql': 'sql',
+  '.sh': 'shell',
+  '.bash': 'shell',
+  '.zsh': 'shell',
+  '.ps1': 'powershell',
+  '.bat': 'bat',
+  '.cmd': 'bat',
+  '.toml': 'toml',
+  '.yaml': 'yaml',
+  '.yml': 'yaml',
+  '.xml': 'xml',
+  '.svg': 'xml',
+  '.tex': 'latex',
+  '.env': 'plaintext',
+  '.log': 'plaintext',
+  '.gitignore': 'ignore',
+  '.dockerignore': 'ignore',
+  '.editorconfig': 'editorconfig',
+  '.prettierrc': 'json',
+  '.eslintrc': 'json',
+  Dockerfile: 'dockerfile',
+  Makefile: 'makefile',
+};
+
+export function detectLanguage(filePath: string): string {
+  const name = filePath.split(/[/\\]/).pop() || '';
+  if (EXTENSION_MAP[name]) return EXTENSION_MAP[name];
+  const dot = name.lastIndexOf('.');
+  if (dot === -1) return 'plaintext';
+  const ext = name.slice(dot).toLowerCase();
+  return EXTENSION_MAP[ext] || 'plaintext';
+}
