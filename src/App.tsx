@@ -282,6 +282,7 @@ export default function App() {
   const openModal = useUiStore((s) => s.openModal);
   const sidebarVisible = useUiStore((s) => s.sidebarVisible);
   const sidebarTab = useUiStore((s) => s.sidebarTab);
+  const taskPanelVisible = useUiStore((s) => s.taskPanelVisible);
 
   const [rightPanelWidth, setRightPanelWidth] = useState(340);
   const isResizing = useRef(false);
@@ -468,43 +469,50 @@ export default function App() {
                 ) : null}
               </Suspense>
               {/* Divisor arrastável (Resize Handle) para redimensionar o painel direito */}
-              {activeView === 'workspace' &&
-                useUiStore.getState().taskPanelVisible && (
-                  <div
-                    onMouseDown={startResize}
-                    style={{
-                      width: '4px',
-                      cursor: 'col-resize',
-                      background: 'transparent',
-                      zIndex: 100,
-                      alignSelf: 'stretch',
-                      position: 'relative',
-                      marginLeft: '-2px',
-                      marginRight: '-2px',
-                      transition: 'background 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'var(--accent)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                    }}
-                  />
-                )}
+              {activeView === 'workspace' && taskPanelVisible && (
+                <div
+                  onMouseDown={startResize}
+                  style={{
+                    width: '4px',
+                    cursor: 'col-resize',
+                    background: 'transparent',
+                    zIndex: 100,
+                    alignSelf: 'stretch',
+                    position: 'relative',
+                    marginLeft: '-2px',
+                    marginRight: '-2px',
+                    transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--accent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                />
+              )}
               {/* Painel Direito: AgentTerminalPanel na visualização de arquivos, senão TaskPanel normal */}
               {activeView === 'workspace' ? (
                 sidebarTab === 'files' ? (
                   <AgentTerminalPanel
                     style={{
-                      width: rightPanelWidth,
-                      maxWidth: rightPanelWidth,
+                      width: taskPanelVisible ? rightPanelWidth : 0,
+                      maxWidth: taskPanelVisible ? rightPanelWidth : 0,
+                      transition:
+                        'width 250ms cubic-bezier(0.2, 0.8, 0.2, 1), max-width 250ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 250ms ease',
+                      opacity: taskPanelVisible ? 1 : 0,
+                      overflow: 'hidden',
                     }}
                   />
                 ) : (
                   <TaskPanel
                     style={{
-                      width: rightPanelWidth,
-                      maxWidth: rightPanelWidth,
+                      width: taskPanelVisible ? rightPanelWidth : 0,
+                      maxWidth: taskPanelVisible ? rightPanelWidth : 0,
+                      transition:
+                        'width 250ms cubic-bezier(0.2, 0.8, 0.2, 1), max-width 250ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 250ms ease',
+                      opacity: taskPanelVisible ? 1 : 0,
+                      overflow: 'hidden',
                     }}
                   />
                 )

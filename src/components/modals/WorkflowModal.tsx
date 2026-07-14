@@ -25,6 +25,7 @@ export function WorkflowModal() {
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [selectedTerminalId, setSelectedTerminalId] = useState<string>('');
+  const [workflowTitle, setWorkflowTitle] = useState('');
   const [task, setTask] = useState('');
   const [agentType, setAgentType] = useState<string>('claude');
   const [mode, setMode] = useState<WorkflowMode>('LOCAL');
@@ -47,6 +48,8 @@ export function WorkflowModal() {
   useEffect(() => {
     if (open) {
       setSelectedProjectId(activeProjectId || (projects[0]?.id ?? ''));
+      setWorkflowTitle('');
+      setTask('');
     }
   }, [open, activeProjectId, projects]);
 
@@ -76,7 +79,7 @@ export function WorkflowModal() {
         setMode('GIT');
       })
       .catch(() => {
-        setGitStatus('no-repo');
+        setGitStatus('no-git');
         setMode('LOCAL');
       });
   }, [open, defaultCwd]);
@@ -95,10 +98,17 @@ export function WorkflowModal() {
     setBusy(true);
     setError(null);
     try {
+      const payload = JSON.stringify({
+        title: workflowTitle.trim() || 'Sem Título',
+        description: task.trim(),
+        terminalId: selectedTerminalId,
+        terminalName: selectedTerminal?.name || 'Geral',
+      });
+
       await startSession(
         `wf-${Date.now()}`,
         agentType,
-        task.trim(),
+        payload,
         mode,
         mode === 'GIT' ? repoRoot.trim() || null : null,
       );
@@ -151,12 +161,31 @@ export function WorkflowModal() {
     >
       <div className={styles.form}>
         <label className={styles.label}>
-          {t('workflow.task')}
+          Título do Workflow
+          <input
+            className={styles.input}
+            type="text"
+            value={workflowTitle}
+            onChange={(e) => setWorkflowTitle(e.target.value)}
+            placeholder="e.g. testar"
+            style={{
+              padding: '8px 10px',
+              background: 'var(--bg-sunken)',
+              color: 'var(--fg)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              outline: 'none',
+              fontSize: '13px',
+            }}
+          />
+        </label>
+        <label className={styles.label}>
+          Prompt da Tarefa
           <textarea
             className={styles.input}
             value={task}
             onChange={(e) => setTask(e.target.value)}
-            placeholder="e.g. Implement JWT authentication"
+            placeholder="Descreva detalhadamente o que a IA deve fazer..."
             rows={3}
           />
         </label>
