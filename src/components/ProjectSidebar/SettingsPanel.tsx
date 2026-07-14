@@ -1153,6 +1153,22 @@ function ModelsAndKeysSettingsView() {
                   )}
                   <ProviderIcon size={14} />
                   <span style={{ flex: 1 }}>{provider}</span>
+                  {provider === 'OpenCode Go' && (
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        color: '#16a34a',
+                        background: 'rgba(22, 163, 74, 0.12)',
+                        padding: '2px 6px',
+                        borderRadius: '6px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
+                      Free
+                    </span>
+                  )}
                   <span
                     style={{
                       fontSize: '10px',
@@ -1200,7 +1216,17 @@ function ModelsAndKeysSettingsView() {
                             <span style={{ fontSize: '12px', fontWeight: 500 }}>
                               {m.name}
                             </span>
-                            {isCustom && (
+                            {provider === 'OpenCode Go' ? (
+                              <span
+                                style={{
+                                  fontSize: '10px',
+                                  color: '#16a34a',
+                                  fontWeight: 500,
+                                }}
+                              >
+                                Gratuito · Sem API key
+                              </span>
+                            ) : isCustom ? (
                               <span
                                 style={{
                                   fontSize: '10px',
@@ -1209,7 +1235,7 @@ function ModelsAndKeysSettingsView() {
                               >
                                 Customizado
                               </span>
-                            )}
+                            ) : null}
                           </div>
                           <div
                             style={{
