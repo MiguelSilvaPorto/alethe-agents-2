@@ -63,7 +63,20 @@ pub fn start_proxy(app: AppHandle) {
                 let _ = request.respond(
                     Response::from_string(providers.to_string())
                         .with_header(Header::from_str("Content-Type: application/json").unwrap())
+                        .with_header(Header::from_str("Access-Control-Allow-Origin: *").unwrap())
+                        .with_header(Header::from_str("Access-Control-Allow-Methods: GET, OPTIONS").unwrap())
                         .with_status_code(200)
+                );
+                continue;
+            }
+
+            // Handle preflight OPTIONS for /provider
+            if url_path == "/provider" && method == "OPTIONS" {
+                let _ = request.respond(
+                    Response::empty(204)
+                        .with_header(Header::from_str("Access-Control-Allow-Origin: *").unwrap())
+                        .with_header(Header::from_str("Access-Control-Allow-Methods: GET, OPTIONS").unwrap())
+                        .with_header(Header::from_str("Access-Control-Allow-Headers: Content-Type").unwrap())
                 );
                 continue;
             }
