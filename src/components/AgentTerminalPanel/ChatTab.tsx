@@ -9,10 +9,17 @@ import {
   ChevronDown,
   Settings,
   X,
+  Search,
 } from 'lucide-react';
 import { useUiStore } from '../../stores/uiStore';
 import { useProjectsStore } from '../../stores/projectsStore';
-import { useEditorStore } from '../../stores/editorStore';
+import {
+  IconText,
+  IconImage,
+  IconContext,
+  IconFree,
+  IconCode,
+} from '../icons/ModelIcons';
 import styles from './ChatTab.module.css';
 
 interface Message {
@@ -131,23 +138,19 @@ export function ChatTab() {
     [sessions, activeSessionId],
   );
 
-  const PROVIDERS = useMemo(
-    () => [
-      { id: 'all', name: 'All Providers' },
-      { id: 'Anthropic', name: 'Anthropic' },
-      { id: 'OpenAI', name: 'OpenAI' },
-      { id: 'Google', name: 'Google' },
-      { id: 'DeepSeek', name: 'DeepSeek' },
-    ],
-    [],
-  );
-
   const preferences = useProjectsStore((s) => s.preferences);
+  const opencodeModels = useUiStore((s) => s.opencodeModels);
 
   const AVAILABLE_MODELS = useMemo(() => {
-    const list: Array<{ name: string; provider: string }> = [];
+    const list: Array<{
+      name: string;
+      provider: string;
+      id?: string;
+      isFree?: boolean;
+    }> = [];
 
-    const nativos = [
+    // Modelos nativos (com chave direta - Anthropic, OpenAI, Google, DeepSeek)
+    const direct = [
       {
         id: 'claude-3-5-sonnet',
         name: 'Claude 3.5 Sonnet',
@@ -169,46 +172,35 @@ export function ChatTab() {
       { id: 'gemini-2.0-pro', name: 'Gemini 2.0 Pro', provider: 'Google' },
       { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek' },
       { id: 'deepseek-r1', name: 'DeepSeek R1', provider: 'DeepSeek' },
-      // OpenCode Go
-      {
-        id: 'opencode-go/glm-5.2',
-        name: 'GLM 5.2 (OpenCode Go)',
-        provider: 'OpenCode Go',
-      },
-      {
-        id: 'opencode-go/kimi-k2.7-code',
-        name: 'Kimi K2.7 Code (OpenCode Go)',
-        provider: 'OpenCode Go',
-      },
-      {
-        id: 'opencode-go/mimo-v2.5-pro',
-        name: 'Mimo v2.5 Pro (OpenCode Go)',
-        provider: 'OpenCode Go',
-      },
-      {
-        id: 'opencode-go/qwen3.7-max',
-        name: 'Qwen 3.7 Max (OpenCode Go)',
-        provider: 'OpenCode Go',
-      },
-      {
-        id: 'opencode-go/deepseek-v4-flash',
-        name: 'DeepSeek V4 Flash (OpenCode Go)',
-        provider: 'OpenCode Go',
-      },
     ];
 
-    nativos.forEach((m) => {
+    direct.forEach((m) => {
       const isVerified = preferences.verifiedProviders?.[m.provider] === true;
       const isEnabled = preferences.enabledModels?.[m.id] !== false;
       if (isVerified && isEnabled) {
-        list.push(m);
+        list.push({ name: m.name, provider: m.provider, id: m.id });
       }
     });
 
+    // Modelos do OpenCode CLI
+    opencodeModels.forEach((m) => {
+      const id = m.full_id || m.id;
+      const isEnabled = preferences.enabledModels?.[id] !== false;
+      if (isEnabled) {
+        list.push({
+          name: m.name,
+          provider: m.provider,
+          id,
+          isFree: id.includes('free'),
+        });
+      }
+    });
+
+    // Modelos customizados
     (preferences.customModels ?? []).forEach((m) => {
       const isEnabled = preferences.enabledModels?.[m.id] !== false;
       if (isEnabled) {
-        list.push({ name: m.name, provider: m.provider });
+        list.push({ name: m.name, provider: m.provider, id: m.id });
       }
     });
 
@@ -217,6 +209,7 @@ export function ChatTab() {
     preferences.verifiedProviders,
     preferences.enabledModels,
     preferences.customModels,
+    opencodeModels,
   ]);
 
   const [inputValue, setInputValue] = useState('');
@@ -231,19 +224,17 @@ export function ChatTab() {
   const [activeAutocompleteIndex, setActiveAutocompleteIndex] = useState(0);
 
   const [showModelDropdown, setShowModelDropdown] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<string>('all');
   const [modelSearchQuery, setModelSearchQuery] = useState('');
 
   const filteredModels = useMemo(() => {
-    return AVAILABLE_MODELS.filter((m) => {
-      const matchesProvider =
-        selectedProvider === 'all' || m.provider === selectedProvider;
-      const matchesQuery = m.name
-        .toLowerCase()
-        .includes(modelSearchQuery.toLowerCase());
-      return matchesProvider && matchesQuery;
-    });
-  }, [AVAILABLE_MODELS, selectedProvider, modelSearchQuery]);
+    const query = modelSearchQuery.toLowerCase();
+    if (!query) return AVAILABLE_MODELS;
+    return AVAILABLE_MODELS.filter(
+      (m) =>
+        m.name.toLowerCase().includes(query) ||
+        m.provider.toLowerCase().includes(query),
+    );
+  }, [AVAILABLE_MODELS, modelSearchQuery]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -684,169 +675,109 @@ export function ChatTab() {
                   position: 'absolute',
                   bottom: 'calc(100% + 8px)',
                   right: 0,
-                  width: '290px',
+                  width: '340px',
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--border)',
                   borderRadius: 'var(--radius-md)',
                   boxShadow: 'var(--shadow-lg)',
-                  display: 'flex',
                   zIndex: 2000,
-                  height: '240px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  maxHeight: '320px',
                   overflow: 'hidden',
                 }}
               >
-                {/* Lateral Esquerda: Lista de Provedores */}
+                {/* Busca */}
                 <div
                   style={{
-                    width: '95px',
-                    borderRight: '1px solid var(--border)',
-                    background: 'var(--bg-sunken)',
+                    padding: '8px',
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Search size={13} style={{ color: 'var(--fg-faint)' }} />
+                  <input
+                    type="text"
+                    placeholder="Buscar modelo..."
+                    value={modelSearchQuery}
+                    onChange={(e) => setModelSearchQuery(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: '4px 6px',
+                      fontSize: '12px',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      color: 'var(--fg)',
+                    }}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      useUiStore.getState().setActiveView('workspace');
+                      useUiStore.getState().setSidebarTab('settings');
+                      setShowModelDropdown(false);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--fg-muted)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      padding: '4px',
+                      borderRadius: '4px',
+                    }}
+                    title="Abrir Preferências"
+                  >
+                    <Settings size={13} />
+                  </button>
+                </div>
+
+                {/* Lista de Modelos */}
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: 'auto',
                     padding: '6px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '2px',
-                    overflowY: 'auto',
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: '9px',
-                      fontWeight: 600,
-                      color: 'var(--fg-faint)',
-                      padding: '4px 6px',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Provedor
-                  </div>
-                  {PROVIDERS.map((prov) => (
-                    <button
-                      key={prov.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedProvider(prov.id);
-                        setModelSearchQuery('');
-                      }}
+                  {filteredModels.length === 0 ? (
+                    <div
                       style={{
-                        textAlign: 'left',
-                        padding: '6px 8px',
-                        borderRadius: '4px',
-                        background:
-                          selectedProvider === prov.id
-                            ? 'var(--panel-hover)'
-                            : 'transparent',
-                        color:
-                          selectedProvider === prov.id
-                            ? 'var(--accent)'
-                            : 'var(--fg-muted)',
-                        border: 'none',
-                        fontSize: '11px',
-                        cursor: 'pointer',
-                        fontWeight: selectedProvider === prov.id ? 600 : 400,
+                        padding: '24px',
+                        textAlign: 'center',
+                        fontSize: '12px',
+                        color: 'var(--fg-faint)',
                       }}
                     >
-                      {prov.name}
-                    </button>
-                  ))}
-                </div>
+                      Nenhum modelo encontrado.
+                    </div>
+                  ) : (
+                    filteredModels.map((m) => {
+                      const isActive = model === m.name;
+                      const isFree = m.isFree || m.id?.includes('free');
+                      const hasVision =
+                        m.id?.includes('vision') ||
+                        m.id?.includes('vl') ||
+                        m.provider === 'Anthropic' ||
+                        m.provider === 'OpenAI' ||
+                        m.provider === 'Google';
+                      const hasCodex =
+                        m.id?.includes('codex') || m.id?.includes('coder');
+                      const ctxHint =
+                        m.id?.includes('deepseek') || m.id?.includes('kimi')
+                          ? '1M ctx'
+                          : '200K ctx';
 
-                {/* Lateral Direira: Pesquisa e Modelos */}
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minWidth: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      padding: '6px',
-                      borderBottom: '1px solid var(--border)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <input
-                      type="text"
-                      className={styles.textarea}
-                      placeholder="Pesquisar modelos..."
-                      value={modelSearchQuery}
-                      onChange={(e) => setModelSearchQuery(e.target.value)}
-                      style={{
-                        flex: 1,
-                        padding: '4px 8px',
-                        fontSize: '11px',
-                        background: 'var(--bg-sunken)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '4px',
-                        outline: 'none',
-                        color: 'var(--fg)',
-                        minHeight: '24px',
-                      }}
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        useEditorStore
-                          .getState()
-                          .openFile('virtual://settings');
-                        useUiStore.getState().setActiveView('workspace');
-                        useUiStore.getState().setSidebarTab('files');
-                        setShowModelDropdown(false);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--fg-muted)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '4px',
-                        borderRadius: '4px',
-                        transition: 'background 0.15s, color 0.15s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'var(--panel-hover)';
-                        e.currentTarget.style.color = 'var(--fg)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = 'var(--fg-muted)';
-                      }}
-                      title="Abrir Preferências (Configurações)"
-                    >
-                      <Settings size={14} />
-                    </button>
-                  </div>
-                  <div
-                    style={{
-                      flex: 1,
-                      overflowY: 'auto',
-                      padding: '4px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '1px',
-                    }}
-                  >
-                    {filteredModels.length === 0 ? (
-                      <div
-                        style={{
-                          padding: '20px',
-                          textAlign: 'center',
-                          fontSize: '11px',
-                          color: 'var(--fg-faint)',
-                        }}
-                      >
-                        Nenhum modelo encontrado.
-                      </div>
-                    ) : (
-                      filteredModels.map((m) => (
+                      return (
                         <button
-                          key={m.name}
+                          key={m.id || m.name}
                           type="button"
                           onClick={() => {
                             setModel(m.name);
@@ -854,36 +785,127 @@ export function ChatTab() {
                           }}
                           style={{
                             textAlign: 'left',
-                            padding: '6px 8px',
-                            borderRadius: '4px',
-                            background:
-                              model === m.name
-                                ? 'var(--accent-faint)'
-                                : 'transparent',
-                            color:
-                              model === m.name ? 'var(--accent)' : 'var(--fg)',
-                            border: 'none',
-                            fontSize: '11.5px',
+                            padding: '8px 10px',
+                            borderRadius: '6px',
+                            background: isActive
+                              ? 'var(--accent-faint)'
+                              : 'transparent',
+                            border: isActive
+                              ? '1px solid var(--accent-ring)'
+                              : '1px solid transparent',
                             cursor: 'pointer',
                             display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
+                            flexDirection: 'column',
+                            gap: '3px',
+                            transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isActive)
+                              e.currentTarget.style.background =
+                                'var(--panel-hover)';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isActive)
+                              e.currentTarget.style.background = 'transparent';
                           }}
                         >
-                          <span>{m.name}</span>
-                          <span
+                          <div
                             style={{
-                              fontSize: '9px',
-                              color: 'var(--fg-faint)',
-                              textTransform: 'uppercase',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
                             }}
                           >
-                            {m.provider}
-                          </span>
+                            <span
+                              style={{
+                                fontSize: '12px',
+                                fontWeight: isActive ? 600 : 500,
+                                color: isActive ? 'var(--accent)' : 'var(--fg)',
+                              }}
+                            >
+                              {m.name}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '9px',
+                                color: 'var(--fg-faint)',
+                                textTransform: 'uppercase',
+                                background: 'var(--bg-sunken)',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                              }}
+                            >
+                              {m.provider}
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '10px',
+                              color: 'var(--fg-muted)',
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <IconText size={11} /> Texto
+                            </span>
+                            {hasVision && (
+                              <span
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                }}
+                              >
+                                <IconImage size={11} /> Imagem
+                              </span>
+                            )}
+                            <span
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                              }}
+                            >
+                              <IconContext size={11} /> {ctxHint}
+                            </span>
+                            {hasCodex && (
+                              <span
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                }}
+                              >
+                                <IconCode size={11} /> Codex
+                              </span>
+                            )}
+                            {isFree && (
+                              <span
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  color: '#16a34a',
+                                  fontWeight: 600,
+                                }}
+                              >
+                                <IconFree size={11} /> Free
+                              </span>
+                            )}
+                          </div>
                         </button>
-                      ))
-                    )}
-                  </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             )}

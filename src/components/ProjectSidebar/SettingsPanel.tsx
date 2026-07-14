@@ -497,12 +497,15 @@ function ModelsAndKeysSettingsView() {
   });
 
   // OpenCode real data
-  const [opencodeModels, setOpencodeModels] = useState<OpenCodeModel[]>([]);
+  const [opencodeModels, setLocalOpencodeModels] = useState<OpenCodeModel[]>(
+    [],
+  );
   const [_opencodeProviders, setOpencodeProviders] = useState<
     { id: string; name: string; active: boolean }[]
   >([]);
   const [opencodeLoading, setOpencodeLoading] = useState(false);
   const [opencodeError, setOpencodeError] = useState<string | null>(null);
+  const setSharedOpenCodeModels = useUiStore((s) => s.setOpenCodeModels);
 
   const loadOpenCodeData = useCallback(async () => {
     setOpencodeLoading(true);
@@ -514,7 +517,8 @@ function ModelsAndKeysSettingsView() {
           () => [] as { id: string; name: string; active: boolean }[],
         ),
       ]);
-      setOpencodeModels(models);
+      setLocalOpencodeModels(models);
+      setSharedOpenCodeModels(models);
       setOpencodeProviders(providers);
       if (models.length === 0 && providers.length === 0) {
         setOpencodeError('OpenCode CLI não encontrado ou sem dados.');

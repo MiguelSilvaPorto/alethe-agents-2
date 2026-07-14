@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ClaudeUsage, CodexUsage, MemoryStats } from '../lib/tauri';
+import type { OpenCodeModel } from '../lib/tauri';
 import type { AgentType } from '../lib/types';
 import type { UpdateInfo } from '../lib/updater';
 
@@ -93,6 +94,9 @@ type UiState = {
   setSidebarTab: (
     tab: 'files' | 'git' | 'projects' | 'workflows' | 'settings',
   ) => void;
+  /** Modelos carregados do OpenCode CLI. Compartilhado entre SettingsPanel e ChatTab. */
+  opencodeModels: OpenCodeModel[];
+  setOpenCodeModels: (models: OpenCodeModel[]) => void;
 
   openModal_: (
     kind: Exclude<ModalKind, null>,
@@ -159,6 +163,8 @@ export const useUiStore = create<UiState>((set) => ({
   updateInfo: null,
   sidebarTab: 'projects',
   setSidebarTab: (tab) => set({ sidebarTab: tab }),
+  opencodeModels: [],
+  setOpenCodeModels: (models) => set({ opencodeModels: models }),
 
   openModal_: (kind, context) =>
     set({ openModal: kind, modalContext: context ?? null }),
